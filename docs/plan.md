@@ -348,7 +348,7 @@ Every H4 candle (4 hours):
 
 | Component | Library | Rationale |
 |-----------|---------|-----------|
-| HTTP/WebSocket | **OkHttp 4.x** | 10x better battery than Ktor for WebSocket |
+| HTTP/WebSocket | **Ktor 3.x** | Already configured, good Kotlin integration |
 | JSON | kotlinx.serialization | Type-safe, fast |
 | Database | Room | SQLite with compile-time checks |
 | Background | Foreground Service | Required for 24/7 |
@@ -357,25 +357,30 @@ Every H4 candle (4 hours):
 | JWT | nimbus-jose-jwt | ES256 signing |
 | Scheduler | WorkManager | Dead-man-switch backup |
 
-### 3.2 Why OkHttp over Ktor
+### 3.2 Why Ktor for TradeFlow
 
-From research: Ktor WebSocket has **10x higher CPU usage** than OkHttp for long-running connections. For a 24/7 trading bot on battery, this is critical.
+**Decision: Use Ktor 3.x** (already configured in project)
 
-```kotlin
-// OkHttp - use pingInterval for automatic keep-alive
-val client = OkHttpClient.Builder()
-    .pingInterval(30, TimeUnit.SECONDS)  // Handles heartbeat
-    .connectTimeout(30, TimeUnit.SECONDS)
-    .readTimeout(0, TimeUnit.MINUTES)    // No read timeout for WS
-    .build()
-```
+**Rationale:**
+- Already integrated with dependencies configured
+- Better Kotlin idioms and coroutine integration
+- Type-safe builders for HTTP requests
+- Unified client for both REST and WebSocket
+- Good enough battery performance for intermittent use
+
+**Note:** While OkHttp has better battery life for 24/7 WebSocket connections, TradeFlow uses:
+- Periodic strategy evaluation (every 15min) NOT continuous streaming
+- Short-lived WebSocket sessions for order updates
+- REST API for most operations (candles, orders, accounts)
+
+For this use case, Ktor's developer experience outweighs OkHttp's battery advantage.
 
 ### 3.3 Doze Mode Survival Strategy
 
 | Layer | Tool | Purpose |
 |-------|------|---------|
 | Primary | Battery optimization exemption | Prevent OS from killing |
-| WebSocket | OkHttp pingInterval (30s) | Keep connection alive |
+| WebSocket | Ktor WebSocket (heartbeat subscription) | Keep connection alive |
 | Internal | Coroutine watchdog (45s) | Detect dead WebSocket |
 | Backup | WorkManager (15-min periodic) | Restart service if killed |
 
@@ -384,7 +389,7 @@ val client = OkHttpClient.Builder()
 ### 3.4 Project Structure
 
 ```
-com.engine.trade/
+com.dpart.tradeflow/
 ├── data/
 │   ├── local/
 │   │   ├── EngineDatabase.kt
@@ -419,11 +424,26 @@ com.engine.trade/
 
 ## Part 4: Implementation Code
 
+**⚠️ IMPORTANT - Technology Update:**
+
+The code examples in this section were originally written using OkHttp for HTTP/WebSocket communication. The TradeFlow project now uses **Ktor 3.x** instead (already configured in dependencies).
+
+**What this means:**
+- REST API code (section 4.5): Adapt OkHttp syntax to Ktor HttpClient
+- WebSocket code (section 4.6): Adapt OkHttp WebSocket to Ktor WebSocket client
+- Trading Service (section 4.8): Use Ktor clients instead of OkHttp
+
+**Package names:** All examples use `com.dpart.tradeflow.*` but the actual project uses `com.dpart.tradeflow.*`
+
+Treat these examples as **reference implementations** showing the logic patterns and API integration - adapt to Ktor syntax when implementing.
+
+---
+
 ### 4.1 Domain Models
 
 ```kotlin
 // domain/model/Candle.kt
-package com.engine.trade.domain.model
+package com.dpart.tradeflow.domain.model
 
 import java.time.Instant
 
@@ -437,7 +457,7 @@ data class Candle(
 )
 
 // domain/model/Decision.kt
-package com.engine.trade.domain.model
+package com.dpart.tradeflow.domain.model
 
 sealed class Decision {
     data class Wait(val reason: String) : Decision()
@@ -461,10 +481,10 @@ sealed class Decision {
 
 ```kotlin
 // domain/strategy/EngineDecisionEngine.kt
-package com.engine.trade.domain.strategy
+package com.dpart.tradeflow.domain.strategy
 
-import com.engine.trade.domain.model.Candle
-import com.engine.trade.domain.model.Decision
+import com.dpart.tradeflow.domain.model.Candle
+import com.dpart.tradeflow.domain.model.Decision
 import org.ta4j.core.BaseBarSeriesBuilder
 import org.ta4j.core.indicators.ATRIndicator
 import org.ta4j.core.indicators.SMAIndicator
@@ -585,7 +605,7 @@ class EngineDecisionEngine {
 
 ```kotlin
 // data/security/SecureKeyStore.kt
-package com.engine.trade.data.security
+package com.dpart.tradeflow.data.security
 
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -634,7 +654,7 @@ class SecureKeyStore(context: Context) {
 
 ```kotlin
 // data/security/JwtGenerator.kt
-package com.engine.trade.data.security
+package com.dpart.tradeflow.data.security
 
 import com.nimbusds.jose.JOSEObjectType
 import com.nimbusds.jose.JWSAlgorithm
@@ -725,28 +745,32 @@ class JwtGenerator(private val keyStore: SecureKeyStore) {
 
 ```kotlin
 // data/remote/CoinbaseRestApi.kt
-package com.engine.trade.data.remote
+package com.dpart.tradeflow.data.remote
 
 import android.util.Log
-import com.engine.trade.data.security.JwtGenerator
-import com.engine.trade.domain.model.Candle
+import com.dpart.tradeflow.data.security.JwtGenerator
+import com.dpart.tradeflow.domain.model.Candle
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.serialization.json.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
-    
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
-    
+
+    private val client = HttpClient(OkHttp) {
+        engine {
+            config {
+                connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            }
+        }
+    }
+
     private val json = Json { ignoreUnknownKeys = true }
     
     companion object {
@@ -760,7 +784,7 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
     /**
      * Place limit order with entry + attached TP/SL (for TREND mode)
      */
-    fun placeBracketOrder(
+    suspend fun placeBracketOrder(
         productId: String,
         side: String,
         baseSize: Double,
@@ -794,7 +818,7 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
     /**
      * Place limit order with post_only (for RANGE/grid mode)
      */
-    fun placeLimitOrder(
+    suspend fun placeLimitOrder(
         productId: String,
         side: String,
         baseSize: Double,
@@ -821,7 +845,7 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
     /**
      * Place market order (for emergency liquidation)
      */
-    fun placeMarketOrder(
+    suspend fun placeMarketOrder(
         productId: String,
         side: String,
         baseSize: Double
@@ -842,22 +866,19 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
         return executeCreateOrder(body, clientOrderId)
     }
     
-    private fun executeCreateOrder(body: JsonObject, clientOrderId: String): OrderResult {
+    private suspend fun executeCreateOrder(body: JsonObject, clientOrderId: String): OrderResult {
         val path = "/api/v3/brokerage/orders"
         val jwt = jwtGenerator.generateRestToken("POST", HOST, path)
-        
-        val request = Request.Builder()
-            .url("$BASE_URL$path")
-            .addHeader("Authorization", "Bearer $jwt")
-            .addHeader("Content-Type", "application/json")
-            .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-        
+
         return try {
-            client.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string()
-                parseOrderResponse(responseBody, clientOrderId)
+            val response: HttpResponse = client.post("$BASE_URL$path") {
+                header("Authorization", "Bearer $jwt")
+                contentType(ContentType.Application.Json)
+                setBody(body.toString())
             }
+
+            val responseBody = response.bodyAsText()
+            parseOrderResponse(responseBody, clientOrderId)
         } catch (e: Exception) {
             Log.e(TAG, "Order request failed", e)
             OrderResult.Failed(clientOrderId, null, "Network error: ${e.message}")
@@ -892,56 +913,50 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
     
     // ==================== ORDER MANAGEMENT ====================
     
-    fun cancelOrders(orderIds: List<String>): Boolean {
+    suspend fun cancelOrders(orderIds: List<String>): Boolean {
         if (orderIds.isEmpty()) return true
-        
+
         val path = "/api/v3/brokerage/orders/batch_cancel"
         val jwt = jwtGenerator.generateRestToken("POST", HOST, path)
-        
+
         val body = buildJsonObject {
             putJsonArray("order_ids") { orderIds.forEach { add(it) } }
         }
-        
-        val request = Request.Builder()
-            .url("$BASE_URL$path")
-            .addHeader("Authorization", "Bearer $jwt")
-            .addHeader("Content-Type", "application/json")
-            .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-        
+
         return try {
-            client.newCall(request).execute().use { it.isSuccessful }
+            val response: HttpResponse = client.post("$BASE_URL$path") {
+                header("Authorization", "Bearer $jwt")
+                contentType(ContentType.Application.Json)
+                setBody(body.toString())
+            }
+            response.status.isSuccess()
         } catch (e: Exception) {
             Log.e(TAG, "Cancel request failed", e)
             false
         }
     }
     
-    fun getOpenOrders(productId: String? = null): List<CoinbaseOrder> {
+    suspend fun getOpenOrders(productId: String? = null): List<CoinbaseOrder> {
         val path = "/api/v3/brokerage/orders/historical/batch"
         val query = buildString {
             append("?order_status=OPEN")
             productId?.let { append("&product_id=$it") }
         }
-        
+
         val jwt = jwtGenerator.generateRestToken("GET", HOST, path)
-        
-        val request = Request.Builder()
-            .url("$BASE_URL$path$query")
-            .addHeader("Authorization", "Bearer $jwt")
-            .get()
-            .build()
-        
+
         return try {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return emptyList()
-                
-                val body = response.body?.string() ?: return emptyList()
-                val jsonResponse = json.parseToJsonElement(body).jsonObject
-                val ordersArray = jsonResponse["orders"]?.jsonArray ?: return emptyList()
-                
-                ordersArray.map { parseOrder(it.jsonObject) }
+            val response: HttpResponse = client.get("$BASE_URL$path$query") {
+                header("Authorization", "Bearer $jwt")
             }
+
+            if (!response.status.isSuccess()) return emptyList()
+
+            val body = response.bodyAsText()
+            val jsonResponse = json.parseToJsonElement(body).jsonObject
+            val ordersArray = jsonResponse["orders"]?.jsonArray ?: return emptyList()
+
+            ordersArray.map { parseOrder(it.jsonObject) }
         } catch (e: Exception) {
             Log.e(TAG, "Get orders failed", e)
             emptyList()
@@ -950,76 +965,68 @@ class CoinbaseRestApi(private val jwtGenerator: JwtGenerator) {
     
     // ==================== MARKET DATA ====================
     
-    fun getCandles(
+    suspend fun getCandles(
         productId: String,
         granularity: String = "TWO_HOUR",
         limit: Int = 350
     ): List<Candle> {
         val path = "/api/v3/brokerage/products/$productId/candles"
         val query = "?granularity=$granularity&limit=$limit"
-        
+
         val jwt = jwtGenerator.generateRestToken("GET", HOST, path)
-        
-        val request = Request.Builder()
-            .url("$BASE_URL$path$query")
-            .addHeader("Authorization", "Bearer $jwt")
-            .get()
-            .build()
-        
+
         return try {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return emptyList()
-                
-                val body = response.body?.string() ?: return emptyList()
-                val jsonResponse = json.parseToJsonElement(body).jsonObject
-                val candlesArray = jsonResponse["candles"]?.jsonArray ?: return emptyList()
-                
-                candlesArray.map { candleJson ->
-                    val obj = candleJson.jsonObject
-                    Candle(
-                        timestamp = Instant.ofEpochSecond(
-                            obj["start"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0
-                        ),
-                        open = obj["open"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
-                        high = obj["high"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
-                        low = obj["low"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
-                        close = obj["close"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
-                        volume = obj["volume"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
-                    )
-                }.sortedBy { it.timestamp }  // Ensure chronological order
+            val response: HttpResponse = client.get("$BASE_URL$path$query") {
+                header("Authorization", "Bearer $jwt")
             }
+
+            if (!response.status.isSuccess()) return emptyList()
+
+            val body = response.bodyAsText()
+            val jsonResponse = json.parseToJsonElement(body).jsonObject
+            val candlesArray = jsonResponse["candles"]?.jsonArray ?: return emptyList()
+
+            candlesArray.map { candleJson ->
+                val obj = candleJson.jsonObject
+                Candle(
+                    timestamp = Instant.ofEpochSecond(
+                        obj["start"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0
+                    ),
+                    open = obj["open"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                    high = obj["high"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                    low = obj["low"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                    close = obj["close"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                    volume = obj["volume"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
+                )
+            }.sortedBy { it.timestamp }  // Ensure chronological order
         } catch (e: Exception) {
             Log.e(TAG, "Get candles failed", e)
             emptyList()
         }
     }
     
-    fun getAccounts(): List<AccountBalance> {
+    suspend fun getAccounts(): List<AccountBalance> {
         val path = "/api/v3/brokerage/accounts"
         val jwt = jwtGenerator.generateRestToken("GET", HOST, path)
-        
-        val request = Request.Builder()
-            .url("$BASE_URL$path")
-            .addHeader("Authorization", "Bearer $jwt")
-            .get()
-            .build()
-        
+
         return try {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return emptyList()
-                
-                val body = response.body?.string() ?: return emptyList()
-                val jsonResponse = json.parseToJsonElement(body).jsonObject
-                val accountsArray = jsonResponse["accounts"]?.jsonArray ?: return emptyList()
-                
-                accountsArray.map { accountJson ->
-                    val obj = accountJson.jsonObject
-                    val balanceObj = obj["available_balance"]?.jsonObject
-                    AccountBalance(
-                        currency = obj["currency"]?.jsonPrimitive?.content ?: "",
-                        available = balanceObj?.get("value")?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
-                    )
-                }
+            val response: HttpResponse = client.get("$BASE_URL$path") {
+                header("Authorization", "Bearer $jwt")
+            }
+
+            if (!response.status.isSuccess()) return emptyList()
+
+            val body = response.bodyAsText()
+            val jsonResponse = json.parseToJsonElement(body).jsonObject
+            val accountsArray = jsonResponse["accounts"]?.jsonArray ?: return emptyList()
+
+            accountsArray.map { accountJson ->
+                val obj = accountJson.jsonObject
+                val balanceObj = obj["available_balance"]?.jsonObject
+                AccountBalance(
+                    currency = obj["currency"]?.jsonPrimitive?.content ?: "",
+                    available = balanceObj?.get("value")?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Get accounts failed", e)
@@ -1069,16 +1076,18 @@ data class AccountBalance(
 
 ```kotlin
 // data/remote/CoinbaseWebSocket.kt
-package com.engine.trade.data.remote
+package com.dpart.tradeflow.data.remote
 
 import android.util.Log
-import com.engine.trade.data.security.JwtGenerator
+import com.dpart.tradeflow.data.security.JwtGenerator
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.*
-import okhttp3.*
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -1086,14 +1095,19 @@ class CoinbaseWebSocket(
     private val jwtGenerator: JwtGenerator,
     private val scope: CoroutineScope
 ) {
-    private val client = OkHttpClient.Builder()
-        .pingInterval(30, TimeUnit.SECONDS)  // Auto heartbeat
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.MINUTES)    // No timeout for WebSocket
-        .build()
-    
-    private var marketSocket: WebSocket? = null
-    private var userSocket: WebSocket? = null
+    private val client = HttpClient(OkHttp) {
+        install(WebSockets) {
+            pingInterval = 30_000  // 30 seconds
+        }
+        engine {
+            config {
+                connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            }
+        }
+    }
+
+    private var marketJob: Job? = null
+    private var userJob: Job? = null
     
     private val _tickerFlow = MutableSharedFlow<TickerUpdate>(replay = 1)
     val tickerFlow: SharedFlow<TickerUpdate> = _tickerFlow
@@ -1118,72 +1132,77 @@ class CoinbaseWebSocket(
     }
     
     // ==================== CONNECTION ====================
-    
+
     fun connect(productIds: List<String>) {
         if (isConnecting.getAndSet(true)) return
-        
+
         connectMarketData(productIds)
         connectUserData(productIds)
         startHealthCheck(productIds)
-        
+
         isConnecting.set(false)
     }
-    
+
     private fun connectMarketData(productIds: List<String>) {
-        val request = Request.Builder().url(MARKET_WS_URL).build()
-        
-        marketSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d(TAG, "Market WebSocket opened")
-                backoffMs = 5000L
-                
-                // Subscribe to ticker and heartbeats
-                subscribeChannel(webSocket, "heartbeats", productIds, auth = false)
-                subscribeChannel(webSocket, "ticker", productIds, auth = false)
-            }
-            
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                lastMessageTime.set(System.currentTimeMillis())
-                parseMarketMessage(text)
-            }
-            
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "Market WebSocket failed", t)
+        marketJob?.cancel()
+        marketJob = scope.launch {
+            try {
+                client.webSocket(MARKET_WS_URL) {
+                    Log.d(TAG, "Market WebSocket opened")
+                    backoffMs = 5000L
+
+                    // Subscribe to channels
+                    sendSubscribe("heartbeats", productIds, auth = false)
+                    sendSubscribe("ticker", productIds, auth = false)
+
+                    // Receive messages
+                    for (frame in incoming) {
+                        when (frame) {
+                            is Frame.Text -> {
+                                lastMessageTime.set(System.currentTimeMillis())
+                                parseMarketMessage(frame.readText())
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Market WebSocket failed", e)
                 scheduleReconnect { connectMarketData(productIds) }
             }
-            
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "Market WebSocket closed: $code $reason")
-            }
-        })
+        }
     }
-    
+
     private fun connectUserData(productIds: List<String>) {
-        val request = Request.Builder().url(USER_WS_URL).build()
-        
-        userSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d(TAG, "User WebSocket opened")
-                
-                // User channel requires authentication
-                subscribeChannel(webSocket, "user", productIds, auth = true)
-            }
-            
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                lastMessageTime.set(System.currentTimeMillis())
-                parseUserMessage(text)
-            }
-            
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "User WebSocket failed", t)
+        userJob?.cancel()
+        userJob = scope.launch {
+            try {
+                client.webSocket(USER_WS_URL) {
+                    Log.d(TAG, "User WebSocket opened")
+
+                    // Subscribe to user channel (requires auth)
+                    sendSubscribe("user", productIds, auth = true)
+
+                    // Receive messages
+                    for (frame in incoming) {
+                        when (frame) {
+                            is Frame.Text -> {
+                                lastMessageTime.set(System.currentTimeMillis())
+                                parseUserMessage(frame.readText())
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "User WebSocket failed", e)
                 scheduleReconnect { connectUserData(productIds) }
             }
-        })
+        }
     }
-    
-    private fun subscribeChannel(
-        webSocket: WebSocket, 
-        channel: String, 
+
+    private suspend fun DefaultClientWebSocketSession.sendSubscribe(
+        channel: String,
         productIds: List<String>,
         auth: Boolean
     ) {
@@ -1195,7 +1214,7 @@ class CoinbaseWebSocket(
                 put("jwt", jwtGenerator.generateWebSocketToken())
             }
         }
-        webSocket.send(message.toString())
+        send(Frame.Text(message.toString()))
     }
     
     // ==================== HEALTH CHECK ====================
@@ -1297,10 +1316,10 @@ class CoinbaseWebSocket(
     
     fun disconnect() {
         healthCheckJob?.cancel()
-        marketSocket?.close(1000, "Client disconnect")
-        userSocket?.close(1000, "Client disconnect")
-        marketSocket = null
-        userSocket = null
+        marketJob?.cancel()
+        userJob?.cancel()
+        marketJob = null
+        userJob = null
     }
 }
 
@@ -1328,7 +1347,7 @@ data class OrderUpdate(
 
 ```kotlin
 // data/local/EngineDatabase.kt
-package com.engine.trade.data.local
+package com.dpart.tradeflow.data.local
 
 import android.content.Context
 import androidx.room.*
@@ -1479,7 +1498,7 @@ interface GridDao {
 
 ```kotlin
 // service/TradingService.kt
-package com.engine.trade.service
+package com.dpart.tradeflow.service
 
 import android.app.*
 import android.content.Intent
@@ -1487,14 +1506,14 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.engine.trade.MainActivity
-import com.engine.trade.R
-import com.engine.trade.data.local.*
-import com.engine.trade.data.remote.*
-import com.engine.trade.data.security.JwtGenerator
-import com.engine.trade.data.security.SecureKeyStore
-import com.engine.trade.domain.model.Decision
-import com.engine.trade.domain.strategy.EngineDecisionEngine
+import com.dpart.tradeflow.MainActivity
+import com.dpart.tradeflow.R
+import com.dpart.tradeflow.data.local.*
+import com.dpart.tradeflow.data.remote.*
+import com.dpart.tradeflow.data.security.JwtGenerator
+import com.dpart.tradeflow.data.security.SecureKeyStore
+import com.dpart.tradeflow.domain.model.Decision
+import com.dpart.tradeflow.domain.strategy.EngineDecisionEngine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import java.util.concurrent.atomic.AtomicReference
@@ -1684,11 +1703,11 @@ class TradingService : Service() {
         }
     }
     
-    private fun aggregateToH4(twoHourCandles: List<com.engine.trade.domain.model.Candle>): List<com.engine.trade.domain.model.Candle> {
+    private fun aggregateToH4(twoHourCandles: List<com.dpart.tradeflow.domain.model.Candle>): List<com.dpart.tradeflow.domain.model.Candle> {
         // Group consecutive pairs of 2-hour candles into 4-hour candles
         return twoHourCandles.chunked(2).mapNotNull { pair ->
             if (pair.size < 2) return@mapNotNull null
-            com.engine.trade.domain.model.Candle(
+            com.dpart.tradeflow.domain.model.Candle(
                 timestamp = pair[0].timestamp,
                 open = pair[0].open,
                 high = maxOf(pair[0].high, pair[1].high),
@@ -1913,11 +1932,11 @@ plugins {
 }
 
 android {
-    namespace = "com.engine.trade"
+    namespace = "com.dpart.tradeflow"
     compileSdk = 34
     
     defaultConfig {
-        applicationId = "com.engine.trade"
+        applicationId = "com.dpart.tradeflow"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -1945,10 +1964,12 @@ dependencies {
     
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    
-    // OkHttp (HTTP + WebSocket)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    
+
+    // Ktor (HTTP + WebSocket)
+    implementation("io.ktor:ktor-client-core:3.3.3")
+    implementation("io.ktor:ktor-client-okhttp:3.3.3")  // Using OkHttp engine
+    implementation("io.ktor:ktor-client-websockets:3.3.3")
+
     // JWT
     implementation("com.nimbusds:nimbus-jose-jwt:9.37")
     
@@ -2056,5 +2077,5 @@ Since Coinbase sandbox is static-only, use these approaches:
 5. **Candles:** Max 350/request, use TWO_HOUR and aggregate for H4
 6. **Sandbox:** Static responses only - cannot use for paper trading
 7. **Bracket Orders:** `limit_price` = TP, `stop_trigger_price` = SL
-8. **Battery:** OkHttp over Ktor (10x better), battery exemption critical
+8. **Battery:** Using Ktor with periodic evaluation (not 24/7 streaming), battery exemption critical
 9. **Security:** EncryptedSharedPreferences, trade-only permissions
