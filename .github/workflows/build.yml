@@ -8,76 +8,61 @@ on:
 permissions:
   contents: write
 
-env:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
         distribution: 'temurin'
-        cache: 'gradle'
+        java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
 
     - name: Build debug APK
       id: build
-      run: |
-        chmod +x gradlew
-        ./gradlew assembleDebug --build-cache --no-daemon 2>&1 | tee build-output.txt
-        echo "build_status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+      run: ./gradlew assembleDebug
       continue-on-error: true
+
+    - name: Set build status
+      id: status
+      run: echo "result=${{ steps.build.outcome }}" >> $GITHUB_OUTPUT
 
     - name: Commit build result
       if: always()
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        BRANCH="${{ github.head_ref || github.ref_name }}"
-        git fetch origin $BRANCH
-        git checkout $BRANCH
+        git fetch origin ${{ github.ref_name }}
+        git checkout ${{ github.ref_name }}
 
-        # Write status file
-        if [ "${{ steps.build.outputs.build_status }}" = "0" ]; then
+        if [ "${{ steps.build.outcome }}" = "success" ]; then
           echo "SUCCESS" > .build-status
           rm -f build-log.txt
         else
           echo "FAILURE" > .build-status
-          tail -200 build-output.txt > build-log.txt
+          ./gradlew assembleDebug 2>&1 | tail -200 > build-log.txt || true
           git add build-log.txt
         fi
 
         git add .build-status
-        git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outputs.build_status == '0' && 'SUCCESS' || 'FAILURE' }}" || true
-        git push origin $BRANCH || true
-
-    - name: Fail if build failed
-      if: steps.build.outputs.build_status != '0'
-      run: exit 1
+        git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outcome }}" || true
+        git push origin ${{ github.ref_name }} || true
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: steps.build.outputs.build_status == '0'
+      if: steps.build.outcome == 'success'
       with:
         name: debug-apk
         path: app/build/outputs/apk/debug/*.apk
         retention-days: 7
+
+    - name: Fail if build failed
+      if: steps.build.outcome != 'success'
+      run: exit 1
