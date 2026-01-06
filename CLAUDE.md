@@ -19,6 +19,97 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Simple strategies often beat complex ML
 - Every trade is a taxable event
 
+## Development Workflow
+
+**Remote Development + Testing Pipeline:**
+
+```
+┌──────────────────┐
+│ Claude Code      │ (Desktop or Mobile)
+│ - Implements     │
+│ - Pushes branch  │
+│ - Creates PR     │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ GitHub Actions   │
+│ - Builds APK     │
+│ - Runs on PR     │
+│ - Uploads to     │
+│   Firebase       │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Firebase App     │
+│ Distribution     │
+│ → Phone          │
+│ (Test on device) │
+└──────────────────┘
+```
+
+**Why this workflow:**
+- **Remote development:** Make changes from anywhere, test on actual device
+- **No local builds:** Phone is the test environment
+- **Fast iteration:** Push → build → test cycle in minutes
+
+**Mobile vs Desktop tradeoffs:**
+
+| Capability | Claude Code Mobile | Claude Code Desktop + IDE |
+|------------|-------------------|--------------------------|
+| **Basic code changes** | ✅ Yes | ✅ Yes |
+| **File edits** | ✅ Yes | ✅ Yes |
+| **Git operations** | ✅ Yes | ✅ Yes |
+| **MCP Servers** | ❌ No Notion/Coinbase | ✅ Full access |
+| **IDE integration** | ❌ No diagnostics | ✅ Live errors |
+| **Context depth** | ⚠️ Limited | ✅ Full codebase |
+| **Best for** | Small tweaks, fixes | Complex features |
+
+**When to use Mobile:**
+- Quick bug fixes
+- Small UI tweaks
+- Simple refactors
+- When away from laptop
+- After detailed ticket is written with full context
+
+**When to use Desktop:**
+- Complex features requiring Coinbase API docs (MCP)
+- Tasks needing Notion integration
+- Architecture changes
+- Initial feature planning
+- Anything requiring deep codebase exploration
+
+**The Feedback Loop (Commit-Back Pattern):**
+
+GitHub Actions commits build results back to the branch, allowing Claude Code to verify changes:
+
+```
+1. Claude → implements feature
+2. Claude → pushes to branch
+3. GitHub Actions → builds
+4. GitHub Actions → commits result (.build-status + build-log.txt if failure)
+5. Claude → checks committed files to verify build success
+```
+
+**Key files for feedback:**
+- `.build-status` - Contains "SUCCESS" or "FAILURE"
+- `build-log.txt` - Last 200 lines of build output (only on failure)
+
+**How Claude Code uses this:**
+After pushing, Claude should check these files to verify the build passed:
+```bash
+git pull  # Get latest commits from Actions
+cat .build-status  # Check if build succeeded
+cat build-log.txt  # If failed, read error details
+```
+
+This allows Claude to:
+- Verify changes compile without local Gradle execution
+- Fix build errors by reading `build-log.txt`
+- Iterate on fixes until `.build-status` shows SUCCESS
+- Ensure PR is ready for testing before user downloads APK
+
 ## Build Commands
 
 ```bash
@@ -100,7 +191,7 @@ com.dpart.tradeflow/
 
 ## Development Roadmap
 
-**See `plan.md` for detailed implementation blueprint** (2000+ lines of Kotlin code examples, API docs, complete architecture).
+**See `docs/plan.md` for detailed implementation blueprint** (2000+ lines of Kotlin code examples, API docs, complete architecture).
 
 **Current Status:** Phase 0 - Nothing implemented beyond scaffolding.
 
@@ -151,6 +242,8 @@ com.dpart.tradeflow/
 **CI/CD:** GitHub Actions configured for Android builds
 **Distribution:** Firebase App Distribution → partene.darius@gmail.com
 **Git Remote:** Not configured (local-only repo)
+
+**See `docs/github_actions.md` for complete CI/CD documentation** (workflow details, troubleshooting, Firebase setup).
 
 ## Key Configuration
 
