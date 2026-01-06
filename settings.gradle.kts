@@ -2,7 +2,6 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://oss.sonatype.org/content/repositories/releases/") }
         gradlePluginPortal()
     }
 }
@@ -11,7 +10,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://oss.sonatype.org/content/repositories/releases/") }
     }
 }
 
