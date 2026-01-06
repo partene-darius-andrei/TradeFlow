@@ -71,7 +71,8 @@ dependencies {
 
     // Ktor
     implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.websockets)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
@@ -86,6 +87,21 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    // JWT (for Coinbase API authentication)
+    implementation(libs.nimbus.jose.jwt)
+
+    // Technical Analysis (for indicators like SMA, ADX, ATR)
+    implementation(libs.ta4j.core)
+
+    // Security (for encrypted credentials storage)
+    implementation(libs.security.crypto)
+
+    // WorkManager (for background tasks)
+    implementation(libs.work.runtime.ktx)
+
+    // DataStore (for settings persistence)
+    implementation(libs.datastore.preferences)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
