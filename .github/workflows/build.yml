@@ -47,17 +47,27 @@ jobs:
         echo "build_status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
       continue-on-error: true
 
-    - name: Commit build log on failure
-      if: steps.build.outputs.build_status != '0'
+    - name: Commit build result
+      if: always()
       run: |
-        tail -200 build-output.txt > build-log.txt
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         BRANCH="${{ github.head_ref || github.ref_name }}"
         git fetch origin $BRANCH
         git checkout $BRANCH
-        git add build-log.txt
-        git commit -m "Build failed - run #${{ github.run_number }}" || true
+
+        # Write status file
+        if [ "${{ steps.build.outputs.build_status }}" = "0" ]; then
+          echo "SUCCESS" > .build-status
+          rm -f build-log.txt
+        else
+          echo "FAILURE" > .build-status
+          tail -200 build-output.txt > build-log.txt
+          git add build-log.txt
+        fi
+
+        git add .build-status
+        git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outputs.build_status == '0' && 'SUCCESS' || 'FAILURE' }}" || true
         git push origin $BRANCH || true
 
     - name: Fail if build failed
