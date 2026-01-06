@@ -27,43 +27,65 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew clean                  # Clean build
 ```
 
-## Architecture
+## Current Project State (Jan 2026)
 
-**Clean Architecture** with Single Activity + Jetpack Compose.
+**STATUS: Pre-MVP Scaffolding** - Modern Android setup, zero trading logic.
+
+### What Actually Exists
 
 ```
 com.dpart.tradeflow/
-├── di/                          # Hilt modules
-├── data/
-│   ├── remote/                  # Coinbase API (Ktor), DTOs
-│   ├── local/                   # Room (trades, candles, settings)
-│   └── repository/              # Repository implementations
-├── domain/
-│   ├── model/                   # Domain models
-│   ├── repository/              # Repository interfaces
-│   └── usecase/                 # Use cases
-├── presentation/                # Screens and ViewModels
-├── trading/
-│   ├── engine/                  # Trading engine (Foreground Service)
-│   ├── strategy/                # Strategy implementations
-│   └── risk/                    # Risk management
-├── MainActivity.kt
-└── TradeFlowApp.kt
+├── MainActivity.kt              ✅ Shows "TradeFlow" text only
+├── TradeFlowApp.kt              ✅ Initializes Timber logging
+├── di/
+│   ├── AppModule.kt             ✅ Empty Hilt module
+│   ├── DatabaseModule.kt        ✅ Provides Room database
+│   └── NetworkModule.kt         ✅ Provides Ktor HttpClient
+└── data/local/
+    ├── AppDatabase.kt           ✅ Room DB (empty)
+    └── PlaceholderEntity.kt     ✅ Dummy entity
 ```
+
+### What DOESN'T Exist Yet
+
+```
+❌ data/remote/              # No Coinbase API client
+❌ data/repository/          # No repositories
+❌ domain/model/             # No domain models
+❌ domain/repository/        # No repository interfaces
+❌ domain/usecase/           # No use cases
+❌ presentation/             # No screens beyond MainActivity
+❌ trading/engine/           # No trading service
+❌ trading/strategy/         # No strategies
+❌ trading/risk/             # No risk management
+```
+
+**Bottom line:** This is a greenfield project with dependencies configured but no business logic.
 
 ## Tech Stack
 
-| Library | Purpose |
-|---------|---------|
-| Hilt | Dependency injection |
-| Ktor | HTTP + WebSocket (Coinbase API) |
-| Room | Local database |
-| Timber | Logging |
-| Vico | Charts |
-| Compose + Material3 | UI |
-| Coroutines/Flow | Async |
-| WorkManager | Scheduled DCA execution |
-| DataStore | Encrypted API keys, settings |
+| Library | Version | Status | Usage |
+|---------|---------|--------|-------|
+| **Kotlin** | 2.3.0 | ✅ Active | Language |
+| **Compose BOM** | 2025.12.01 | ✅ Active | UI framework |
+| **Hilt** | 2.57.2 | ✅ Configured | DI modules exist, mostly empty |
+| **Room** | 2.8.4 | ⚠️ Scaffolded | Database exists, 1 dummy entity |
+| **Ktor** | 3.3.3 | ⚠️ Configured | HttpClient provided, never used |
+| **Timber** | 5.0.1 | ✅ Active | Initialized in Application |
+| **Vico** | 2.4.0 | ❌ Unused | Dependency added, zero usage |
+| **Firebase Analytics** | 34.7.0 | ✅ Active | Monitoring enabled |
+| **Firebase Crashlytics** | 34.7.0 | ✅ Active | Error tracking |
+| **Coroutines** | 1.10.2 | ❌ Unused | Dependency only |
+
+### Missing Dependencies (Needed for Trading)
+
+| Library | Purpose | Status |
+|---------|---------|--------|
+| **nimbus-jose-jwt** | JWT ES256 signing for Coinbase | ❌ Not added |
+| **ta4j** | Technical indicators (SMA, RSI, etc) | ❌ Not added |
+| **security-crypto** | EncryptedSharedPreferences for API keys | ❌ Not added |
+| **WorkManager** | Background DCA execution | ❌ Not added |
+| **DataStore** | Settings persistence | ❌ Not added |
 
 ## Coinbase Advanced Trade API
 
@@ -76,59 +98,88 @@ com.dpart.tradeflow/
 
 **Key Channels:** heartbeats, ticker, candles, level2, user, market_trades
 
-## Development Phases
+## Development Roadmap
 
-See `docs/tradeflow_master_plan.md` for complete system design.
-See `docs/phase1_plan.md` for current implementation details.
+**See `plan.md` for detailed implementation blueprint** (2000+ lines of Kotlin code examples, API docs, complete architecture).
 
-### Phase 1: Data Foundation + Smart DCA (Current)
-- Coinbase JWT auth + API integration
-- Fear & Greed API integration
-- Local indicator calculation (RSI, EMA, ATR)
-- Smart DCA strategy with sentiment adjustment
-- Basic UI: Dashboard, History, Settings
-- Trade logging with signal capture
+**Current Status:** Phase 0 - Nothing implemented beyond scaffolding.
 
-### Phase 2: Backtesting
-- Historical data download (Binance API)
+### Phase 0: Foundation (NOT STARTED)
+**Required before any trading logic:**
+- [ ] Add missing dependencies (nimbus-jose-jwt, ta4j, security-crypto)
+- [ ] Choose HTTP library (plan.md recommends OkHttp over Ktor for battery life)
+- [ ] Implement JWT token generator for Coinbase ES256 auth
+- [ ] Build encrypted credential storage (EncryptedSharedPreferences)
+- [ ] Create Room entities (Candle, Order, Portfolio)
+- [ ] Implement Coinbase REST API client
+- [ ] Implement WebSocket client for real-time data
+
+### Phase 1: Data Foundation (NOT STARTED)
+**Coinbase integration + basic strategy:**
+- [ ] JWT auth working with Coinbase API
+- [ ] Fetch historical candles (H4 timeframe)
+- [ ] Calculate indicators: SMA(200), ADX(14), ATR(14)
+- [ ] Implement simple regime detection (TREND/RANGE/DEFENSE)
+- [ ] Basic settings screen for API key input
+- [ ] Dashboard showing current state
+
+### Phase 2: Trading Engine (NOT STARTED)
+**Foreground service + order execution:**
+- [ ] Foreground service with wake lock
+- [ ] Decision engine with strategy logic
+- [ ] Order placement (bracket, limit, market)
+- [ ] Risk management (position sizing, drawdown limits)
+- [ ] Trade logging to Room database
+- [ ] Emergency kill switch
+
+### Phase 3: UI & Monitoring (NOT STARTED)
+**User interface + trade history:**
+- [ ] Trade history screen
+- [ ] Performance charts with Vico
+- [ ] Real-time price updates
+- [ ] Service control (start/stop)
+
+### Future Phases (Vision Only)
 - Backtesting engine
-- Performance metrics & visualization
+- Regime detection with ML
+- Advanced strategies (grid, mean reversion)
+- On-chain metrics integration
 
-### Phase 3: Regime Detection
-- Label historical data with market regimes
-- Train TensorFlow classifier
-- Deploy as TFLite on device
-- Strategy selection based on regime
+## Build & CI Status
 
-### Phase 4: Advanced Strategies
-- Trend Following
-- Mean Reversion
-- Momentum Breakout
-- Grid Trading
-- Signal aggregation
-
-### Phase 5: Risk & Hardening
-- Position sizing (Kelly/ATR-based)
-- Stop loss management
-- Kill switch
-- Daily/weekly loss limits
-
-### Phase 6: On-Chain Edge
-- Glassnode integration
-- Exchange flow signals
-- Whale tracking
+**Current Build:** #27 (Failed - dependency issues)
+**CI/CD:** GitHub Actions configured for Android builds
+**Distribution:** Firebase App Distribution → partene.darius@gmail.com
+**Git Remote:** Not configured (local-only repo)
 
 ## Key Configuration
 
-- Package: `com.dpart.tradeflow`
-- Min SDK: 24 / Target SDK: 36
-- JVM: 17
-- Dependencies: `gradle/libs.versions.toml`
+- **Package:** `com.dpart.tradeflow`
+- **Min SDK:** 24 / **Target SDK:** 36
+- **JVM:** 17
+- **Gradle:** 8.13.2
+- **Kotlin:** 2.3.0
+- **Dependencies:** `gradle/libs.versions.toml`
+
+## About plan.md
+
+The root `plan.md` file (~2000 lines) is a **comprehensive implementation blueprint**, not current state:
+- Complete Coinbase Advanced Trade API documentation
+- Full Kotlin code examples for all components
+- JWT auth implementation (ES256)
+- WebSocket client with OkHttp
+- Decision engine with ta4j indicators
+- Trading service with foreground service
+- Room database schema
+- Risk management logic
+
+**This is aspirational documentation** - treat it as a reference implementation guide, not a status report.
 
 ## Critical Rules
 
 1. **Never hardcode API keys** - Encrypted DataStore only
 2. **Log every trade** - For debugging and taxes
 3. **Paper trade first** - Validate before real money
-4. **Account for fees** - In all calculations
+4. **Account for fees** - In all calculations (0.25-0.60% at Coinbase)
 5. **Kill switch always** - Immediate stop capability
+6. **Battery optimization** - Request exemption for 24/7 service
