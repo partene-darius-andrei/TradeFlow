@@ -43,20 +43,8 @@ jobs:
       id: build
       run: |
         chmod +x gradlew
-        # Retry up to 3 times for transient Maven Central issues
-        for attempt in 1 2 3; do
-          echo "=== Build attempt $attempt ==="
-          ./gradlew assembleDebug --build-cache --no-daemon 2>&1 | tee build-output.txt
-          status=${PIPESTATUS[0]}
-          if [ $status -eq 0 ]; then
-            break
-          fi
-          if [ $attempt -lt 3 ]; then
-            echo "Build failed, retrying in 10s..."
-            sleep 10
-          fi
-        done
-        echo "build_status=$status" >> $GITHUB_OUTPUT
+        ./gradlew assembleDebug --build-cache --no-daemon 2>&1 | tee build-output.txt
+        echo "build_status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
       continue-on-error: true
 
     - name: Commit build result
