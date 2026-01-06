@@ -1,0 +1,219 @@
+name: Update Documentation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["main"]
+  push:
+    branches: ["claude/*"]
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for diff
+
+    - name: Get changed files
+      id: changes
+      run: |
+        # Get base branch
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          BASE="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE="origin/main"
+        fi
+
+        # Get changed files (exclude docs to avoid loops)
+        CHANGED=$(git diff --name-only $BASE HEAD | grep -v '^CLAUDE\.md' | grep -v '^docs/' || true)
+
+        if [ -z "$CHANGED" ]; then
+          echo "has_code_changes=false" >> $GITHUB_OUTPUT
+          echo "No code changes detected, skipping doc update"
+        else
+          echo "has_code_changes=true" >> $GITHUB_OUTPUT
+          echo "Code changes detected:"
+          echo "$CHANGED"
+        fi
+
+    - name: Get diff for analysis
+      if: steps.changes.outputs.has_code_changes == 'true'
+      id: diff
+      run: |
+        # Get base branch
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          BASE="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE="origin/main"
+        fi
+
+        # Get file list
+        FILES=$(git diff --name-only $BASE HEAD | grep -v '^CLAUDE\.md' | grep -v '^docs/')
+
+        # Get diff (limit to 8000 lines to avoid API limits)
+        DIFF=$(git diff $BASE HEAD -- . ':!CLAUDE.md' ':!docs/' | head -n 8000)
+
+        # Save to file for API call
+        echo "$DIFF" > /tmp/changes.diff
+
+        # Save file list
+        echo "$FILES" > /tmp/files.txt
+
+    - name: Read current documentation
+      if: steps.changes.outputs.has_code_changes == 'true'
+      id: read_docs
+      run: |
+        # Find all markdown files in docs/ and CLAUDE.md
+        find docs -name "*.md" -type f > /tmp/doc_files.txt
+        echo "CLAUDE.md" >> /tmp/doc_files.txt
+
+        echo "Documentation files to analyze:"
+        cat /tmp/doc_files.txt
+
+    - name: Update documentation with Claude
+      if: steps.changes.outputs.has_code_changes == 'true'
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        # Read changes
+        CHANGED_FILES=$(cat /tmp/files.txt)
+        DIFF=$(cat /tmp/changes.diff)
+
+        # Build documentation context
+        DOC_CONTEXT=""
+        while IFS= read -r doc_file; do
+          if [ -f "$doc_file" ]; then
+            DOC_CONTEXT="${DOC_CONTEXT}\n\n=== ${doc_file} ===\n$(cat "$doc_file")"
+          fi
+        done < /tmp/doc_files.txt
+
+        # Build prompt for Claude
+        PROMPT="Analyze the following code changes and update the documentation files accordingly.
+
+## Changed Files
+${CHANGED_FILES}
+
+## Git Diff
+${DIFF}
+
+## Current Documentation Files
+${DOC_CONTEXT}
+
+## Task
+Based on the code changes, update the relevant documentation files:
+- CLAUDE.md: Update 'Current Project State', 'Tech Stack', 'Dependencies' if anything changed
+- docs/github_actions.md: Update if workflow, CI/CD, or build process changed
+- docs/plan.md: Update roadmap status if features were implemented
+- Any other docs/* files that need updates
+
+For each file that needs updating:
+1. Output the filename on a line starting with '### FILE:'
+2. Output the COMPLETE updated file content
+3. Separate files with '### END FILE'
+
+Example format:
+### FILE: CLAUDE.md
+[complete updated content]
+### END FILE
+
+### FILE: docs/plan.md
+[complete updated content]
+### END FILE
+
+IMPORTANT:
+- Only include files that actually need updates
+- Preserve all existing content not related to the changes
+- Update version numbers, status markers (✅/❌/⚠️), dependency lists accurately
+- Keep the same markdown formatting and structure
+- Don't mention files that don't need changes"
+
+        # Call Claude API
+        RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+          -H "content-type: application/json" \
+          -H "x-api-key: $ANTHROPIC_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -d "{
+            \"model\": \"claude-sonnet-4-20250514\",
+            \"max_tokens\": 8192,
+            \"messages\": [{
+              \"role\": \"user\",
+              \"content\": $(echo "$PROMPT" | jq -Rs .)
+            }]
+          }")
+
+        # Save response
+        echo "$RESPONSE" > /tmp/claude_response.json
+
+        # Extract content
+        CONTENT=$(cat /tmp/claude_response.json | jq -r '.content[0].text')
+        echo "$CONTENT" > /tmp/claude_output.txt
+
+        echo "Claude analysis complete"
+
+    - name: Apply documentation updates
+      if: steps.changes.outputs.has_code_changes == 'true'
+      run: |
+        # Parse Claude's output and update files
+        OUTPUT=$(cat /tmp/claude_output.txt)
+
+        # Simple parser: look for ### FILE: markers
+        echo "$OUTPUT" | awk '
+          /^### FILE:/ {
+            if (filename != "") {
+              close(filename)
+            }
+            filename = $3
+            in_file = 1
+            content = ""
+            next
+          }
+          /^### END FILE/ {
+            if (filename != "") {
+              print content > filename
+              close(filename)
+              print "Updated: " filename
+              filename = ""
+              in_file = 0
+              content = ""
+            }
+            next
+          }
+          in_file {
+            content = content $0 "\n"
+          }
+        '
+
+        echo "Documentation updates applied"
+
+    - name: Commit documentation updates
+      if: steps.changes.outputs.has_code_changes == 'true'
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+
+        # Check if any docs were actually modified
+        if git diff --quiet CLAUDE.md docs/; then
+          echo "No documentation changes needed"
+          exit 0
+        fi
+
+        # Stage all doc changes
+        git add CLAUDE.md docs/
+
+        # Commit
+        git commit -m "Update documentation based on code changes
+
+Automated update by update-docs workflow.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || true
+
+        # Push back to branch
+        git push origin HEAD:${{ github.head_ref || github.ref_name }}
+
+        echo "✅ Documentation updated and committed"

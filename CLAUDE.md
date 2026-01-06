@@ -245,6 +245,35 @@ com.dpart.tradeflow/
 
 **See `docs/github_actions.md` for complete CI/CD documentation** (workflow details, troubleshooting, Firebase setup).
 
+## Auto-Documentation
+
+**Documentation updates automatically** when code changes are pushed.
+
+**Workflow:** `.github/workflows/update-docs.yml`
+
+**How it works:**
+1. Push to `claude/*` branch or create PR
+2. GitHub Actions analyzes git diff
+3. Claude API reviews changes
+4. Updates `CLAUDE.md` and all `docs/*.md` files
+5. Commits updates back to branch
+
+**What gets updated:**
+- **CLAUDE.md** - Current state, tech stack, dependencies
+- **docs/github_actions.md** - Workflow changes, CI/CD updates
+- **docs/plan.md** - Roadmap status, feature checkboxes
+- **All docs/*.md** - Any relevant documentation
+
+**Benefits:**
+- ✅ Works with Mobile Claude Code (no local setup)
+- ✅ Documentation never out of sync
+- ✅ No manual doc updates needed
+- ✅ Same commit-back pattern as build workflow
+
+**See:** `docs/auto_documentation.md` for complete documentation
+
+**Required Secret:** `ANTHROPIC_API_KEY` in GitHub repo settings
+
 ## Key Configuration
 
 - **Package:** `com.dpart.tradeflow`
