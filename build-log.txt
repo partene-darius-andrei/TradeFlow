@@ -1,3 +1,15 @@
+Downloading https://services.gradle.org/distributions/gradle-8.13-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 8.13!
+
+Here are the highlights of this release:
+ - Daemon JVM auto-provisioning
+ - Enhancements for Scala plugin and JUnit testing
+ - Improvements for build authors and plugin developers
+
+For more details see https://docs.gradle.org/8.13/release-notes.html
+
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -9,7 +21,8 @@ Detected use of deprecated firebaseAppDistribution { } block. If you used this b
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:checkDebugAarMetadata
 > Task :app:checkDebugAarMetadata FAILED
 
 FAILURE: Build failed with an exception.
@@ -17,12 +30,30 @@ FAILURE: Build failed with an exception.
 * What went wrong:
 Execution failed for task ':app:checkDebugAarMetadata'.
 > Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
-   > Could not resolve io.ktor:ktor-client-android:3.3.3.
-     Required by:
-         project :app
-      > Could not resolve io.ktor:ktor-client-android:3.3.3.
-         > Could not get resource 'https://repo.maven.apache.org/maven2/io/ktor/ktor-client-android/3.3.3/ktor-client-android-3.3.3.pom'.
-            > Could not GET 'https://repo.maven.apache.org/maven2/io/ktor/ktor-client-android/3.3.3/ktor-client-android-3.3.3.pom'. Received status code 403 from server: Forbidden
+   > Failed to transform hilt-android-2.57.2.aar (com.google.dagger:hilt-android:2.57.2) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download hilt-android-2.57.2.aar (com.google.dagger:hilt-android:2.57.2)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android/2.57.2/hilt-android-2.57.2.aar'.
+            > Could not HEAD 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android/2.57.2/hilt-android-2.57.2.aar'. Received status code 403 from server: Forbidden
+   > Failed to transform compose-m3-2.4.0.aar (com.patrykandpatrick.vico:compose-m3:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download compose-m3-2.4.0.aar (com.patrykandpatrick.vico:compose-m3:2.4.0)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose-m3/2.4.0/compose-m3-2.4.0.aar'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose-m3/2.4.0/compose-m3-2.4.0.aar'. Received status code 403 from server: Forbidden
+   > Failed to transform compose-2.4.0.aar (com.patrykandpatrick.vico:compose:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download compose-2.4.0.aar (com.patrykandpatrick.vico:compose:2.4.0)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose/2.4.0/compose-2.4.0.aar'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose/2.4.0/compose-2.4.0.aar'. Received status code 403 from server: Forbidden
+   > Failed to transform timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/jakewharton/timber/timber/5.0.1/timber-5.0.1.aar'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/jakewharton/timber/timber/5.0.1/timber-5.0.1.aar'. Received status code 403 from server: Forbidden
+   > Failed to transform core-2.4.0.aar (com.patrykandpatrick.vico:core:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download core-2.4.0.aar (com.patrykandpatrick.vico:core:2.4.0)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/core/2.4.0/core-2.4.0.aar'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/core/2.4.0/core-2.4.0.aar'. Received status code 403 from server: Forbidden
+   > Failed to transform dagger-lint-aar-2.57.2.aar (com.google.dagger:dagger-lint-aar:2.57.2) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+      > Could not download dagger-lint-aar-2.57.2.aar (com.google.dagger:dagger-lint-aar:2.57.2)
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger-lint-aar/2.57.2/dagger-lint-aar-2.57.2.aar'.
+            > Could not HEAD 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger-lint-aar/2.57.2/dagger-lint-aar-2.57.2.aar'. Received status code 403 from server: Forbidden
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -30,5 +61,5 @@ Execution failed for task ':app:checkDebugAarMetadata'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 15s
-2 actionable tasks: 1 executed, 1 up-to-date
+BUILD FAILED in 4m 43s
+2 actionable tasks: 2 executed
