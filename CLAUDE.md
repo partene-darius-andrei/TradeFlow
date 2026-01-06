@@ -19,6 +19,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Simple strategies often beat complex ML
 - Every trade is a taxable event
 
+## Project Management
+
+**Task Tracking:** [TradeFlow Notion Database](https://www.notion.so/2e0c71f7a8c380cf8ae1c02c63987a14?v=2e0c71f7a8c38025a1c8000c923c4485)
+
+All tasks, features, and bugs are tracked in Notion as a Kanban board. Claude Code can read/write tasks via MCP integration (Desktop only).
+
+**Database Properties:**
+- **Task name** (Title) - Description of the task
+- **Status** (Status) - Workflow state
+  - `Not started` - Task created, not yet refined
+  - `Refined` - Requirements clear, ready to implement
+  - `Ongoing` - Currently being worked on
+  - `In review` - Implementation complete, awaiting review/testing
+  - `Done` - Completed and verified
+- **Priority** (Select) - `High` / `Medium` / `Low`
+- **Effort level** (Select) - `Small` / `Medium` / `Large`
+- **Assignee** (Person) - Who's responsible (usually you)
+- **Due date** (Date) - Target completion date
+
+**Task Workflow:**
+1. Create task in Notion with description and priority
+2. Refine: Add details, acceptance criteria, mark as `Refined`
+3. Claude Code (Desktop) reads task and creates branch `claude/task-description`
+4. Implement → Update status to `Ongoing`
+5. Build passes → Update status to `In review`
+6. Test on device → Move to `Done`
+
+**When to use Notion:**
+- ✅ Planning features before implementation
+- ✅ Breaking down complex work into tasks
+- ✅ Tracking bugs and tech debt
+- ✅ Keeping context for Mobile Claude Code sessions
+- ❌ Not for in-progress TODOs (use TodoWrite tool during active session)
+
 ## Development Workflow
 
 **Remote Development + Testing Pipeline:**
