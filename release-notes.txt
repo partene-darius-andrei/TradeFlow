@@ -1,1 +1,5 @@
-Initial TradeFlow build - Firebase setup complete
+v1.0.1 - CI/CD Pipeline Setup
+
+- Added GitHub Actions CI/CD pipeline
+- Integrated Firebase App Distribution
+- Automated build and distribution on push

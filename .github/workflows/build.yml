@@ -1,0 +1,75 @@
+name: Build Android
+
+on:
+  push:
+    branches: [ "claude/*", "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Create Firebase service account
+      run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > app/tradeflow.json
+
+    - name: Build debug APK
+      id: build
+      run: ./gradlew assembleDebug
+      continue-on-error: true
+
+    - name: Upload to Firebase App Distribution
+      if: steps.build.outcome == 'success'
+      run: ./gradlew appDistributionUploadDebug
+
+    - name: Cleanup credentials
+      if: always()
+      run: rm -f app/tradeflow.json
+
+    - name: Commit build result
+      if: always()
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git fetch origin ${{ github.ref_name }}
+        git checkout ${{ github.ref_name }}
+
+        if [ "${{ steps.build.outcome }}" = "success" ]; then
+          echo "SUCCESS" > .build-status
+          rm -f build-log.txt
+        else
+          echo "FAILURE" > .build-status
+          ./gradlew assembleDebug 2>&1 | tail -200 > build-log.txt || true
+          git add build-log.txt
+        fi
+
+        git add .build-status
+        git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outcome }}" || true
+        git push origin ${{ github.ref_name }} || true
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      if: steps.build.outcome == 'success'
+      with:
+        name: debug-apk
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 7
+
+    - name: Fail if build failed
+      if: steps.build.outcome != 'success'
+      run: exit 1
