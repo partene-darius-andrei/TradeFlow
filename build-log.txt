@@ -1,0 +1,84 @@
+Downloading https://services.gradle.org/distributions/gradle-8.13-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 8.13!
+
+Here are the highlights of this release:
+ - Daemon JVM auto-provisioning
+ - Enhancements for Scala plugin and JUnit testing
+ - Improvements for build authors and plugin developers
+
+For more details see https://docs.gradle.org/8.13/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+
+> Configure project :app
+Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
+Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig
+> Task :app:checkDebugAarMetadata
+> Task :app:processDebugNavigationResources
+> Task :app:generateDebugResValues
+> Task :app:compileDebugNavigationResources
+> Task :app:processDebugGoogleServices
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:mergeDebugResources
+> Task :app:processDebugMainManifest
+> Task :app:packageDebugResources
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug FAILED
+> Task :app:processDebugManifestForPackage
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1767703753354.json
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:javaPreCompileDebug'.
+> Could not resolve all files for configuration ':app:_agp_internal_javaPreCompileDebug_kspClasspath'.
+   > Could not resolve com.google.dagger:hilt-android-compiler:2.57.2.
+     Required by:
+         project :app
+      > Could not resolve com.google.dagger:hilt-android-compiler:2.57.2.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android-compiler/2.57.2/hilt-android-compiler-2.57.2.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android-compiler/2.57.2/hilt-android-compiler-2.57.2.pom'. Received status code 403 from server: Forbidden
+   > Could not resolve com.google.auto:auto-common:1.2.1.
+     Required by:
+         project :app > androidx.room:room-compiler:2.8.4
+         project :app > androidx.room:room-compiler:2.8.4 > androidx.room:room-compiler-processing:2.8.4
+      > Could not resolve com.google.auto:auto-common:1.2.1.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/auto/auto-common/1.2.1/auto-common-1.2.1.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/google/auto/auto-common/1.2.1/auto-common-1.2.1.pom'. Received status code 403 from server: Forbidden
+   > Could not resolve org.jetbrains.kotlin:kotlin-stdlib:2.2.0.
+     Required by:
+         project :app > androidx.room:room-compiler:2.8.4
+         project :app > androidx.room:room-compiler:2.8.4 > androidx.room:room-compiler-processing:2.8.4
+         project :app > androidx.room:room-compiler:2.8.4 > androidx.room:room-common:2.8.4 > androidx.room:room-common-jvm:2.8.4
+         project :app > androidx.room:room-compiler:2.8.4 > androidx.room:room-migration:2.8.4 > androidx.room:room-migration-jvm:2.8.4
+      > Could not resolve org.jetbrains.kotlin:kotlin-stdlib:2.2.0.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.0/kotlin-stdlib-2.2.0.pom'. Received status code 403 from server: Forbidden
+   > Could not resolve org.jetbrains.kotlin:kotlin-metadata-jvm:2.2.0.
+     Required by:
+         project :app > androidx.room:room-compiler:2.8.4 > androidx.room:room-compiler-processing:2.8.4
+      > Could not resolve org.jetbrains.kotlin:kotlin-metadata-jvm:2.2.0.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-metadata-jvm/2.2.0/kotlin-metadata-jvm-2.2.0.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-metadata-jvm/2.2.0/kotlin-metadata-jvm-2.2.0.pom'. Received status code 403 from server: Forbidden
+> There are 5 more failures with identical causes.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 31s
+17 actionable tasks: 17 executed
