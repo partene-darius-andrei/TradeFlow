@@ -31,15 +31,31 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-read-only: false
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
     - name: Build debug APK
       id: build
+      env:
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
       run: |
-        ./gradlew assembleDebug 2>&1 | tee build-output.txt
-        echo "build_status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        # Retry build up to 3 times in case of network issues
+        for i in 1 2 3; do
+          echo "=== Build attempt $i ==="
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.txt
+          status=${PIPESTATUS[0]}
+          if [ $status -eq 0 ]; then
+            break
+          fi
+          if [ $i -lt 3 ]; then
+            echo "Build failed, retrying in 30 seconds..."
+            sleep 30
+          fi
+        done
+        echo "build_status=$status" >> $GITHUB_OUTPUT
       continue-on-error: true
 
     - name: Commit build log on failure
