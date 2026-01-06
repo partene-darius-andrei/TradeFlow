@@ -1,33 +1,28 @@
-Downloading https://services.gradle.org/distributions/gradle-8.13-bin.zip
-.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
-
-Welcome to Gradle 8.13!
-
-Here are the highlights of this release:
- - Daemon JVM auto-provisioning
- - Enhancements for Scala plugin and JUnit testing
- - Improvements for build authors and plugin developers
-
-For more details see https://docs.gradle.org/8.13/release-notes.html
-
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
+> Configure project :app
+Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
+Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata FAILED
+
 FAILURE: Build failed with an exception.
 
-* Where:
-Build file '/home/runner/work/TradeFlow/TradeFlow/build.gradle.kts' line: 1
-
 * What went wrong:
-Plugin [id: 'com.google.dagger.hilt.android', version: '2.57.2', apply: false] was not found in any of the following sources:
-
-- Gradle Core Plugins (plugin is not in 'org.gradle' namespace)
-- Included Builds (No included builds contain this plugin)
-- Plugin Repositories (could not resolve plugin artifact 'com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:2.57.2')
-  Searched in the following repositories:
-    Google
-    MavenRepo
-    Gradle Central Plugin Repository
+Execution failed for task ':app:checkDebugAarMetadata'.
+> Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
+   > Could not resolve io.ktor:ktor-client-android:3.3.3.
+     Required by:
+         project :app
+      > Could not resolve io.ktor:ktor-client-android:3.3.3.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/io/ktor/ktor-client-android/3.3.3/ktor-client-android-3.3.3.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/io/ktor/ktor-client-android/3.3.3/ktor-client-android-3.3.3.pom'. Received status code 403 from server: Forbidden
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -35,4 +30,5 @@ Plugin [id: 'com.google.dagger.hilt.android', version: '2.57.2', apply: false] w
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 38s
+BUILD FAILED in 15s
+2 actionable tasks: 1 executed, 1 up-to-date
