@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.appdistribution)
 }
 
 android {
@@ -88,6 +89,11 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
+}
+
+apply(plugin = "com.google.firebase.appdistribution")
+
+configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
+    releaseNotesFile = "release-notes.txt"
+    groups = "testers"
 }
