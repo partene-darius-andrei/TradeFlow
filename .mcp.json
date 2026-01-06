@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch@latest"
+      ],
+      "env": {},
+      "description": "Fetch MCP server for accessing Coinbase API documentation and other web resources"
+    },
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/mcp-server-notion@latest"
+      ],
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_KEY}"
+      },
+      "description": "Notion MCP server for accessing Notion workspace (requires NOTION_API_KEY environment variable)"
+    }
+  }
+}
