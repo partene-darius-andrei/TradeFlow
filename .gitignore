@@ -26,5 +26,8 @@ output-metadata.json
 *.jks
 *.keystore
 
+# Firebase service account
+app/tradeflow.json
+
 # Android Profiling
 *.hprof

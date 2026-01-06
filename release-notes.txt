@@ -1,0 +1,1 @@
+Initial TradeFlow build - Firebase setup complete
