@@ -43,7 +43,7 @@ jobs:
       id: build
       run: |
         chmod +x gradlew
-        ./gradlew assembleDebug --build-cache --no-daemon --init-script .github/gradle/init.gradle.kts 2>&1 | tee build-output.txt
+        ./gradlew assembleDebug --build-cache --no-daemon 2>&1 | tee build-output.txt
         echo "build_status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
       continue-on-error: true
 
