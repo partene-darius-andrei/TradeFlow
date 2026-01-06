@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,9 +49,13 @@ jobs:
         tail -500 build-output.txt > build-log.txt
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
+        # For PRs use head_ref, for pushes use ref_name
+        BRANCH="${{ github.head_ref || github.ref_name }}"
+        git fetch origin $BRANCH
+        git checkout $BRANCH
         git add build-log.txt
         git commit -m "Build failed - log from run #${{ github.run_number }}" || echo "No changes to commit"
-        git push origin HEAD:${{ github.ref_name }}
+        git push origin $BRANCH
 
     - name: Fail if build failed
       if: steps.build.outputs.build_status != '0'
