@@ -1,59 +1,195 @@
-Downloading https://services.gradle.org/distributions/gradle-8.13-bin.zip
-.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
-
-Welcome to Gradle 8.13!
-
-Here are the highlights of this release:
- - Daemon JVM auto-provisioning
- - Enhancements for Scala plugin and JUnit testing
- - Improvements for build authors and plugin developers
-
-For more details see https://docs.gradle.org/8.13/release-notes.html
-
-To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
-Daemon will be stopped at the end of the build 
-
-> Configure project :app
-Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
-Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
-
-> Task :app:preBuild UP-TO-DATE
-> Task :app:preDebugBuild UP-TO-DATE
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:generateDebugBuildConfig
-> Task :app:checkDebugAarMetadata
-> Task :app:checkDebugAarMetadata FAILED
-
-FAILURE: Build failed with an exception.
-
-* What went wrong:
-Execution failed for task ':app:checkDebugAarMetadata'.
-> Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
-   > Failed to transform hilt-android-2.57.2.aar (com.google.dagger:hilt-android:2.57.2) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download hilt-android-2.57.2.aar (com.google.dagger:hilt-android:2.57.2)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android/2.57.2/hilt-android-2.57.2.aar'.
-            > Could not HEAD 'https://repo.maven.apache.org/maven2/com/google/dagger/hilt-android/2.57.2/hilt-android-2.57.2.aar'. Received status code 403 from server: Forbidden
-   > Failed to transform compose-m3-2.4.0.aar (com.patrykandpatrick.vico:compose-m3:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download compose-m3-2.4.0.aar (com.patrykandpatrick.vico:compose-m3:2.4.0)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose-m3/2.4.0/compose-m3-2.4.0.aar'.
-            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose-m3/2.4.0/compose-m3-2.4.0.aar'. Received status code 403 from server: Forbidden
-   > Failed to transform compose-2.4.0.aar (com.patrykandpatrick.vico:compose:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download compose-2.4.0.aar (com.patrykandpatrick.vico:compose:2.4.0)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose/2.4.0/compose-2.4.0.aar'.
-            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/compose/2.4.0/compose-2.4.0.aar'. Received status code 403 from server: Forbidden
-   > Failed to transform timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/jakewharton/timber/timber/5.0.1/timber-5.0.1.aar'.
-            > Could not GET 'https://repo.maven.apache.org/maven2/com/jakewharton/timber/timber/5.0.1/timber-5.0.1.aar'. Received status code 403 from server: Forbidden
-   > Failed to transform core-2.4.0.aar (com.patrykandpatrick.vico:core:2.4.0) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.dependency.bundling=external, org.gradle.libraryelements=aar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download core-2.4.0.aar (com.patrykandpatrick.vico:core:2.4.0)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/core/2.4.0/core-2.4.0.aar'.
-            > Could not GET 'https://repo.maven.apache.org/maven2/com/patrykandpatrick/vico/core/2.4.0/core-2.4.0.aar'. Received status code 403 from server: Forbidden
-   > Failed to transform dagger-lint-aar-2.57.2.aar (com.google.dagger:dagger-lint-aar:2.57.2) to match attributes {artifactType=android-aar-metadata, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-runtime}.
-      > Could not download dagger-lint-aar-2.57.2.aar (com.google.dagger:dagger-lint-aar:2.57.2)
-         > Could not get resource 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger-lint-aar/2.57.2/dagger-lint-aar-2.57.2.aar'.
-            > Could not HEAD 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger-lint-aar/2.57.2/dagger-lint-aar-2.57.2.aar'. Received status code 403 from server: Forbidden
+   > Could not download asm-util-9.8.jar (org.ow2.asm:asm-util:9.8)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar'. Received status code 403 from server: Forbidden
+   > Could not download asm-analysis-9.8.jar (org.ow2.asm:asm-analysis:9.8)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.jar'. Received status code 403 from server: Forbidden
+   > Could not download asm-tree-9.8.jar (org.ow2.asm:asm-tree:9.8)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar'. Received status code 403 from server: Forbidden
+   > Could not download asm-9.8.jar (org.ow2.asm:asm:9.8)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/ow2/asm/asm/9.8/asm-9.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.8/asm-9.8.jar'. Received status code 403 from server: Forbidden
+   > Could not download bcpkix-jdk18on-1.79.jar (org.bouncycastle:bcpkix-jdk18on:1.79)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/bouncycastle/bcpkix-jdk18on/1.79/bcpkix-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcpkix-jdk18on/1.79/bcpkix-jdk18on-1.79.jar'. Received status code 403 from server: Forbidden
+   > Could not download jaxb-runtime-2.3.2.jar (org.glassfish.jaxb:jaxb-runtime:2.3.2)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar'. Received status code 403 from server: Forbidden
+   > Could not download jopt-simple-4.9.jar (net.sf.jopt-simple:jopt-simple:4.9)
+      > Could not get resource 'https://plugins.gradle.org/m2/net/sf/jopt-simple/jopt-simple/4.9/jopt-simple-4.9.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/sf/jopt-simple/jopt-simple/4.9/jopt-simple-4.9.jar'. Received status code 403 from server: Forbidden
+   > Could not download javapoet-1.13.0.jar (com.squareup:javapoet:1.13.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download protobuf-java-util-3.25.5.jar (com.google.protobuf:protobuf-java-util:3.25.5)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/protobuf/protobuf-java-util/3.25.5/protobuf-java-util-3.25.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java-util/3.25.5/protobuf-java-util-3.25.5.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-protobuf-1.69.1.jar (io.grpc:grpc-protobuf:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-protobuf/1.69.1/grpc-protobuf-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-protobuf/1.69.1/grpc-protobuf-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download tink-1.7.0.jar (com.google.crypto.tink:tink:1.7.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/crypto/tink/tink/1.7.0/tink-1.7.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink/1.7.0/tink-1.7.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download proto-google-common-protos-2.48.0.jar (com.google.api.grpc:proto-google-common-protos:2.48.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/api/grpc/proto-google-common-protos/2.48.0/proto-google-common-protos-2.48.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/api/grpc/proto-google-common-protos/2.48.0/proto-google-common-protos-2.48.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download protobuf-java-3.25.5.jar (com.google.protobuf:protobuf-java:3.25.5)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/protobuf/protobuf-java/3.25.5/protobuf-java-3.25.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/protobuf/protobuf-java/3.25.5/protobuf-java-3.25.5.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-netty-1.69.1.jar (io.grpc:grpc-netty:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-netty/1.69.1/grpc-netty-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-netty/1.69.1/grpc-netty-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-inprocess-1.69.1.jar (io.grpc:grpc-inprocess:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-inprocess/1.69.1/grpc-inprocess-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-inprocess/1.69.1/grpc-inprocess-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-util-1.69.1.jar (io.grpc:grpc-util:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-util/1.69.1/grpc-util-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-util/1.69.1/grpc-util-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-core-1.69.1.jar (io.grpc:grpc-core:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-core/1.69.1/grpc-core-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-core/1.69.1/grpc-core-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download kotlin-build-statistics-2.3.0.jar (org.jetbrains.kotlin:kotlin-build-statistics:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-build-statistics/2.3.0/kotlin-build-statistics-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-build-statistics/2.3.0/kotlin-build-statistics-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download google-api-client-2.7.1.jar (com.google.api-client:google-api-client:2.7.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/api-client/google-api-client/2.7.1/google-api-client-2.7.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/api-client/google-api-client/2.7.1/google-api-client-2.7.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download google-auth-library-oauth2-http-1.30.1.jar (com.google.auth:google-auth-library-oauth2-http:1.30.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/auth/google-auth-library-oauth2-http/1.30.1/google-auth-library-oauth2-http-1.30.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/auth/google-auth-library-oauth2-http/1.30.1/google-auth-library-oauth2-http-1.30.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download gson-2.11.0.jar (com.google.code.gson:gson:2.11.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-stub-1.69.1.jar (io.grpc:grpc-stub:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-stub/1.69.1/grpc-stub-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-stub/1.69.1/grpc-stub-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download tensorflow-lite-metadata-0.2.0.jar (org.tensorflow:tensorflow-lite-metadata:0.2.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download flatbuffers-java-1.12.0.jar (com.google.flatbuffers:flatbuffers-java:1.12.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/flatbuffers/flatbuffers-java/1.12.0/flatbuffers-java-1.12.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/flatbuffers/flatbuffers-java/1.12.0/flatbuffers-java-1.12.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download kotlin-gradle-plugin-idea-proto-2.3.0.jar (org.jetbrains.kotlin:kotlin-gradle-plugin-idea-proto:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0/kotlin-gradle-plugin-idea-proto-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0/kotlin-gradle-plugin-idea-proto-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download kotlin-gradle-plugin-idea-2.3.0.jar (org.jetbrains.kotlin:kotlin-gradle-plugin-idea:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0/kotlin-gradle-plugin-idea-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0/kotlin-gradle-plugin-idea-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download kotlin-klib-commonizer-api-2.3.0.jar (org.jetbrains.kotlin:kotlin-klib-commonizer-api:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0/kotlin-klib-commonizer-api-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0/kotlin-klib-commonizer-api-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download kotlin-util-klib-metadata-2.3.0.jar (org.jetbrains.kotlin:kotlin-util-klib-metadata:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0/kotlin-util-klib-metadata-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0/kotlin-util-klib-metadata-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download abi-tools-api-2.3.0.jar (org.jetbrains.kotlin:abi-tools-api:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/abi-tools-api/2.3.0/abi-tools-api-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/abi-tools-api/2.3.0/abi-tools-api-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download jimfs-1.1.jar (com.google.jimfs:jimfs:1.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/jimfs/jimfs/1.1/jimfs-1.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/jimfs/jimfs/1.1/jimfs-1.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-context-1.69.1.jar (io.grpc:grpc-context:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-context/1.69.1/grpc-context-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-context/1.69.1/grpc-context-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-protobuf-lite-1.69.1.jar (io.grpc:grpc-protobuf-lite:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-protobuf-lite/1.69.1/grpc-protobuf-lite-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-protobuf-lite/1.69.1/grpc-protobuf-lite-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download grpc-api-1.69.1.jar (io.grpc:grpc-api:1.69.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/grpc/grpc-api/1.69.1/grpc-api-1.69.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/grpc/grpc-api/1.69.1/grpc-api-1.69.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download guava-33.3.1-jre.jar (com.google.guava:guava:33.3.1-jre)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar'. Received status code 403 from server: Forbidden
+   > Could not download commons-cli-1.9.0.jar (commons-cli:commons-cli:1.9.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/commons-cli/commons-cli/1.9.0/commons-cli-1.9.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/commons-cli/commons-cli/1.9.0/commons-cli-1.9.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download dagger-2.28.3.jar (com.google.dagger:dagger:2.28.3)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/dagger/dagger/2.28.3/dagger-2.28.3.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/dagger/dagger/2.28.3/dagger-2.28.3.jar'. Received status code 403 from server: Forbidden
+   > Could not download javax.inject-1.jar (javax.inject:javax.inject:1)
+      > Could not get resource 'https://plugins.gradle.org/m2/javax/inject/javax.inject/1/javax.inject-1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/javax/inject/javax.inject/1/javax.inject-1.jar'. Received status code 403 from server: Forbidden
+   > Could not download kxml2-2.3.0.jar (net.sf.kxml:kxml2:2.3.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download commons-compress-1.21.jar (org.apache.commons:commons-compress:1.21)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar'. Received status code 403 from server: Forbidden
+   > Could not download bcutil-jdk18on-1.79.jar (org.bouncycastle:bcutil-jdk18on:1.79)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/bouncycastle/bcutil-jdk18on/1.79/bcutil-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcutil-jdk18on/1.79/bcutil-jdk18on-1.79.jar'. Received status code 403 from server: Forbidden
+   > Could not download bcprov-jdk18on-1.79.jar (org.bouncycastle:bcprov-jdk18on:1.79)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/bouncycastle/bcprov-jdk18on/1.79/bcprov-jdk18on-1.79.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk18on/1.79/bcprov-jdk18on-1.79.jar'. Received status code 403 from server: Forbidden
+   > Could not download httpclient-4.5.14.jar (org.apache.httpcomponents:httpclient:4.5.14)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar'. Received status code 403 from server: Forbidden
+   > Could not download httpcore-4.4.16.jar (org.apache.httpcomponents:httpcore:4.4.16)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar'. Received status code 403 from server: Forbidden
+   > Could not download javax.activation-1.2.0.jar (com.sun.activation:javax.activation:1.2.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download jna-platform-5.6.0.jar (net.java.dev.jna:jna-platform:5.6.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/net/java/dev/jna/jna-platform/5.6.0/jna-platform-5.6.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/net/java/dev/jna/jna-platform/5.6.0/jna-platform-5.6.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download juniversalchardet-1.0.3.jar (com.googlecode.juniversalchardet:juniversalchardet:1.0.3)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/googlecode/juniversalchardet/juniversalchardet/1.0.3/juniversalchardet-1.0.3.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/googlecode/juniversalchardet/juniversalchardet/1.0.3/juniversalchardet-1.0.3.jar'. Received status code 403 from server: Forbidden
+   > Could not download javax.annotation-api-1.3.2.jar (javax.annotation:javax.annotation-api:1.3.2)
+      > Could not get resource 'https://plugins.gradle.org/m2/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar'. Received status code 403 from server: Forbidden
+   > Could not download stax-ex-1.8.1.jar (org.jvnet.staxex:stax-ex:1.8.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download jakarta.xml.bind-api-2.3.2.jar (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2)
+      > Could not get resource 'https://plugins.gradle.org/m2/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar'. Received status code 403 from server: Forbidden
+   > Could not download txw2-2.3.2.jar (org.glassfish.jaxb:txw2:2.3.2)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar'. Received status code 403 from server: Forbidden
+   > Could not download istack-commons-runtime-3.0.8.jar (com.sun.istack:istack-commons-runtime:3.0.8)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar'. Received status code 403 from server: Forbidden
+   > Could not download FastInfoset-1.2.16.jar (com.sun.xml.fastinfoset:FastInfoset:1.2.16)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar'. Received status code 403 from server: Forbidden
+   > Could not download jakarta.activation-api-1.2.1.jar (jakarta.activation:jakarta.activation-api:1.2.1)
+      > Could not get resource 'https://plugins.gradle.org/m2/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar'. Received status code 403 from server: Forbidden
+   > Could not download jose4j-0.9.5.jar (org.bitbucket.b_c:jose4j:0.9.5)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/bitbucket/b_c/jose4j/0.9.5/jose4j-0.9.5.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/bitbucket/b_c/jose4j/0.9.5/jose4j-0.9.5.jar'. Received status code 403 from server: Forbidden
+   > Could not download slf4j-api-1.7.30.jar (org.slf4j:slf4j-api:1.7.30)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar'. Received status code 403 from server: Forbidden
+   > Could not download jdom2-2.0.6.jar (org.jdom:jdom2:2.0.6)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar'. Received status code 403 from server: Forbidden
+   > Could not download jsr305-3.0.2.jar (com.google.code.findbugs:jsr305:3.0.2)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar'. Received status code 403 from server: Forbidden
+   > Could not download annotations-4.1.1.4.jar (com.google.android:annotations:4.1.1.4)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/google/android/annotations/4.1.1.4/annotations-4.1.1.4.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/google/android/annotations/4.1.1.4/annotations-4.1.1.4.jar'. Received status code 403 from server: Forbidden
+   > Could not download animal-sniffer-annotations-1.24.jar (org.codehaus.mojo:animal-sniffer-annotations:1.24)
+      > Could not get resource 'https://plugins.gradle.org/m2/org/codehaus/mojo/animal-sniffer-annotations/1.24/animal-sniffer-annotations-1.24.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-annotations/1.24/animal-sniffer-annotations-1.24.jar'. Received status code 403 from server: Forbidden
+   > Could not download perfmark-api-0.27.0.jar (io.perfmark:perfmark-api:0.27.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/perfmark/perfmark-api/0.27.0/perfmark-api-0.27.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/perfmark/perfmark-api/0.27.0/perfmark-api-0.27.0.jar'. Received status code 403 from server: Forbidden
+   > Could not download netty-codec-http2-4.1.110.Final.jar (io.netty:netty-codec-http2:4.1.110.Final)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar'. Received status code 403 from server: Forbidden
+   > Could not download netty-handler-proxy-4.1.110.Final.jar (io.netty:netty-handler-proxy:4.1.110.Final)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar'. Received status code 403 from server: Forbidden
+   > Could not download netty-transport-native-unix-common-4.1.110.Final.jar (io.netty:netty-transport-native-unix-common:4.1.110.Final)
+      > Could not get resource 'https://plugins.gradle.org/m2/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar'. Received status code 403 from server: Forbidden
+   > Could not download javawriter-2.5.0.jar (com.squareup:javawriter:2.5.0)
+      > Could not get resource 'https://plugins.gradle.org/m2/com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar'.
+         > Could not GET 'https://repo.maven.apache.org/maven2/com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar'. Received status code 403 from server: Forbidden
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -61,5 +197,4 @@ Execution failed for task ':app:checkDebugAarMetadata'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 4m 43s
-2 actionable tasks: 2 executed
+BUILD FAILED in 2m 2s
