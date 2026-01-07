@@ -2,7 +2,9 @@
 
 Effort level: Small
 Priority: High
-Status: Not started
+Status: ✅ COMPLETE
+Completed: 2026-01-07
+PR: #6
 Blocked by: Ticket 00 (Project Modularization Setup)
 Module: :core:domain
 
@@ -122,6 +124,56 @@ core/domain/src/main/kotlin/com/tradeflow/core/domain/
 
 ## Acceptance Criteria
 
-- [ ]  All models are data classes with `BigDecimal` for money
-- [ ]  No Android imports in this module
-- [ ]  Unit tests for any extension functions
+- [x]  All models are data classes with `BigDecimal` for money
+- [x]  No Android imports in this module
+- [ ]  Unit tests for any extension functions (none added yet)
+
+---
+
+## Post-Implementation Notes
+
+**Completed:** 2026-01-07
+**PR:** https://github.com/partene-darius-andrei/TradeFlow/pull/6
+
+### Implementation Summary
+
+All 6 domain model files created successfully in `:core:domain/model/` package. Pure Kotlin/JVM with zero Android dependencies.
+
+### Files Created
+
+1. **Candle.kt** - OHLCV candlestick data + Granularity enum with seconds field
+2. **Ticker.kt** - Real-time price data (productId, price, bid, ask, volume, timestamp)
+3. **Balance.kt** - Currency balance with computed `total` property
+4. **Portfolio.kt** - Collection of balances + total equity USD
+5. **Order.kt** - Order model + 3 enums (OrderSide, OrderType, OrderStatus)
+6. **Decision.kt** - Sealed class for trading decisions (Wait, Defense, Trend, Range)
+
+### Key Decisions
+
+**Granularity Enum Enhancement:**
+- Added `seconds: Long` field to each enum value
+- Makes timeframe conversions easier (e.g., for ta4j or API params)
+- Example: `Granularity.FIVE_MINUTE.seconds == 300`
+
+**Money Precision:**
+- All prices/amounts use `BigDecimal` (not Double/Float)
+- Prevents floating-point errors in financial calculations
+- Critical for order placement and P&L tracking
+
+**Timestamp Format:**
+- Using `java.time.Instant` (not Long epoch millis)
+- Type-safe and easier to work with
+- Coinbase DTOs will map epoch strings → Instant
+
+### Build Verification
+
+✅ `:core:domain:build` - SUCCESS
+✅ `assembleDebug` - SUCCESS (full app)
+✅ Zero Android dependencies confirmed
+
+### Next Steps
+
+With domain models complete:
+- Ticket 02: Repository Interfaces (UNBLOCKED - can start immediately)
+- Ticket 04: Credential Store
+- Ticket 07: JWT Generator (needs these models for signing)
