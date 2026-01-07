@@ -79,10 +79,8 @@ dependencies {
     // Timber (app-level logging)
     implementation(libs.timber)
 
-    // Firebase (app-level analytics/crashlytics)
+    // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
 }
 
 apply(plugin = "com.google.firebase.appdistribution")
