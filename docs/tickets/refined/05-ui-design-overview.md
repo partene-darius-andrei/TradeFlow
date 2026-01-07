@@ -267,10 +267,10 @@ object TradeFlowSpacing {
 1. **Theme & Design System** - Colors, typography, spacing
 2. **Base Components** - Cards, buttons, displays
 
-### Phase 2: Authentication (Ticket 23)
+### Phase 2: Authentication (Ticket 08)
 3. **Login Screen** - Credential input and validation
 
-### Phase 3: Navigation (Ticket 24)
+### Phase 3: Navigation (Ticket 09)
 4. **App Navigation** - NavHost, bottom nav, routing
 
 ### Phase 4: Main Screens (Tickets 25-26)
@@ -281,12 +281,12 @@ object TradeFlowSpacing {
 
 ## 🔗 Related Tickets
 
-- **Ticket 21:** Core UI - Theme & Design System
-- **Ticket 22:** Core UI - Base Components
-- **Ticket 23:** Login/Credentials Screen
-- **Ticket 24:** App Navigation Setup
-- **Ticket 25:** Dashboard Screen (Skeleton)
-- **Ticket 26:** Settings Screen (Skeleton)
+- **Ticket 06:** Core UI - Theme & Design System
+- **Ticket 07:** Core UI - Base Components
+- **Ticket 08:** Login/Credentials Screen
+- **Ticket 09:** App Navigation Setup
+- **Ticket 10:** Dashboard Screen (Skeleton)
+- **Ticket 11:** Settings Screen (Skeleton)
 
 ---
 

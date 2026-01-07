@@ -24,7 +24,7 @@ The core:ui module exists but is empty. We need a professional, trading-focused 
 - Provides consistent spacing and typography
 - Supports Material 3 components
 
-**Reference:** See [docs/tickets/refined/20-ui-design-overview.md](20-ui-design-overview.md) for complete design spec.
+**Reference:** See [docs/tickets/refined/05-ui-design-overview.md](05-ui-design-overview.md) for complete design spec.
 
 ---
 

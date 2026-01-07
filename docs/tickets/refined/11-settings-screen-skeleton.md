@@ -30,7 +30,7 @@ Settings is the secondary screen accessed via bottom navigation. It allows users
 3. **Toggle notifications** - Order filled, mode changed, emergency stop
 4. **Access app info** - Version, logs, privacy policy
 
-**Reference:** See wireframe in [20-ui-design-overview.md](20-ui-design-overview.md)
+**Reference:** See wireframe in [05-ui-design-overview.md](05-ui-design-overview.md)
 
 ---
 

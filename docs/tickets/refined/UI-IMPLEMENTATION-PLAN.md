@@ -57,7 +57,7 @@ This document provides the master plan for implementing TradeFlow's user interfa
 
 ---
 
-### Phase 2: Authentication (Ticket 23)
+### Phase 2: Authentication (Ticket 08)
 **Goal:** Users can enter and save credentials
 
 ```
@@ -94,7 +94,7 @@ This document provides the master plan for implementing TradeFlow's user interfa
 
 ---
 
-### Phase 4: Navigation (Ticket 24)
+### Phase 4: Navigation (Ticket 09)
 **Goal:** Wire everything together
 
 ```
@@ -346,11 +346,11 @@ implementation(libs.hilt.navigation.compose)
 ## Next Steps
 
 1. **Review this plan** - User approval
-2. **Implement Ticket 21** - Theme first
-3. **Implement Ticket 22** - Base components
-4. **Implement Ticket 23** - Login screen
+2. **Implement Ticket 06** - Theme first
+3. **Implement Ticket 07** - Base components
+4. **Implement Ticket 08** - Login screen
 5. **Implement Tickets 25-26** - Dashboard and Settings (parallel)
-6. **Implement Ticket 24** - Wire navigation
+6. **Implement Ticket 09** - Wire navigation
 7. **Test complete flow**
 8. **Mark UI foundation complete** ✅
 
@@ -373,11 +373,11 @@ Before starting implementation:
 ## Resources
 
 - **Tickets:** `docs/tickets/refined/20-26-*.md`
-- **Design Reference:** `docs/tickets/refined/20-ui-design-overview.md`
+- **Design Reference:** `docs/tickets/refined/05-ui-design-overview.md`
 - **Roadmap:** `docs/roadmap.md`
 - **Architecture:** `docs/strategy/overview.md`
 
 ---
 
 **Status:** ✅ Ready for review and implementation
-**Next:** User approval → Start Ticket 21 (Theme)
+**Next:** User approval → Start Ticket 06 (Theme)

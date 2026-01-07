@@ -23,7 +23,7 @@ Create reusable base UI components for TradeFlow app:
 
 ## Context
 
-After establishing the theme (Ticket 21), we need reusable components that can be used across all feature screens. These components should:
+After establishing the theme (Ticket 06), we need reusable components that can be used across all feature screens. These components should:
 - Follow Material 3 design patterns
 - Use TradeFlowTheme colors and typography
 - Be stateless and reusable

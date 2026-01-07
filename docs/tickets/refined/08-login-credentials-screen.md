@@ -29,7 +29,7 @@ This is the FIRST screen users see if they haven't entered credentials. Without 
 - Clear error messages
 - Security assurance message
 
-**Reference:** See wireframe in [20-ui-design-overview.md](20-ui-design-overview.md)
+**Reference:** See wireframe in [05-ui-design-overview.md](05-ui-design-overview.md)
 
 ---
 
