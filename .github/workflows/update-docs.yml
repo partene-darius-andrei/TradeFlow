@@ -139,22 +139,17 @@ jobs:
         # Read final prompt
         FINAL_PROMPT=$(cat /tmp/prompt.txt)
 
-        # Call Claude API with properly escaped JSON
+        # Build JSON payload using jq (avoids heredoc issues in YAML)
+        ESCAPED_PROMPT=$(echo "$FINAL_PROMPT" | jq -Rs .)
+
+        echo "{\"model\": \"claude-sonnet-4-20250514\", \"max_tokens\": 16384, \"messages\": [{\"role\": \"user\", \"content\": $ESCAPED_PROMPT}]}" > /tmp/payload.json
+
+        # Call Claude API
         RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
           -H "content-type: application/json" \
           -H "x-api-key: $ANTHROPIC_API_KEY" \
           -H "anthropic-version: 2023-06-01" \
-          -d @- << JSON_EOF
-{
-  "model": "claude-sonnet-4-20250514",
-  "max_tokens": 16384,
-  "messages": [{
-    "role": "user",
-    "content": $(echo "$FINAL_PROMPT" | jq -Rs .)
-  }]
-}
-JSON_EOF
-)
+          -d @/tmp/payload.json)
 
         # Save response
         echo "$RESPONSE" > /tmp/claude_response.json
