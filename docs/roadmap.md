@@ -183,7 +183,7 @@ app/src/main/java/com/dpart/tradeflow/
 
 ## Implementation Roadmap
 
-### Phase 0A: Authentication Infrastructure [CURRENT PHASE]
+### Phase 0A: Authentication Infrastructure [CURRENT PHASE] (2/6 Complete)
 
 **Goal:** Get foundation ready for Coinbase API authentication
 
@@ -198,142 +198,191 @@ app/src/main/java/com/dpart/tradeflow/
 | 03 | Room Database | Not Started | High | Medium | Database, Entities, DAOs |
 | 04 | Credential Store | ✅ **COMPLETE** | High | Small | SecureCredentialStore (EncryptedSharedPreferences) |
 | 07 | JWT Generator | Not Started | High | Medium | CoinbaseJwtGenerator (ES256 signing) |
-| 08 | REST API Client (Partial) | Not Started | High | Medium | CoinbaseRepository.getAccounts() only |
+| 08 | REST API Client | Not Started | High | Large | CoinbaseRepository (getAccounts only) |
 
-**Dependencies Added:** ✅ All dependencies already in build.gradle.kts
+**Latest Completion:** Secure Credential Store (Ticket 04) ✅ `SecureCredentialStore` implemented with AES-256-GCM encryption using Android Keystore, integrated with Hilt DI via `SecurityModule`.
 
-**Blockers:** None - ready to continue with domain models
+**Next Up:** Domain Models (Ticket 01) - Define Candle, Order, Portfolio, Decision classes
 
-**Success Criteria (Phase 0A):**
-- [x] Repository interfaces define clean contracts ✅
-- [x] Credential store securely saves/loads API keys ✅
-- [ ] Domain models compile with NO Android imports
-- [ ] Room database schema ready for persistence
-- [ ] JWT tokens generate correctly (ES256)
-- [ ] Can call `GET /accounts` and retrieve balances
-- [ ] ✅ **MILESTONE: Can authenticate and see real Coinbase data**
+### Phase 0B: Trading Logic (1 Week)
 
-**Progress: 2/6 Complete (33%)**
-
----
-
-### Phase 0B: Trading Logic [DEFERRED]
-
-**Goal:** Implement decision engine and risk management
-
-**When:** After Phase 0A milestone is reached
+**Goal:** Implement core decision engine without external dependencies
 
 **Tickets:** 05, 06
 
-| # | Ticket | Status | Priority | Effort | Files Created |
-|---|--------|--------|----------|--------|---------------|
-| 05 | Decision Engine | Not Started | High | Large | TradingDecisionEngine with ta4j indicators |
-| 06 | Risk Manager | Not Started | High | Medium | RiskManager for position sizing & drawdown |
+| # | Ticket | Status | Priority | Effort | Component |
+|---|--------|--------|----------|--------|-----------|
+| 05 | Decision Engine | Not Started | HIGH | Large | TradingDecisionEngine (SMA, ADX, ATR) |
+| 06 | Risk Manager | Not Started | HIGH | Medium | TradingRiskManager (drawdown, limits) |
 
----
+### Phase 1: Coinbase Integration (1 Week)
 
-### Phase 1: Coinbase Integration
+**Goal:** Complete Coinbase API integration
 
-**Goal:** Complete REST API and WebSocket clients
+**Tickets:** 07-09
 
-**Tickets:** 09
+| # | Ticket | Status | Priority | Effort | Component |
+|---|--------|--------|----------|--------|-----------|
+| 07 | JWT Generator | Not Started | HIGH | Medium | CoinbaseJwtGenerator (ES256 signing) |
+| 08 | REST API Client | Not Started | HIGH | Large | Complete CoinbaseRepository |
+| 09 | WebSocket Client | Not Started | HIGH | Large | CoinbaseWebSocket (ticker + order updates) |
 
-| # | Ticket | Status | Priority | Effort | Files Created |
-|---|--------|--------|----------|--------|---------------|
-| 09 | WebSocket Client | Not Started | High | Large | CoinbaseWebSocket for real-time data |
+### Phase 2: Presentation Layer (1 Week)
 
----
+**Goal:** Build UI that works with domain interfaces
 
-### Phase 2: Presentation Layer
+**Tickets:** 10-15
 
-**Goal:** Build UI for monitoring and control
+| # | Ticket | Status | Priority | Effort | Component |
+|---|--------|--------|----------|--------|-----------|
+| 10 | Core UI Components | Not Started | Medium | Medium | Theme, shared composables |
+| 11 | Dashboard Screen | Not Started | HIGH | Medium | DashboardScreen (UI only) |
+| 12 | Dashboard ViewModel | Not Started | HIGH | Medium | DashboardViewModel (logic) |
+| 13 | Settings Screen | Not Started | Medium | Medium | SettingsScreen (UI only) |
+| 14 | Settings ViewModel | Not Started | Medium | Small | SettingsViewModel (logic) |
+| 15 | App Navigation | Not Started | HIGH | Medium | NavGraph + main app setup |
 
-**Tickets:** 10, 11, 12, 13, 14, 15
+### Phase 3: Trading Service (1 Week)
 
-| # | Ticket | Status | Priority | Effort | Files Created |
-|---|--------|--------|----------|--------|---------------|
-| 10 | Core UI Components | Not Started | Medium | Medium | Theme, shared components |
-| 11 | Dashboard Screen | Not Started | High | Medium | Dashboard UI (pure Compose) |
-| 12 | Dashboard ViewModel | Not Started | High | Medium | Dashboard business logic |
-| 13 | Settings Screen | Not Started | Medium | Medium | Settings UI (pure Compose) |
-| 14 | Settings ViewModel | Not Started | Medium | Small | Settings business logic |
-| 15 | App Navigation | Not Started | High | Medium | Main app & Hilt modules |
+**Goal:** 24/7 background execution
 
----
+**Tickets:** 16-17
 
-### Phase 3: Trading Service
+| # | Ticket | Status | Priority | Effort | Component |
+|---|--------|--------|----------|--------|-----------|
+| 16 | Trading Service | Not Started | HIGH | Large | TradingService (foreground service) |
+| 17 | Battery Optimization | Not Started | Medium | Small | Doze exemption, wake lock |
 
-**Goal:** Background service for 24/7 operation
-
-**Tickets:** 16, 17
-
-| # | Ticket | Status | Priority | Effort | Files Created |
-|---|--------|--------|----------|--------|---------------|
-| 16 | Trading Service | Not Started | High | Large | Foreground service orchestrator |
-| 17 | Battery Optimization | Not Started | Medium | Small | Doze mode survival |
-
----
-
-### Phase 4: Testing & MVP Validation
+### Phase 4: Testing & Validation (1 Week)
 
 **Goal:** Verify system works end-to-end
 
-**Tickets:** 18, 19
+**Tickets:** 18-19
 
-| # | Ticket | Status | Priority | Effort | Files Created |
-|---|--------|--------|----------|--------|---------------|
+| # | Ticket | Status | Priority | Effort | Component |
+|---|--------|--------|----------|--------|-----------|
 | 18 | Integration Tests | Not Started | Medium | Medium | Real API tests with small trades |
-| 19 | MVP Milestone | Not Started | High | Small | End-to-end validation |
+| 19 | MVP Milestone | Not Started | HIGH | Small | System validation checklist |
 
 ---
 
 ## Quality Gates
 
-### Phase 0A Gate: Authentication Ready
-- [ ] Can authenticate with Coinbase API
-- [ ] Credentials stored securely 
-- [ ] Domain contracts fully defined
-- [ ] Database ready for order/portfolio tracking
+### Phase 0A Exit Criteria (Current)
 
-### Phase 1 Gate: API Integration Complete  
-- [ ] Can place and cancel all order types
-- [ ] Real-time price updates via WebSocket
-- [ ] Order status updates flow correctly
+- [x] All repository interfaces defined ✅
+- [x] Secure credential storage working ✅
+- [ ] Domain models defined
+- [ ] Room database schema created
+- [ ] JWT tokens can be generated
+- [ ] Can call getAccounts() successfully
 
-### Phase 2 Gate: UI Complete
-- [ ] Can monitor trading status visually
+### Phase 0B Exit Criteria
+
+- [ ] Decision engine produces correct modes for test data
+- [ ] Risk manager enforces limits
+- [ ] All domain logic unit tested
+
+### Phase 1 Exit Criteria
+
+- [ ] Can place and cancel orders on Coinbase
+- [ ] WebSocket receives price updates
+- [ ] All error cases handled
+
+### Phase 2 Exit Criteria
+
+- [ ] UI shows real-time data
 - [ ] Can start/stop service from UI
-- [ ] Settings screen for credentials
+- [ ] Settings persist correctly
 
-### Phase 3 Gate: Service Ready
-- [ ] Service survives 24 hours unattended
-- [ ] Battery optimization disabled
-- [ ] Emergency stop works
+### Phase 3 Exit Criteria
 
-### MVP Gate: Ready for Testing
-- [ ] No crashes in 24-hour test
-- [ ] Correct regime detection
-- [ ] Orders placed at correct prices
-- [ ] Drawdown limit enforced
+- [ ] Service survives 8+ hours screen-off
+- [ ] Emergency liquidation works
+- [ ] Battery optimization configured
 
-**Current Status:** Working toward Phase 0A Gate
-**Progress:** 2/6 Phase 0A tickets complete (Repository Interfaces ✅, Credential Store ✅)
+### Phase 4 Exit Criteria
+
+- [ ] Integration tests pass
+- [ ] Can run with real money safely
+- [ ] All logs and monitoring working
 
 ---
 
-## Next Actions
+## File Dependency Roadmap
 
-**Immediate Priority:** Complete Phase 0A - Authentication Infrastructure
+### Phase 0A Files (Current)
 
-**Next Ticket:** 01 - Domain Models
-- Create Candle, Order, Portfolio, Decision types
-- Pure Kotlin (no Android dependencies)  
-- Use BigDecimal for all money values
-- Location: `core/domain/src/main/kotlin/com/tradeflow/core/domain/model/`
+```
+✅ core/domain/auth/CredentialStore.kt
+✅ core/domain/auth/AuthTokenProvider.kt  
+✅ core/domain/repository/ExchangeRepository.kt
+✅ core/domain/repository/BracketOrderRepository.kt
+✅ core/domain/repository/ExchangeWebSocket.kt
+✅ core/domain/error/ExchangeError.kt
+✅ core/data/security/SecureCredentialStore.kt
+✅ core/data/di/SecurityModule.kt
+```
 
-**After Domain Models:** Tickets 03, 07, 08 can be done in parallel
-- 03: Room database (depends on domain models)
-- 07: JWT generator (uses credential store ✅)  
-- 08: REST API client partial (depends on JWT generator)
+**Next: Domain Models (Ticket 01)**
+```
+□ domain/model/Candle.kt                 # Market data
+□ domain/model/Order.kt                  # Order lifecycle  
+□ domain/model/Portfolio.kt              # Account balances
+□ domain/model/Decision.kt               # Strategy decisions
+□ domain/model/Ticker.kt                 # Real-time price
+□ domain/model/Balance.kt                # Account balance
+```
 
-**Blocked Until:** None - ready to proceed with domain models
+### Dependency Chain
+
+```
+01 Domain Models
+├── 03 Room Database (needs entities)
+├── 05 Decision Engine (needs Decision, Candle)
+└── 06 Risk Manager (needs Portfolio, Order)
+
+02 Repository Interfaces ✅
+├── 07 JWT Generator (needs AuthTokenProvider)
+├── 08 REST API Client (needs ExchangeRepository)
+└── 09 WebSocket Client (needs ExchangeWebSocket)
+
+04 Credential Store ✅
+├── 07 JWT Generator (needs credentials)
+└── 13-14 Settings (needs to save/load credentials)
+```
+
+---
+
+## Success Metrics
+
+### Technical KPIs
+
+- **Uptime:** Service runs 23+ hours/day
+- **Latency:** Strategy decisions complete within 30 seconds
+- **Reliability:** < 1 crash per 7 days
+- **Security:** Zero credential leaks in logs
+
+### Trading KPIs (Future)
+
+- **Drawdown:** Never exceed 15% from high water mark
+- **Fees:** Average < 0.4% per trade (maker rates)
+- **Fill Rate:** > 95% of limit orders fill within 24h
+- **Accuracy:** Mode detection correct > 80% of time
+
+---
+
+## Current Phase Focus
+
+**Phase 0A Target:** Complete authentication infrastructure
+
+**This Week:**
+1. **Domain Models** (Ticket 01) - Define all core types
+2. **Room Database** (Ticket 03) - Set up persistence layer
+3. **JWT Generator** (Ticket 07) - Coinbase authentication
+
+**Success Criteria:** Can authenticate with Coinbase API and store credentials securely
+
+**Blocker Resolution:** Repository interfaces complete ✅, credential storage complete ✅
+
+**Next Phase Preview:** Phase 0B will implement trading logic (decision engine + risk manager) without any external API dependencies.

@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-07
-**Project Status:** Phase 0A - Authentication Infrastructure (Credential Store Complete)
+**Project Status:** Phase 0A - Authentication Infrastructure (2/6 Complete)
 **Current Build:** #30 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -41,7 +41,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phase 0A Progress)
+### What EXISTS (Phase 0A Progress: 2/6 Complete)
 
 ```
 ✅ Modern Android app structure
@@ -94,7 +94,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 **See:** [docs/roadmap.md](docs/roadmap.md) for complete roadmap
 
-### Phase 0A: Authentication Infrastructure (CURRENT)
+### Phase 0A: Authentication Infrastructure (CURRENT - 2/6 Complete)
 - [x] **Repository interfaces** (Ticket 02) ✅ COMPLETE
 - [x] **Secure credential storage** (Ticket 04) ✅ COMPLETE 
 - [ ] Domain models (Ticket 01) - Basic domain types
@@ -102,7 +102,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - [ ] JWT token generator (Ticket 07)
 - [ ] REST API client partial (Ticket 08)
 
-**Latest Completion:** Secure credential storage (Ticket 04) ✅ Implemented `SecureCredentialStore` with EncryptedSharedPreferences using AES-256-GCM encryption. Credentials are securely stored and never logged.
+**Latest Completion:** Secure credential storage (Ticket 04) ✅ Implemented `SecureCredentialStore` with EncryptedSharedPreferences using AES-256-GCM encryption. Credentials are securely stored and never logged. Added `SecurityModule` for Hilt dependency injection.
 
 **Next Up:** Domain models (Ticket 01) - Define Candle, Order, Portfolio, Decision types
 
@@ -129,7 +129,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - MVP milestone
 
 **Current Phase:** Phase 0A (Authentication Infrastructure)
-**Progress:** Repository interfaces + credential store complete, domain models next
+**Progress:** 2/6 complete - Repository interfaces + credential store done, domain models next
 
 ---
 
@@ -198,18 +198,142 @@ tickets/
 
 **Recent Completions:** 
 - Ticket 02 (Repository Interfaces) ✅
-- Ticket 04 (Secure Credential Store) ✅
+- Ticket 04 (Secure Credential Storage) ✅
 
-**Phase 0A Active Tickets:**
-- Ticket 01: Domain Models (Candle, Order, Portfolio, Decision) - **NEXT**
-- Ticket 03: Room Database (entities, DAOs)
-- Ticket 07: JWT Generator (ES256 for Coinbase)
-- Ticket 08: REST API Client (getAccounts endpoint)
+---
 
-**Workflow:**
-1. Check [docs/roadmap.md](docs/roadmap.md) for next priority
-2. Find ticket in `docs/tickets/backlog/`
-3. Move to `ongoing/` when starting
-4. Create branch: `claude/ticket-##-description`
-5. Implement → Build → Test → Commit
-6. Move to `in-review/` when complete
+## 🔧 Tech Stack & Dependencies
+
+### Core Framework
+
+```kotlin
+✅ Android SDK 26+ (93%+ device coverage)
+✅ Kotlin 2.1.0 + Coroutines 1.10.2
+✅ Compose BOM 2025.01.00 (Material 3)
+✅ Hilt 2.57.2 (Dependency Injection)
+```
+
+### Data & Persistence
+
+```kotlin
+✅ Room 2.8.4 (Local database)
+✅ DataStore Preferences 1.1.2 (Settings)
+✅ Security Crypto 1.1.0-alpha06 (Credential encryption) ✅ IMPLEMENTED
+```
+
+### Networking & Authentication
+
+```kotlin
+✅ Ktor 3.3.3 (HTTP/WebSocket with OkHttp engine)
+✅ Kotlinx Serialization JSON 1.8.0
+✅ Nimbus JOSE JWT 9.47 (ES256 signing for Coinbase)
+```
+
+### Trading & Analytics
+
+```kotlin
+✅ TA4J Core 0.16 (Technical indicators - SMA, ADX, ATR)
+✅ Vico 2.4.0 (Charts and data visualization)
+```
+
+### Background & Services
+
+```kotlin
+✅ Work Manager 2.10.0 (Background tasks)
+✅ Firebase BOM 34.7.0 (Analytics + Crashlytics)
+```
+
+### Development & Logging
+
+```kotlin
+✅ Timber 5.0.1 (Structured logging)
+✅ Kotlin Compile Testing (Unit test utilities)
+```
+
+### Security Implementation Status
+
+✅ **EncryptedSharedPreferences:** AES-256-GCM with Android Keystore
+✅ **Credential isolation:** Stored separately from app data
+✅ **DI integration:** SecurityModule provides CredentialStore singleton
+✅ **Never logged:** Credentials excluded from all logging
+
+---
+
+## 🔥 Development Workflow
+
+### With GitHub Actions CI/CD
+
+**Pattern:** Push → Build → Download → Test
+
+```bash
+# 1. Implement changes
+# 2. Push to branch
+git push origin claude/feature-name
+
+# 3. Monitor build
+gh run watch  # or check GitHub UI
+
+# 4. Download APK when ready
+gh run download --name debug-apk
+
+# 5. Install and test
+adb install -r app-debug.apk
+```
+
+### Build Status
+
+**Current:** #30 SUCCESS ✅
+**APK:** Available in GitHub Actions artifacts (7-day retention)
+**Distribution:** Firebase App Distribution (partene.darius@gmail.com)
+
+### Documentation Updates
+
+Documentation is automatically updated via GitHub Actions when code changes are pushed:
+- `CLAUDE.md` - Project status and current state
+- `docs/` files - Implementation guides and references
+- Commits back with "[skip ci]" to avoid infinite loops
+
+---
+
+## 📚 Documentation Structure
+
+**Entry Points:**
+- `CLAUDE.md` (this file) - Project overview and navigation
+- `docs/README.md` - Complete documentation index
+- `docs/roadmap.md` - Implementation phases and tickets
+
+**Implementation Guides:**
+- `docs/reference.md` - Parent document with implementation blueprints
+- `docs/api/coinbase.md` - Coinbase API integration guide
+- `docs/strategy/overview.md` - Trading strategy and Android architecture
+- `docs/implementation/*.md` - Code examples organized by component
+
+**Process & Meta:**
+- `docs/ci.md` - CI/CD workflows and GitHub Actions
+- `docs/tickets/` - All tickets organized by status folder
+
+---
+
+## ⚡ Quick Commands
+
+```bash
+# Check build status after push
+cat .build-status
+# Expected: SUCCESS or FAILURE
+
+# Read build failure details
+cat build-log.txt
+
+# View recent documentation updates
+git log --oneline --grep="Update documentation" -5
+
+# See what tickets are ready to implement
+ls docs/tickets/refined/
+
+# Check current phase progress
+grep "✅\|❌" docs/roadmap.md | head -10
+```
+
+---
+
+**Next Action:** Implement domain models (Ticket 01) - Define Candle, Order, Portfolio, Decision classes in `:core:domain` module.
