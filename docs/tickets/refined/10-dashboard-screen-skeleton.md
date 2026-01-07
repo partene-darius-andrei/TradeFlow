@@ -30,7 +30,7 @@ Dashboard is the main screen showing:
 3. **Service status** - Trading service state + controls
 4. **Recent orders** - Last 5 orders or empty state
 
-**Reference:** See wireframe in [05-ui-design-overview.md](05-ui-design-overview.md)
+**Reference:** See wireframe in [05-ui-design-overview.md](../done/05-ui-design-overview.md)
 
 ---
 
