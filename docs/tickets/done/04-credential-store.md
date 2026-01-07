@@ -11,7 +11,7 @@ Module: :core:data
 Implement secure credential storage using EncryptedSharedPreferences.
 
 ## Module
-
+[build](../../../build)
 `:core:data`
 
 ## Implements
