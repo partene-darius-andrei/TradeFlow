@@ -94,52 +94,47 @@ jobs:
           fi
         done < /tmp/doc_files.txt
 
-        # Build prompt (save to file to avoid escaping issues)
-        cat > /tmp/prompt.txt << 'PROMPT_EOF'
-Analyze the following code changes and update the documentation files accordingly.
-
-## Changed Files
-CHANGED_FILES_PLACEHOLDER
-
-## Git Diff
-DIFF_PLACEHOLDER
-
-## Current Documentation Files (first 200 lines of each)
-DOC_CONTEXT_PLACEHOLDER
-
-## Task
-Based on the code changes, update the relevant documentation files:
-- CLAUDE.md: Update 'Current Project State', 'Tech Stack', 'Dependencies' if anything changed
-- docs/ci.md: Update if workflow, CI/CD, or build process changed
-- docs/roadmap.md: Update roadmap status if features were implemented
-- Any other docs/* files that need updates
-
-For each file that needs updating:
-1. Output the filename on a line starting with '### FILE:'
-2. Output the COMPLETE updated file content
-3. Separate files with '### END FILE'
-
-Example format:
-### FILE: CLAUDE.md
-[complete updated content]
-### END FILE
-
-### FILE: docs/roadmap.md
-[complete updated content]
-### END FILE
-
-IMPORTANT:
-- Only include files that actually need updates
-- Preserve all existing content not related to the changes
-- Update version numbers, status markers (✅/❌/⚠️), dependency lists accurately
-- Keep the same markdown formatting and structure
-- Don't mention files that don't need changes
-PROMPT_EOF
-
-        # Replace placeholders with actual content
-        sed -i "s|CHANGED_FILES_PLACEHOLDER|$CHANGED_FILES|g" /tmp/prompt.txt
-        sed -i "s|DIFF_PLACEHOLDER|$DIFF|g" /tmp/prompt.txt
-        sed -i "s|DOC_CONTEXT_PLACEHOLDER|$DOC_CONTEXT|g" /tmp/prompt.txt
+        # Build prompt directly (avoid heredoc syntax issues in YAML)
+        {
+          echo "Analyze the following code changes and update the documentation files accordingly."
+          echo ""
+          echo "## Changed Files"
+          echo "$CHANGED_FILES"
+          echo ""
+          echo "## Git Diff"
+          echo "$DIFF"
+          echo ""
+          echo "## Current Documentation Files (first 200 lines of each)"
+          echo "$DOC_CONTEXT"
+          echo ""
+          echo "## Task"
+          echo "Based on the code changes, update the relevant documentation files:"
+          echo "- CLAUDE.md: Update 'Current Project State', 'Tech Stack', 'Dependencies' if anything changed"
+          echo "- docs/ci.md: Update if workflow, CI/CD, or build process changed"
+          echo "- docs/roadmap.md: Update roadmap status if features were implemented"
+          echo "- Any other docs/* files that need updates"
+          echo ""
+          echo "For each file that needs updating:"
+          echo "1. Output the filename on a line starting with '### FILE:'"
+          echo "2. Output the COMPLETE updated file content"
+          echo "3. Separate files with '### END FILE'"
+          echo ""
+          echo "Example format:"
+          echo "### FILE: CLAUDE.md"
+          echo "[complete updated content]"
+          echo "### END FILE"
+          echo ""
+          echo "### FILE: docs/roadmap.md"
+          echo "[complete updated content]"
+          echo "### END FILE"
+          echo ""
+          echo "IMPORTANT:"
+          echo "- Only include files that actually need updates"
+          echo "- Preserve all existing content not related to the changes"
+          echo "- Update version numbers, status markers (✅/❌/⚠️), dependency lists accurately"
+          echo "- Keep the same markdown formatting and structure"
+          echo "- Don't mention files that don't need changes"
+        } > /tmp/prompt.txt
 
         # Read final prompt
         FINAL_PROMPT=$(cat /tmp/prompt.txt)
