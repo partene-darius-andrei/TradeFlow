@@ -1,8 +1,11 @@
 name: Update Documentation
 
 on:
-  push:
-    branches: ["claude/*"]
+  workflow_run:
+    workflows: ["Build Android"]
+    types:
+      - completed
+    branches: ["claude/*", "main"]
 
 permissions:
   contents: write
@@ -10,11 +13,13 @@ permissions:
 jobs:
   update-docs:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
+        ref: ${{ github.event.workflow_run.head_branch }}
         fetch-depth: 0  # Full history for diff
 
     - name: Check if last commit was by bot
@@ -219,26 +224,141 @@ jobs:
 
         echo "✅ Documentation updates applied"
 
+    - name: Generate version and release notes with Claude
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
+      id: version_release
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        # Read current version
+        CURRENT_VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed 's/.*versionName = "\(.*\)"/\1/')
+        echo "Current version: $CURRENT_VERSION"
+
+        # Get commits since main
+        COMMITS=$(git log origin/main..HEAD --pretty=format:"%h %s" --no-merges)
+
+        # Get diff
+        DIFF=$(git diff origin/main..HEAD | head -n 3000)
+
+        # Build prompt for Claude
+        {
+          echo "Analyze these code changes and determine:"
+          echo "1. Whether to bump MINOR version (new features) or PATCH version (bug fixes/tweaks)"
+          echo "2. Generate concise release notes for users"
+          echo ""
+          echo "## Current Version"
+          echo "$CURRENT_VERSION"
+          echo ""
+          echo "## Commits"
+          echo "$COMMITS"
+          echo ""
+          echo "## Git Diff (first 3000 lines)"
+          echo "$DIFF"
+          echo ""
+          echo "## Instructions"
+          echo "Respond with EXACTLY this format (nothing else):"
+          echo ""
+          echo "VERSION_TYPE: minor|patch"
+          echo "NEW_VERSION: X.Y.Z"
+          echo "RELEASE_NOTES:"
+          echo "[Your release notes here - be concise, user-focused, max 5 bullet points]"
+          echo ""
+          echo "Rules:"
+          echo "- Use 'minor' for new features/screens/major functionality"
+          echo "- Use 'patch' for bug fixes, tweaks, refactors, CI changes"
+          echo "- NEW_VERSION should bump MINOR or PATCH from current version accordingly"
+          echo "- Release notes should be user-facing, not technical jargon"
+          echo "- Each bullet point should start with '- '"
+          echo "- Focus on what changed, not how it was implemented"
+        } > /tmp/version_prompt.txt
+
+        # Escape for JSON
+        ESCAPED_PROMPT=$(cat /tmp/version_prompt.txt | jq -Rs .)
+
+        # Call Claude API
+        echo "{\"model\": \"claude-sonnet-4-20250514\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": $ESCAPED_PROMPT}]}" > /tmp/version_payload.json
+
+        RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+          -H "content-type: application/json" \
+          -H "x-api-key: $ANTHROPIC_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -d @/tmp/version_payload.json)
+
+        # Check for errors
+        if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+          echo "❌ Claude API error:"
+          echo "$RESPONSE" | jq '.error'
+          exit 1
+        fi
+
+        # Extract content
+        CONTENT=$(echo "$RESPONSE" | jq -r '.content[0].text // empty')
+
+        if [ -z "$CONTENT" ]; then
+          echo "❌ No content from Claude API"
+          exit 1
+        fi
+
+        echo "$CONTENT" > /tmp/version_output.txt
+        echo "✅ Claude analysis:"
+        cat /tmp/version_output.txt
+
+        # Parse output
+        VERSION_TYPE=$(grep "^VERSION_TYPE:" /tmp/version_output.txt | cut -d' ' -f2 | tr -d '[:space:]')
+        NEW_VERSION=$(grep "^NEW_VERSION:" /tmp/version_output.txt | cut -d' ' -f2 | tr -d '[:space:]')
+
+        echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+        # Extract release notes (everything after RELEASE_NOTES:)
+        awk '/^RELEASE_NOTES:/{flag=1; next} flag' /tmp/version_output.txt > /tmp/release_notes.txt
+
+        echo "✅ Version bump: $VERSION_TYPE → $NEW_VERSION"
+
+    - name: Update version and release notes
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
+      run: |
+        NEW_VERSION="${{ steps.version_release.outputs.new_version }}"
+
+        # Update app/build.gradle.kts
+        sed -i.bak "s/versionName = \".*\"/versionName = \"$NEW_VERSION\"/" app/build.gradle.kts
+        rm -f app/build.gradle.kts.bak
+
+        # Create release notes file
+        {
+          echo "Version $NEW_VERSION"
+          echo ""
+          cat /tmp/release_notes.txt
+        } > release-notes.txt
+
+        echo "✅ Version updated to $NEW_VERSION"
+        echo ""
+        echo "Release notes:"
+        cat release-notes.txt
+
     - name: Commit documentation updates
       if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
 
-        # Check if any docs were actually modified
-        if git diff --quiet CLAUDE.md docs/ 2>/dev/null; then
-          echo "No documentation changes needed"
-          exit 0
-        fi
+        # Stage version and release notes
+        git add app/build.gradle.kts release-notes.txt 2>/dev/null || true
 
         # Stage all doc changes
         git add CLAUDE.md docs/ 2>/dev/null || true
 
+        # Check if anything was actually modified
+        if git diff --cached --quiet 2>/dev/null; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
         # Commit with [skip ci] to prevent triggering this workflow again
-        COMMIT_MSG="Update documentation based on code changes [skip ci]"$'\n\n'"Automated update by update-docs workflow."$'\n\n'"Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        COMMIT_MSG="Update docs, version, and release notes [skip ci]"$'\n\n'"Version: ${{ steps.version_release.outputs.new_version }} (${{ steps.version_release.outputs.version_type }} bump)"$'\n\n'"Automated update by update-docs workflow."$'\n\n'"Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
         git commit -m "$COMMIT_MSG" || true
 
         # Push back to branch
         git push origin HEAD
 
-        echo "✅ Documentation updated and committed"
+        echo "✅ Documentation, version, and release notes updated"
