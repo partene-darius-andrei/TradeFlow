@@ -60,16 +60,16 @@ Documentation automatically updates when you push code changes. No manual doc ed
 - **Missing Dependencies** section
   - Move to Tech Stack when added
 
-### docs/github_actions.md
+### docs/ci.md
 - Workflow changes
 - New build steps
 - Secret/environment changes
 - Trigger pattern updates
 
-### docs/plan.md
-- Roadmap checkboxes ([ ] → [x])
-- Phase status updates
-- Implementation notes
+### docs/reference.md
+- Implementation guide updates
+- Code example corrections
+- API reference changes
 
 ### Any docs/*.md file
 - All documentation files scanned

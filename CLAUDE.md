@@ -1,14 +1,32 @@
-# CLAUDE.md
+# TradeFlow - Claude Code Entry Point
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+**Last Updated:** 2026-01-07
+**Project Status:** Pre-MVP Scaffolding (Phase 0 - Foundation)
+**Current Build:** #30 SUCCESS
 
-## Project Vision
+This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
+
+---
+
+## 🎯 Quick Navigation
+
+| Document | Purpose | Use When |
+|----------|---------|----------|
+| **[docs/roadmap.md](docs/roadmap.md)** | Implementation roadmap organized in phases | Planning what to build next |
+| **[docs/README.md](docs/README.md)** | Complete documentation index and ticket mapping | Finding specific documentation |
+| **[docs/reference.md](docs/reference.md)** | Implementation blueprint with code examples | Implementing features |
+| **[docs/ci.md](docs/ci.md)** | CI/CD workflows and troubleshooting | Understanding build pipeline |
+| **[docs/tickets/](docs/tickets/)** | All ticket files organized by status | Reading detailed requirements |
+
+---
+
+## 📊 Project Overview
 
 **TradeFlow** - Personal automated crypto trading bot for Coinbase Advanced Trade API.
 
-**Goals:**
+**Vision:**
 - Remove human emotions from trading decisions
-- Run 24/7 unattended (physical device when proven)
+- Run 24/7 unattended on physical device (when proven)
 - Simple UI, simple implementation, easy to maintain
 - Backtest → Paper trade → Live (small) → Scale
 - Never published - personal use only
@@ -19,61 +37,123 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Simple strategies often beat complex ML
 - Every trade is a taxable event
 
-## Project Management
+---
 
-**Task Tracking:** [TradeFlow Notion Database](https://www.notion.so/2e0c71f7a8c380cf8ae1c02c63987a14?v=2e0c71f7a8c38025a1c8000c923c4485)
+## 🚦 Current Status
 
-All tasks, features, and bugs are tracked in Notion as a Kanban board. Claude Code can read/write tasks via MCP integration (Desktop only).
+### What EXISTS (Phase 0 - Scaffolding Complete)
 
-**Database Properties:**
-- **Task name** (Title) - Description of the task
-- **Status** (Status) - Workflow state
-  - `Not started` - Task created, not yet refined
-  - `Refined` - Requirements clear, ready to implement
-  - `Ongoing` - Currently being worked on
-  - `In review` - Implementation complete, awaiting review/testing
-  - `Done` - Completed and verified
-- **Priority** (Select) - `High` / `Medium` / `Low`
-- **Effort level** (Select) - `Small` / `Medium` / `Large`
-- **Assignee** (Person) - Who's responsible (usually you)
-- **Due date** (Date) - Target completion date
+```
+✅ Modern Android app structure
+✅ Hilt dependency injection configured
+✅ Room database with empty schema
+✅ Ktor HTTP client configured (OkHttp engine)
+✅ Timber logging initialized
+✅ Firebase Analytics + Crashlytics
+✅ GitHub Actions CI/CD pipeline
+✅ All trading dependencies added (ta4j, nimbus-jose-jwt, security-crypto)
+```
 
-**Task Workflow:**
-1. Create task in Notion with description and priority
-2. Refine: Add details, acceptance criteria, mark as `Refined`
-3. Claude Code (Desktop) reads task and creates branch `claude/task-description`
-4. Implement → Update status to `Ongoing`
-5. Build passes → Update status to `In review`
-6. Test on device → Move to `Done`
+### What DOESN'T Exist Yet (Everything Else)
 
-**When to use Notion:**
-- ✅ Planning features before implementation
-- ✅ Breaking down complex work into tasks
-- ✅ Tracking bugs and tech debt
-- ✅ Keeping context for Mobile Claude Code sessions
-- ❌ Not for in-progress TODOs (use TodoWrite tool during active session)
+```
+❌ Coinbase API integration (JWT auth, REST, WebSocket)
+❌ Domain models (Candle, Decision, Order, Portfolio)
+❌ Decision engine (regime switching logic)
+❌ Trading service (foreground service)
+❌ Risk management
+❌ UI beyond MainActivity
+```
 
-## Development Workflow
+**Bottom Line:** Greenfield project with solid foundation, zero business logic.
 
-**Remote Development + Testing Pipeline:**
+---
+
+## 📋 Implementation Roadmap
+
+**See:** [docs/roadmap.md](docs/roadmap.md) for complete roadmap
+
+### Phase 0: Foundation (NEXT)
+- Domain models and interfaces
+- Room database schema
+- Secure credential storage
+- Decision engine
+- Risk manager
+
+### Phase 1: Coinbase Integration
+- JWT token generator
+- REST API client
+- WebSocket client
+
+### Phase 2: Presentation Layer
+- UI components and theme
+- Dashboard screen + ViewModel
+- Settings screen + ViewModel
+- App navigation
+
+### Phase 3: Trading Service
+- Foreground service
+- Battery optimization
+
+### Phase 4: Testing & Validation
+- Integration tests
+- MVP milestone
+
+**Current Progress:** Phase 0 not started
+
+---
+
+## 🎫 Ticket System
+
+**Location:** `docs/tickets/` (organized by status)
+
+```
+tickets/
+├── backlog/        # Not started yet
+├── refined/        # Ready for implementation (user-approved)
+├── ongoing/        # Currently being worked on
+├── in-review/      # Implementation complete, awaiting review
+├── done/           # Completed and verified
+└── archived/       # Superseded/duplicate tickets
+```
+
+**Workflow:**
+1. Check [docs/roadmap.md](docs/roadmap.md) for next ticket number
+2. Map ticket number to file name in [docs/README.md](docs/README.md)
+3. Find ticket file in `docs/tickets/backlog/` (or user moves it to `refined/`)
+4. Create branch: `claude/ticket-##-description`
+5. Move ticket: `backlog/` → `ongoing/` (start work)
+6. Implement → Build → Test → Commit
+7. Move ticket: `ongoing/` → `in-review/` (ready for review)
+8. After user approval → move to `done/`
+9. Update docs/roadmap.md checkboxes
+
+**Example Mapping:**
+- Ticket 01: Domain Models → `📦 DOMAIN Core Domain Models 2e0c71f7a8c381b0b87dd20c1a51ffb2.md`
+- Ticket 07: JWT Generator → `🟡 COINBASE JWT Token Generator 2e1c71f7a8c381c7906df5b5cf0f977e.md`
+
+**See:** [docs/README.md](docs/README.md) for complete ticket mapping table
+
+---
+
+## 🛠️ Development Workflow
+
+### Remote Development Pipeline
 
 ```
 ┌──────────────────┐
 │ Claude Code      │ (Desktop or Mobile)
 │ - Implements     │
 │ - Pushes branch  │
-│ - Creates PR     │
 └────────┬─────────┘
-         │
          ▼
 ┌──────────────────┐
 │ GitHub Actions   │
 │ - Builds APK     │
-│ - Runs on PR     │
 │ - Uploads to     │
 │   Firebase       │
+│ - Commits status │
 └────────┬─────────┘
-         │
          ▼
 ┌──────────────────┐
 │ Firebase App     │
@@ -83,271 +163,215 @@ All tasks, features, and bugs are tracked in Notion as a Kanban board. Claude Co
 └──────────────────┘
 ```
 
-**Why this workflow:**
-- **Remote development:** Make changes from anywhere, test on actual device
-- **No local builds:** Phone is the test environment
-- **Fast iteration:** Push → build → test cycle in minutes
+### When to Use Desktop vs Mobile
 
-**Mobile vs Desktop tradeoffs:**
+| Scenario | Use Desktop | Use Mobile |
+|----------|-------------|------------|
+| Complex features | ✅ Full IDE, MCP servers | ❌ Limited context |
+| Quick bug fixes | ⚠️ Overkill | ✅ Fast and easy |
+| API integration | ✅ Coinbase MCP server | ❌ No MCP access |
+| Simple refactors | ⚠️ Either works | ✅ Convenient |
 
-| Capability | Claude Code Mobile | Claude Code Desktop + IDE |
-|------------|-------------------|--------------------------|
-| **Basic code changes** | ✅ Yes | ✅ Yes |
-| **File edits** | ✅ Yes | ✅ Yes |
-| **Git operations** | ✅ Yes | ✅ Yes |
-| **MCP Servers** | ❌ No Notion/Coinbase | ✅ Full access |
-| **IDE integration** | ❌ No diagnostics | ✅ Live errors |
-| **Context depth** | ⚠️ Limited | ✅ Full codebase |
-| **Best for** | Small tweaks, fixes | Complex features |
+### Build-Before-Push Protocol
 
-**When to use Mobile:**
-- Quick bug fixes
-- Small UI tweaks
-- Simple refactors
-- When away from laptop
-- After detailed ticket is written with full context
-
-**When to use Desktop:**
-- Complex features requiring Coinbase API docs (MCP)
-- Tasks needing Notion integration
-- Architecture changes
-- Initial feature planning
-- Anything requiring deep codebase exploration
-
-**Build Before Push (Desktop Only):**
-
-When working from Desktop/local environment with Gradle available:
-```
-1. Claude → implements feature
-2. Claude → runs local build (`./gradlew assembleDebug`)
-3. If build passes → push to branch
-4. If build fails → fix errors and retry
-```
-
-This catches compilation errors immediately without waiting for CI/CD.
-
-**The Feedback Loop (Commit-Back Pattern - Mobile Fallback):**
-
-When working from Mobile (no local build capability), rely on GitHub Actions:
-
-```
-1. Claude → implements feature
-2. Claude → pushes to branch
-3. GitHub Actions → builds
-4. GitHub Actions → commits result (.build-status + build-log.txt if failure)
-5. Claude → checks committed files to verify build success
-```
-
-**Key files for feedback:**
-- `.build-status` - Contains "SUCCESS" or "FAILURE"
-- `build-log.txt` - Last 200 lines of build output (only on failure)
-
-**How Claude Code uses this:**
-After pushing, Claude should check these files to verify the build passed:
+**Desktop (with Gradle):**
 ```bash
-git pull  # Get latest commits from Actions
-cat .build-status  # Check if build succeeded
-cat build-log.txt  # If failed, read error details
+1. Implement feature
+2. Run: ./gradlew assembleDebug
+3. If SUCCESS → push
+4. If FAILURE → fix and retry
 ```
 
-This allows Claude to:
-- Verify changes compile without local Gradle execution
-- Fix build errors by reading `build-log.txt`
-- Iterate on fixes until `.build-status` shows SUCCESS
-- Ensure PR is ready for testing before user downloads APK
-
-## Build Commands
-
+**Mobile (no Gradle):**
 ```bash
-./gradlew assembleDebug          # Build debug APK
-./gradlew assembleRelease        # Build release APK
-./gradlew clean                  # Clean build
+1. Implement feature
+2. Push to branch
+3. GitHub Actions builds
+4. Check .build-status file
+5. If FAILURE → read build-log.txt and fix
 ```
 
-## Current Project State (Jan 2026)
+**See:** [docs/ci.md](docs/ci.md) for CI/CD details
 
-**STATUS: Pre-MVP Scaffolding** - Modern Android setup, zero trading logic.
+---
 
-### What Actually Exists
+## 📚 Technical Documentation
 
-```
-com.dpart.tradeflow/
-├── MainActivity.kt              ✅ Shows "TradeFlow" text only
-├── TradeFlowApp.kt              ✅ Initializes Timber logging
-├── di/
-│   ├── AppModule.kt             ✅ Empty Hilt module
-│   ├── DatabaseModule.kt        ✅ Provides Room database
-│   └── NetworkModule.kt         ✅ Provides Ktor HttpClient
-└── data/local/
-    ├── AppDatabase.kt           ✅ Room DB (empty)
-    └── PlaceholderEntity.kt     ✅ Dummy entity
-```
+### Quick Reference
 
-### What DOESN'T Exist Yet
+| What You Need | Read This |
+|---------------|-----------|
+| **How to implement features** | [docs/reference.md](docs/reference.md) |
+| **Coinbase API endpoints** | [docs/api/coinbase.md](docs/api/coinbase.md) |
+| **Strategy logic** | [docs/strategy/overview.md](docs/strategy/overview.md) |
+| **Code examples** | [docs/implementation/*.md](docs/implementation/) |
+| **Dependencies & config** | [docs/implementation/config.md](docs/implementation/config.md) |
+
+### Documentation Structure
 
 ```
-❌ data/remote/              # No Coinbase API client
-❌ data/repository/          # No repositories
-❌ domain/model/             # No domain models
-❌ domain/repository/        # No repository interfaces
-❌ domain/usecase/           # No use cases
-❌ presentation/             # No screens beyond MainActivity
-❌ trading/engine/           # No trading service
-❌ trading/strategy/         # No strategies
-❌ trading/risk/             # No risk management
+docs/
+├── README.md                       # Complete index and navigation
+├── reference.md                     # Parent doc with links to all implementation guides
+│
+├── api/
+│   └── coinbase.md     # REST/WebSocket API reference
+│
+├── strategy/
+│   └── overview.md         # Strategy specification + architecture
+│
+├── implementation/
+│   ├── domain.md              # Domain models + decision engine
+│   ├── security.md            # Credential storage + JWT generation
+│   ├── clients.md              # REST + WebSocket clients
+│   ├── storage.md          # Database + trading service
+│   └── config.md            # Gradle + manifest + testing
+│
+├── ci.md                            # CI/CD workflows
+├── auto-docs.md                     # Auto-doc system
+│
+└── tickets/                        # All ticket files organized by status
+    ├── backlog/                    # Not started
+    ├── refined/                    # User-approved, ready to implement
+    ├── ongoing/                    # In progress
+    ├── in-review/                  # Awaiting review
+    ├── done/                       # Completed
+    └── archived/                   # Superseded/duplicate
 ```
 
-**Bottom line:** This is a greenfield project with dependencies configured but no business logic.
+**All files <1000 lines** with hierarchical links for easy navigation.
 
-## Tech Stack
+**See:** [docs/README.md](docs/README.md) for complete navigation
 
-| Library | Version | Status | Usage |
-|---------|---------|--------|-------|
-| **Kotlin** | 2.3.0 | ✅ Active | Language |
-| **Compose BOM** | 2025.12.01 | ✅ Active | UI framework |
-| **Hilt** | 2.57.2 | ✅ Configured | DI modules exist, mostly empty |
-| **Room** | 2.8.4 | ⚠️ Scaffolded | Database exists, 1 dummy entity |
-| **Ktor** | 3.3.3 | ⚠️ Configured | HttpClient provided, never used |
-| **Timber** | 5.0.1 | ✅ Active | Initialized in Application |
-| **Vico** | 2.4.0 | ❌ Unused | Dependency added, zero usage |
-| **Firebase Analytics** | 34.7.0 | ✅ Active | Monitoring enabled |
-| **Firebase Crashlytics** | 34.7.0 | ✅ Active | Error tracking |
-| **Coroutines** | 1.10.2 | ❌ Unused | Dependency only |
+---
 
-### Missing Dependencies (Needed for Trading)
+## 🔧 Tech Stack
 
-| Library | Purpose | Status |
+### Current Dependencies
+
+| Library | Version | Status |
 |---------|---------|--------|
-| **nimbus-jose-jwt** | JWT ES256 signing for Coinbase | ❌ Not added |
-| **ta4j** | Technical indicators (SMA, RSI, etc) | ❌ Not added |
-| **security-crypto** | EncryptedSharedPreferences for API keys | ❌ Not added |
-| **WorkManager** | Background DCA execution | ❌ Not added |
-| **DataStore** | Settings persistence | ❌ Not added |
+| **Kotlin** | 2.3.0 | ✅ Active |
+| **Compose BOM** | 2025.12.01 | ✅ Active |
+| **Hilt** | 2.57.2 | ✅ Configured (modules empty) |
+| **Room** | 2.8.4 | ⚠️ Scaffolded (dummy entity) |
+| **Ktor** | 3.3.3 | ⚠️ Configured (OkHttp engine) |
+| **Firebase** | 34.7.0 | ✅ Active (Analytics + Crashlytics) |
+| **Timber** | 5.0.1 | ✅ Active |
 
-## Coinbase Advanced Trade API
+### Trading Dependencies (Added, Not Used)
 
-**REST:** `https://api.coinbase.com/api/v3/brokerage/`
+| Library | Purpose | Version |
+|---------|---------|---------|
+| **nimbus-jose-jwt** | JWT ES256 signing for Coinbase | 9.47 |
+| **ta4j-core** | Technical indicators (SMA, ADX, ATR) | 0.16 |
+| **security-crypto** | EncryptedSharedPreferences | 1.1.0-alpha06 |
+| **work-runtime-ktx** | Background execution backup | 2.10.0 |
+| **datastore-preferences** | Settings persistence | 1.1.1 |
+
+---
+
+## 🎨 Coinbase Integration
+
+**REST API:** `https://api.coinbase.com/api/v3/brokerage/`
 **WebSocket Market:** `wss://advanced-trade-ws.coinbase.com`
 **WebSocket User:** `wss://advanced-trade-ws-user.coinbase.com`
-**Sandbox:** `https://api-sandbox.coinbase.com` (static responses)
 
-**Auth:** CDP API Keys → JWT tokens (refresh every 2 min for WS)
+**Authentication:** CDP API Keys → JWT ES256 tokens (2-minute expiry)
 
-**Key Channels:** heartbeats, ticker, candles, level2, user, market_trades
+**Key Endpoints:**
+- POST `/orders` - Create order
+- POST `/orders/batch_cancel` - Cancel orders
+- GET `/orders/historical/batch` - Order history
+- GET `/accounts` - Account balances
+- GET `/products/{id}/candles` - OHLCV data
 
-## Development Roadmap
+**WebSocket Channels:**
+- `heartbeats` - Keep-alive (required)
+- `ticker` - Real-time prices
+- `user` - Order updates (auth required)
 
-**See `docs/plan.md` for detailed implementation blueprint** (2000+ lines of Kotlin code examples, API docs, complete architecture).
+**See:** [docs/api/coinbase.md](docs/api/coinbase.md) for complete API reference
 
-**Current Status:** Phase 0 - Nothing implemented beyond scaffolding.
+---
 
-### Phase 0: Foundation (NOT STARTED)
-**Required before any trading logic:**
-- [ ] Add missing dependencies (nimbus-jose-jwt, ta4j, security-crypto)
-- [ ] Choose HTTP library (plan.md recommends OkHttp over Ktor for battery life)
-- [ ] Implement JWT token generator for Coinbase ES256 auth
-- [ ] Build encrypted credential storage (EncryptedSharedPreferences)
-- [ ] Create Room entities (Candle, Order, Portfolio)
-- [ ] Implement Coinbase REST API client
-- [ ] Implement WebSocket client for real-time data
+## 📝 Documentation Guidelines
 
-### Phase 1: Data Foundation (NOT STARTED)
-**Coinbase integration + basic strategy:**
-- [ ] JWT auth working with Coinbase API
-- [ ] Fetch historical candles (H4 timeframe)
-- [ ] Calculate indicators: SMA(200), ADX(14), ATR(14)
-- [ ] Implement simple regime detection (TREND/RANGE/DEFENSE)
-- [ ] Basic settings screen for API key input
-- [ ] Dashboard showing current state
+### When to Create New .md Files
 
-### Phase 2: Trading Engine (NOT STARTED)
-**Foreground service + order execution:**
-- [ ] Foreground service with wake lock
-- [ ] Decision engine with strategy logic
-- [ ] Order placement (bracket, limit, market)
-- [ ] Risk management (position sizing, drawdown limits)
-- [ ] Trade logging to Room database
-- [ ] Emergency kill switch
+| Type | Location | Example | Lifespan |
+|------|----------|---------|----------|
+| **Temporary analysis** | `docs/temp/session_YYYY-MM-DD_[name].md` | Alignment checks, session summaries | Until action complete |
+| **Permanent guide** | `docs/[category]/[name].md` | API guides, workflow docs | Permanent |
+| **Critical context** | Update `CLAUDE.md` or `roadmap.md` | Project state, roadmap | Updated continuously |
 
-### Phase 3: UI & Monitoring (NOT STARTED)
-**User interface + trade history:**
-- [ ] Trade history screen
-- [ ] Performance charts with Vico
-- [ ] Real-time price updates
-- [ ] Service control (start/stop)
+### Cleanup Protocol
 
-### Future Phases (Vision Only)
-- Backtesting engine
-- Regime detection with ML
-- Advanced strategies (grid, mean reversion)
-- On-chain metrics integration
+**Monthly:**
+- Review `docs/temp/` - archive or delete completed items
+- Review `docs/` - ensure all docs are still relevant
+- Archive to `docs/archive/YYYY-MM/` if needed
 
-## Build & CI Status
+**Per Phase:**
+- Update docs/roadmap.md checkboxes
+- Update CLAUDE.md "Current Status" section
 
-**Current Build:** #27 (Failed - dependency issues)
-**CI/CD:** GitHub Actions configured for Android builds
-**Distribution:** Firebase App Distribution → partene.darius@gmail.com
-**Git Remote:** Not configured (local-only repo)
+---
 
-**See `docs/github_actions.md` for complete CI/CD documentation** (workflow details, troubleshooting, Firebase setup).
+## ⚡ Critical Rules
 
-## Auto-Documentation
-
-**Documentation updates automatically** when code changes are pushed.
-
-**Workflow:** `.github/workflows/update-docs.yml`
-
-**How it works:**
-1. Push to `claude/*` branch or create PR
-2. GitHub Actions analyzes git diff
-3. Claude API reviews changes
-4. Updates `CLAUDE.md` and all `docs/*.md` files
-5. Commits updates back to branch
-
-**What gets updated:**
-- **CLAUDE.md** - Current state, tech stack, dependencies
-- **docs/github_actions.md** - Workflow changes, CI/CD updates
-- **docs/plan.md** - Roadmap status, feature checkboxes
-- **All docs/*.md** - Any relevant documentation
-
-**Benefits:**
-- ✅ Works with Mobile Claude Code (no local setup)
-- ✅ Documentation never out of sync
-- ✅ No manual doc updates needed
-- ✅ Same commit-back pattern as build workflow
-
-**See:** `docs/auto_documentation.md` for complete documentation
-
-**Required Secret:** `ANTHROPIC_API_KEY` in GitHub repo settings
-
-## Key Configuration
-
-- **Package:** `com.dpart.tradeflow`
-- **Min SDK:** 24 / **Target SDK:** 36
-- **JVM:** 17
-- **Gradle:** 8.13.2
-- **Kotlin:** 2.3.0
-- **Dependencies:** `gradle/libs.versions.toml`
-
-## About plan.md
-
-The root `plan.md` file (~2000 lines) is a **comprehensive implementation blueprint**, not current state:
-- Complete Coinbase Advanced Trade API documentation
-- Full Kotlin code examples for all components
-- JWT auth implementation (ES256)
-- WebSocket client with OkHttp
-- Decision engine with ta4j indicators
-- Trading service with foreground service
-- Room database schema
-- Risk management logic
-
-**This is aspirational documentation** - treat it as a reference implementation guide, not a status report.
-
-## Critical Rules
-
-1. **Never hardcode API keys** - Encrypted DataStore only
+1. **Never hardcode API keys** - Use EncryptedSharedPreferences only
 2. **Log every trade** - For debugging and taxes
 3. **Paper trade first** - Validate before real money
-4. **Account for fees** - In all calculations (0.25-0.60% at Coinbase)
-5. **Kill switch always** - Immediate stop capability
+4. **Account for fees** - 0.60% maker at intro tier → 1.5% minimum grid spacing
+5. **Kill switch always** - Emergency liquidation at 15% drawdown
 6. **Battery optimization** - Request exemption for 24/7 service
+7. **Build before push** - Desktop: run `./gradlew assembleDebug` first
+
+---
+
+## 🚀 Getting Started (For New Sessions)
+
+### 1. Load Context (5 minutes)
+```
+Read: CLAUDE.md (this file)
+Read: docs/roadmap.md (understand roadmap)
+Check: Current phase and next ticket
+```
+
+### 2. Find Next Task
+```
+1. Open docs/roadmap.md
+2. Find first unchecked ticket
+3. Map ticket number to file name (docs/README.md)
+4. Read detailed ticket file
+```
+
+### 3. Implement
+```
+1. Create branch: claude/ticket-##-description
+2. Read docs/reference.md for code examples
+3. Implement → Build → Test → Commit
+4. Update docs/roadmap.md checkboxes
+```
+
+### 4. Verify
+```
+Desktop: ./gradlew assembleDebug
+Mobile: Push → Check .build-status
+```
+
+---
+
+## 📞 Quick Links
+
+- **Roadmap:** [docs/roadmap.md](docs/roadmap.md)
+- **Docs Hub:** [docs/README.md](docs/README.md)
+- **Implementation Guide:** [docs/reference.md](docs/reference.md)
+- **CI/CD:** [docs/ci.md](docs/ci.md)
+- **Tickets:** [docs/tickets/](docs/tickets/)
+
+---
+
+**Last Build:** #30 SUCCESS (NetworkModule.kt fix - switched to OkHttp engine)
+**Next:** Start Phase 0 - Implement Ticket 01 (Domain Models)
