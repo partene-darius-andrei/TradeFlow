@@ -1,4 +1,4 @@
-package com.dpart.tradeflow.di
+package com.tradeflow.exchange.coinbase.di
 
 import dagger.Module
 import dagger.Provides

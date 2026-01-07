@@ -1,8 +1,8 @@
-package com.dpart.tradeflow.di
+package com.tradeflow.core.data.di
 
 import android.content.Context
 import androidx.room.Room
-import com.dpart.tradeflow.data.local.AppDatabase
+import com.tradeflow.core.data.local.database.AppDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
