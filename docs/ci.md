@@ -1,7 +1,7 @@
 # GitHub Actions CI/CD
 
 **Status:** ✅ Active
-**Last Build:** #30 (SUCCESS)
+**Last Build:** #30 (FAILURE - Kotlin compatibility)
 **Workflow File:** `.github/workflows/build.yml` + `.github/workflows/update-docs.yml`
 
 ## Quick Reference
@@ -164,6 +164,51 @@ cat build-log.txt
 # Make fixes, repeat from step 1
 ```
 
+## Current Build Issues
+
+### Build #30 - Kotlin Compatibility Failure
+
+**Status:** FAILURE
+**Root Cause:** Kotlin metadata version mismatch
+
+**Error Details:**
+```
+> Task :core:ui:compileDebugKotlin FAILED
+
+e: Module was compiled with an incompatible version of Kotlin. 
+   The binary version of its metadata is 2.3.0, expected version is 2.1.0.
+
+Affected libraries:
+- compose-2.4.0-api.jar
+- core-2.4.0-api.jar  
+- compose-m3-2.4.0-api.jar
+```
+
+**Problem:** 
+- Project using Kotlin 2.1.0
+- Compose BOM 2025.12.01 libraries compiled with Kotlin 2.3.0
+- Binary metadata incompatible
+
+**Solutions:**
+
+**Option 1: Update Kotlin (Recommended)**
+```kotlin
+// build.gradle.kts (Project level)
+plugins {
+    kotlin("android") version "2.3.0"  // Update from 2.1.0
+    kotlin("plugin.compose") version "2.3.0"
+}
+```
+
+**Option 2: Downgrade Compose BOM**
+```kotlin
+// gradle/libs.versions.toml
+[versions]
+composeBom = "2024.09.00"  # Compatible with Kotlin 2.1.0
+```
+
+**Impact:** UI theme system implemented but can't compile until resolved.
+
 ### Benefits
 
 ✅ **Remote development** - Claude Code Mobile can develop from anywhere
@@ -198,149 +243,36 @@ cat build-log.txt
 
 **Recommendation:** Use Mobile for quick fixes after detailed tickets are written. Use Desktop for complex work requiring API docs or deep context.
 
-## Triggers
-
-```yaml
-# Build workflow
-on:
-  push:
-    branches: [ "claude/*", "main" ]
-  workflow_dispatch:  # Manual trigger via GitHub UI
-
-# Documentation workflow
-on:
-  push:
-    branches: [ "claude/*" ]
-  pull_request:
-    branches: [ "main" ]
-```
-
-**Build runs on:**
-- Every push to `main`
-- Every push to `claude/*` pattern branches
-- Manual dispatch from GitHub Actions tab
-
-**Documentation runs on:**
-- Every push to `claude/*` pattern branches
-- Every pull request to `main`
-
-## Build Flow
-
-```
-┌─────────────────────┐
-│ Push to branch      │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Checkout code       │
-│ Setup Java 17       │
-│ Setup Gradle        │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Build debug APK     │
-│ (continue-on-error) │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Upload to Firebase  │
-│ App Distribution    │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Commit build status │
-│ (.build-status file)│
-│ Push back to branch │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Auto-update docs    │
-│ (via Claude API)    │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Commit doc updates  │
-│ Push back [skip ci] │
-└─────────────────────┘
-```
-
-## Auto-Documentation Workflow
-
-**File:** `.github/workflows/update-docs.yml`
-
-### How It Works
-
-1. **Triggered on push** to `claude/*` branches or PR to `main`
-2. **Analyzes changes** - Gets git diff (up to 8000 lines)
-3. **Reads current docs** - CLAUDE.md and all files in docs/
-4. **Calls Claude API** - Analyzes changes and updates relevant documentation
-5. **Commits back** - Updates files and pushes with `[skip ci]` to avoid infinite loops
-
-### What Gets Updated
-
-- **CLAUDE.md** - Current project state, tech stack, dependencies
-- **docs/ci.md** - This file (workflow changes)
-- **docs/reference.md** - Implementation guide updates
-- **Any docs/*.md file** - Based on code changes
-
-### Configuration
-
-**Required Secret:** `ANTHROPIC_API_KEY` in GitHub repo settings
-
-**Model:** `claude-3-5-sonnet-20241022`
-
-**Commit Format:**
-```
-Update documentation based on code changes [skip ci]
-
-Automated update by update-docs workflow.
-
-Co-Authored-By: Claude Sonnet 3.5 <noreply@anthropic.com>
-```
-
-### Benefits
-
-✅ **Never out of sync** - Documentation updates with every code change
-✅ **Zero manual work** - Claude reads the diff and updates docs automatically
-✅ **Works with Mobile** - No local setup needed for doc maintenance
-✅ **Preserves context** - Maintains existing structure and formatting
-
-## Security
-
-**Secrets used:**
-- `ANTHROPIC_API_KEY` - For documentation updates
-- Firebase service account (automatic via Firebase CLI)
-
-**Branch protection:**
-- No secrets exposed to public
-- Only runs on authenticated pushes
-- `[skip ci]` prevents infinite loops
-
 ## Troubleshooting
 
-### Build Failures
+### Common Build Failures
 
-1. Check `.build-status` file after `git pull`
-2. Read `build-log.txt` for specific errors
-3. Common issues:
-   - Gradle sync problems
-   - Missing dependencies
-   - Kotlin compilation errors
-   - Resource conflicts
+**1. Kotlin Compatibility (Current Issue)**
+- **Symptom:** "Module was compiled with an incompatible version of Kotlin"
+- **Fix:** Update Kotlin version or downgrade dependencies
+- **Prevention:** Keep Kotlin and library versions aligned
 
-### Documentation Not Updating
+**2. Dependency Conflicts**
+- **Symptom:** "Duplicate class" or "Resolution failed"
+- **Fix:** Check gradle/libs.versions.toml for version mismatches
+- **Prevention:** Use BOM dependencies for version alignment
 
-1. Check if `ANTHROPIC_API_KEY` secret is set
-2. Verify branch matches `claude/*` pattern
-3. Look for workflow errors in GitHub Actions tab
-4. Check if changes actually affect documented areas
+**3. Memory Issues**
+- **Symptom:** "OutOfMemoryError" during build
+- **Fix:** Increase Gradle memory in gradle.properties
+- **Prevention:** Monitor build performance, clean regularly
 
-### Firebase Distribution Issues
+### Recovery Steps
 
-1. Ensure Firebase project is configured
-2. Check `google-services.json` is present
-3. Verify Firebase CLI authentication
-4. Check Firebase App Distribution limits
+**If build continues to fail:**
+1. Check build-log.txt for specific errors
+2. Verify all dependencies are compatible
+3. Clean and rebuild: `./gradlew clean assembleDebug`
+4. Update documentation to reflect current status
+5. Create issue for persistent problems
 
-**Build History:** All builds logged in GitHub Actions with artifacts and Firebase distribution links.
-
+**Emergency rollback:**
+1. Revert to last known good commit
+2. Update .build-status to SUCCESS
+3. Commit with message explaining rollback
+4. Investigate issue separately
