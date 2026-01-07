@@ -1,8 +1,8 @@
 # GitHub Actions CI/CD
 
 **Status:** ✅ Active
-**Last Build:** #27 (Failed)
-**Workflow File:** `.github/workflows/build.yml`
+**Last Build:** #30 (SUCCESS)
+**Workflow File:** `.github/workflows/build.yml` + `.github/workflows/update-docs.yml`
 
 ## Quick Reference
 
@@ -28,6 +28,12 @@ gh run download <run-id> -n debug-apk
 2. ✅ Uploads to Firebase App Distribution (partene.darius@gmail.com)
 3. ✅ Commits build status back to branch
 4. ✅ Uploads APK artifact (7-day retention)
+
+**Auto-documentation pipeline** that updates docs when code changes:
+
+1. ✅ Analyzes git diff on push
+2. ✅ Calls Claude API to update documentation
+3. ✅ Commits updated CLAUDE.md and docs/ back to branch
 
 ## Claude Code Integration
 
@@ -55,25 +61,28 @@ gh run download <run-id> -n debug-apk
 │ GitHub Actions      │
 │                     │
 │ 4. Builds APK       │
-│ 5. Commits result:  │
+│ 5. Updates docs     │
+│ 6. Commits result:  │
 │    - .build-status  │
 │    - build-log.txt  │
+│    - CLAUDE.md      │
+│    - docs/*.md      │
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
 │ Claude Code         │
 │                     │
-│ 6. git pull         │
-│ 7. cat .build-      │
+│ 7. git pull         │
+│ 8. cat .build-      │
 │    status           │
-│ 8. Fix if needed    │
+│ 9. Fix if needed    │
 └─────────────────────┘
 ```
 
 ### Key Features for Claude Integration
 
-**1. Commit-back pattern** (steps 44-63 in workflow):
+**1. Commit-back pattern** (steps 44-63 in build workflow):
 ```yaml
 - name: Commit build result
   if: always()  # Run even on failure
@@ -104,6 +113,18 @@ Claude implements → Push → Actions build → Firebase distribution → Test 
 
 No local Gradle execution needed. Claude Code Mobile can make changes remotely and immediately test on device.
 
+**4. Auto-documentation update:**
+```yaml
+- name: Update documentation
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  run: |
+    # Get git diff and all documentation files
+    # Call Claude API to analyze changes
+    # Update CLAUDE.md and docs/ files
+    # Commit back with [skip ci]
+```
+
 ### Claude Code Usage
 
 **After pushing changes:**
@@ -118,6 +139,10 @@ cat .build-status
 # If failed, read error details
 cat build-log.txt
 # Output: Last 200 lines of build output
+
+# Documentation is automatically updated
+git log --oneline -5
+# Shows: "Update documentation based on code changes [skip ci]"
 ```
 
 **Fix-iterate loop:**
@@ -128,7 +153,7 @@ git push
 # 2. Wait for Actions (check GitHub UI or use gh CLI)
 gh run watch
 
-# 3. Pull result
+# 3. Pull result (build status + doc updates)
 git pull
 
 # 4. Check status
@@ -146,6 +171,7 @@ cat build-log.txt
 ✅ **Automated testing** - APK delivered to phone via Firebase
 ✅ **Build verification** - Claude verifies changes compile before user tests
 ✅ **Fast iteration** - Push → build → test in 3-5 minutes
+✅ **Always-current docs** - Documentation updates automatically with code changes
 
 ### Limitations
 
@@ -175,16 +201,28 @@ cat build-log.txt
 ## Triggers
 
 ```yaml
+# Build workflow
 on:
   push:
     branches: [ "claude/*", "main" ]
   workflow_dispatch:  # Manual trigger via GitHub UI
+
+# Documentation workflow
+on:
+  push:
+    branches: [ "claude/*" ]
+  pull_request:
+    branches: [ "main" ]
 ```
 
-**Runs on:**
+**Build runs on:**
 - Every push to `main`
 - Every push to `claude/*` pattern branches
 - Manual dispatch from GitHub Actions tab
+
+**Documentation runs on:**
+- Every push to `claude/*` pattern branches
+- Every pull request to `main`
 
 ## Build Flow
 
@@ -200,376 +238,109 @@ on:
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
-│ Create Firebase     │
-│ service account     │
-│ (from secret)       │
+│ Build debug APK     │
+│ (continue-on-error) │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
-│ ./gradlew           │
-│ assembleDebug       │
-│ (continue on error) │
-└──────────┬──────────┘
-           │
-      ┌────┴────┐
-      │         │
-   SUCCESS   FAILURE
-      │         │
-┌─────▼─────┐   │
-│ Upload to │   │
-│ Firebase  │   │
-│ App Dist  │   │
-└─────┬─────┘   │
-      │         │
-      └────┬────┘
-           │
-┌──────────▼──────────┐
-│ Cleanup credentials │
-│ (always runs)       │
+│ Upload to Firebase  │
+│ App Distribution    │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
 │ Commit build status │
-│ - SUCCESS → write   │
-│   .build-status     │
-│ - FAILURE → write   │
-│   .build-status +   │
-│   build-log.txt     │
+│ (.build-status file)│
+│ Push back to branch │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
-│ Upload APK artifact │
-│ (success only)      │
+│ Auto-update docs    │
+│ (via Claude API)    │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
-│ Fail workflow if    │
-│ build failed        │
+│ Commit doc updates  │
+│ Push back [skip ci] │
 └─────────────────────┘
 ```
 
-## Required Secrets
+## Auto-Documentation Workflow
 
-Configure in GitHub repo settings → Secrets and variables → Actions:
+**File:** `.github/workflows/update-docs.yml`
 
-| Secret Name | Description | Format |
-|------------|-------------|--------|
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase service account credentials | JSON file content |
+### How It Works
 
-**Firebase service account setup:**
-1. Firebase Console → Project Settings → Service Accounts
-2. Generate new private key
-3. Copy entire JSON content to GitHub secret
+1. **Triggered on push** to `claude/*` branches or PR to `main`
+2. **Analyzes changes** - Gets git diff (up to 8000 lines)
+3. **Reads current docs** - CLAUDE.md and all files in docs/
+4. **Calls Claude API** - Analyzes changes and updates relevant documentation
+5. **Commits back** - Updates files and pushes with `[skip ci]` to avoid infinite loops
 
-## Build Artifacts
+### What Gets Updated
 
-### 1. APK Artifact (GitHub Actions)
-- **Name:** `debug-apk`
-- **Path:** `app/build/outputs/apk/debug/*.apk`
-- **Retention:** 7 days
-- **Access:** GitHub Actions → Workflow run → Artifacts
+- **CLAUDE.md** - Current project state, tech stack, dependencies
+- **docs/ci.md** - This file (workflow changes)
+- **docs/reference.md** - Implementation guide updates
+- **Any docs/*.md file** - Based on code changes
 
-### 2. Firebase App Distribution
-- **Email:** partene.darius@gmail.com
-- **Triggered:** Only on successful builds
-- **Command:** `./gradlew appDistributionUploadDebug`
+### Configuration
 
-### 3. Build Status Files (Committed to Branch)
+**Required Secret:** `ANTHROPIC_API_KEY` in GitHub repo settings
 
-**`.build-status`** - Always created:
+**Model:** `claude-3-5-sonnet-20241022`
+
+**Commit Format:**
 ```
-SUCCESS
-```
-or
-```
-FAILURE
+Update documentation based on code changes [skip ci]
+
+Automated update by update-docs workflow.
+
+Co-Authored-By: Claude Sonnet 3.5 <noreply@anthropic.com>
 ```
 
-**`build-log.txt`** - Only on failure:
-```
-[Last 200 lines of build output]
-```
+### Benefits
 
-**Commit message pattern:**
-```
-Build #27: success
-Build #28: failure
-```
+✅ **Never out of sync** - Documentation updates with every code change
+✅ **Zero manual work** - Claude reads the diff and updates docs automatically
+✅ **Works with Mobile** - No local setup needed for doc maintenance
+✅ **Preserves context** - Maintains existing structure and formatting
 
-## Build Environment
+## Security
 
-```yaml
-runs-on: ubuntu-latest
+**Secrets used:**
+- `ANTHROPIC_API_KEY` - For documentation updates
+- Firebase service account (automatic via Firebase CLI)
 
-Java:
-  distribution: temurin
-  version: 17
-
-Gradle:
-  uses: gradle/actions/setup-gradle@v4
-  # Automatic caching enabled
-```
-
-## Key Features
-
-### ✅ Continue on Error
-```yaml
-- name: Build debug APK
-  run: ./gradlew assembleDebug
-  continue-on-error: true  # Don't stop workflow on build failure
-```
-
-**Why:** Allows workflow to commit build status even when build fails.
-
-### ✅ Conditional Steps
-```yaml
-- name: Upload to Firebase App Distribution
-  if: steps.build.outcome == 'success'
-  run: ./gradlew appDistributionUploadDebug
-```
-
-**Conditions used:**
-- `if: steps.build.outcome == 'success'` - Only on successful build
-- `if: always()` - Always run (cleanup, status commit)
-- `if: steps.build.outcome != 'success'` - Final failure step
-
-### ✅ Credential Security
-```yaml
-- name: Create Firebase service account
-  run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > app/tradeflow.json
-
-- name: Cleanup credentials
-  if: always()
-  run: rm -f app/tradeflow.json
-```
-
-**Security:**
-- Service account created at runtime
-- Deleted after build (success or failure)
-- Never committed to repository
-
-### ✅ Build Status Tracking
-```yaml
-- name: Commit build result
-  if: always()
-  run: |
-    git config user.name "GitHub Actions"
-    git config user.email "actions@github.com"
-
-    if [ "${{ steps.build.outcome }}" = "success" ]; then
-      echo "SUCCESS" > .build-status
-      rm -f build-log.txt  # Clean up old failure logs
-    else
-      echo "FAILURE" > .build-status
-      ./gradlew assembleDebug 2>&1 | tail -200 > build-log.txt
-    fi
-
-    git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outcome }}"
-```
-
-**Benefits:**
-- Build status visible in repository
-- Failure logs committed for debugging
-- Build number tracking via `${{ github.run_number }}`
-
-## Current Issues
-
-### Build #27 Failed
-**Status:** ❌ Failure
-**Likely cause:** Dependency/configuration issues (check `build-log.txt` if exists)
-
-**Debug steps:**
-```bash
-# Check build status file
-cat .build-status
-
-# Check failure log (if exists)
-cat build-log.txt
-
-# Reproduce locally
-./gradlew assembleDebug --stacktrace
-
-# Check GitHub Actions logs
-gh run view --log
-```
-
-## Local Development
-
-**Test build before pushing:**
-```bash
-# Clean build
-./gradlew clean assembleDebug
-
-# Verify APK created
-ls -lh app/build/outputs/apk/debug/
-
-# Test Firebase upload (requires google-services.json)
-./gradlew appDistributionUploadDebug
-```
-
-## Firebase App Distribution Configuration
-
-**Location:** `app/build.gradle.kts`
-
-```kotlin
-firebaseAppDistribution {
-    serviceCredentialsFile = "app/tradeflow.json"
-    releaseNotes = "Automated build from CI/CD"
-    groups = "testers"  // Or specific tester emails
-}
-```
-
-**Note:** `app/tradeflow.json` is created by CI from secrets, not in repository.
-
-## Permissions
-
-```yaml
-permissions:
-  contents: write  # Required to commit build status
-```
-
-**Why write access:**
-- Commit `.build-status` file
-- Commit `build-log.txt` on failure
-- Push changes back to branch
-
-## Workflow Improvements (Future)
-
-**Potential enhancements:**
-
-1. **Release builds:**
-```yaml
-- name: Build release APK
-  if: github.ref == 'refs/heads/main'
-  run: ./gradlew assembleRelease
-```
-
-2. **Test execution:**
-```yaml
-- name: Run unit tests
-  run: ./gradlew testDebugUnitTest
-
-- name: Upload test results
-  uses: actions/upload-artifact@v4
-  with:
-    name: test-results
-    path: app/build/test-results/
-```
-
-3. **Code quality checks:**
-```yaml
-- name: Run Detekt
-  run: ./gradlew detekt
-  continue-on-error: true
-```
-
-4. **Slack/Discord notifications:**
-```yaml
-- name: Notify on failure
-  if: steps.build.outcome != 'success'
-  uses: slackapi/slack-github-action@v1
-```
-
-5. **Versioning:**
-```yaml
-- name: Tag release
-  if: github.ref == 'refs/heads/main' && steps.build.outcome == 'success'
-  run: |
-    git tag "v1.0.${{ github.run_number }}"
-    git push origin "v1.0.${{ github.run_number }}"
-```
+**Branch protection:**
+- No secrets exposed to public
+- Only runs on authenticated pushes
+- `[skip ci]` prevents infinite loops
 
 ## Troubleshooting
 
-### Build fails in CI but works locally
+### Build Failures
 
-**Check:**
-1. Java version mismatch (CI uses Java 17)
-2. Missing `google-services.json` (should be in repo)
-3. Gradle wrapper version
-4. Environment-specific configurations
+1. Check `.build-status` file after `git pull`
+2. Read `build-log.txt` for specific errors
+3. Common issues:
+   - Gradle sync problems
+   - Missing dependencies
+   - Kotlin compilation errors
+   - Resource conflicts
 
-**Fix:**
-```bash
-# Test with Java 17 locally
-java -version
+### Documentation Not Updating
 
-# Run with same Gradle version
-./gradlew --version
-```
+1. Check if `ANTHROPIC_API_KEY` secret is set
+2. Verify branch matches `claude/*` pattern
+3. Look for workflow errors in GitHub Actions tab
+4. Check if changes actually affect documented areas
 
-### Firebase upload fails
+### Firebase Distribution Issues
 
-**Check:**
-1. `FIREBASE_SERVICE_ACCOUNT_JSON` secret configured
-2. Firebase project permissions for service account
-3. `google-services.json` in `app/` directory
-4. `firebaseAppDistribution` block in `app/build.gradle.kts`
+1. Ensure Firebase project is configured
+2. Check `google-services.json` is present
+3. Verify Firebase CLI authentication
+4. Check Firebase App Distribution limits
 
-### Build status not committed
+**Build History:** All builds logged in GitHub Actions with artifacts and Firebase distribution links.
 
-**Check:**
-1. `contents: write` permission in workflow
-2. Branch protection rules (may prevent force push)
-3. Workflow logs for git errors
-
-## Cost & Limits
-
-**GitHub Actions (Free tier):**
-- 2,000 minutes/month for private repos
-- Unlimited for public repos
-
-**Current usage per build:**
-- ~3-5 minutes per run
-- ~400-666 builds/month on free tier
-
-**Firebase App Distribution:**
-- Free tier: Unlimited testers
-- No build quota limits
-
-## Manual Workflow Dispatch
-
-**Via GitHub UI:**
-1. GitHub repo → Actions tab
-2. Select "Build Android" workflow
-3. Click "Run workflow"
-4. Select branch
-5. Click "Run workflow" button
-
-**Via GitHub CLI:**
-```bash
-gh workflow run build.yml --ref main
-gh workflow run build.yml --ref claude/new-feature
-```
-
-## Related Files
-
-```
-.github/workflows/build.yml    # This workflow
-app/google-services.json       # Firebase config (in repo)
-app/tradeflow.json            # Service account (CI-generated, not in repo)
-.build-status                 # Build result (auto-generated)
-build-log.txt                 # Failure log (auto-generated on failure)
-app/build.gradle.kts          # Firebase App Distribution config
-```
-
-## Critical Rules
-
-1. **Never commit `app/tradeflow.json`** - Service account credentials
-2. **Check `.build-status` before merging** - Ensure builds pass
-3. **Review `build-log.txt` on failures** - Debugging info
-4. **Test locally before pushing** - Save CI minutes
-5. **Don't disable `continue-on-error`** - Breaks status tracking
-
-## Quick Status Check
-
-```bash
-# Check current build status
-cat .build-status
-
-# View last 5 build commits
-git log --oneline --grep="Build #" -5
-
-# Count recent failures
-git log --oneline --grep="Build #.*failure" --since="1 week ago" | wc -l
-```
