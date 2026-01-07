@@ -97,13 +97,13 @@ jobs:
         PROMPT="Analyze the following code changes and update the documentation files accordingly.
 
 ## Changed Files
-${CHANGED_FILES}
+$CHANGED_FILES
 
 ## Git Diff
-${DIFF}
+$DIFF
 
 ## Current Documentation Files
-${DOC_CONTEXT}
+$DOC_CONTEXT
 
 ## Task
 Based on the code changes, update the relevant documentation files:
