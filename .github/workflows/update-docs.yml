@@ -1,9 +1,6 @@
 name: Update Documentation
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: ["main"]
   push:
     branches: ["claude/*"]
 
@@ -20,15 +17,23 @@ jobs:
       with:
         fetch-depth: 0  # Full history for diff
 
+    - name: Check if last commit was by bot
+      id: bot_check
+      run: |
+        LAST_AUTHOR=$(git log -1 --format='%an')
+        if [ "$LAST_AUTHOR" = "GitHub Actions" ]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "Last commit was by bot, skipping to prevent loop"
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Get changed files
+      if: steps.bot_check.outputs.skip == 'false'
       id: changes
       run: |
-        # Get base branch
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          BASE="${{ github.event.pull_request.base.sha }}"
-        else
-          BASE="origin/main"
-        fi
+        # Compare against main branch
+        BASE="origin/main"
 
         # Get changed files (exclude docs to avoid loops)
         CHANGED=$(git diff --name-only $BASE HEAD | grep -v '^CLAUDE\.md' | grep -v '^docs/' || true)
@@ -43,30 +48,26 @@ jobs:
         fi
 
     - name: Get diff for analysis
-      if: steps.changes.outputs.has_code_changes == 'true'
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       id: diff
       run: |
-        # Get base branch
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          BASE="${{ github.event.pull_request.base.sha }}"
-        else
-          BASE="origin/main"
-        fi
+        BASE="origin/main"
 
         # Get file list
-        FILES=$(git diff --name-only $BASE HEAD | grep -v '^CLAUDE\.md' | grep -v '^docs/')
+        FILES=$(git diff --name-only $BASE HEAD | grep -v '^CLAUDE\.md' | grep -v '^docs/' || true)
 
         # Get diff (limit to 8000 lines to avoid API limits)
         DIFF=$(git diff $BASE HEAD -- . ':!CLAUDE.md' ':!docs/' | head -n 8000)
 
-        # Save to file for API call
+        # Save to files for API call
+        echo "$FILES" > /tmp/files.txt
         echo "$DIFF" > /tmp/changes.diff
 
-        # Save file list
-        echo "$FILES" > /tmp/files.txt
+        echo "Captured $(echo "$FILES" | wc -l) changed files"
+        echo "Captured $(echo "$DIFF" | wc -l) lines of diff"
 
     - name: Read current documentation
-      if: steps.changes.outputs.has_code_changes == 'true'
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       id: read_docs
       run: |
         # Find all markdown files in docs/ and CLAUDE.md
@@ -77,7 +78,7 @@ jobs:
         cat /tmp/doc_files.txt
 
     - name: Update documentation with Claude
-      if: steps.changes.outputs.has_code_changes == 'true'
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       run: |
@@ -85,31 +86,32 @@ jobs:
         CHANGED_FILES=$(cat /tmp/files.txt)
         DIFF=$(cat /tmp/changes.diff)
 
-        # Build documentation context
+        # Build documentation context (limit size)
         DOC_CONTEXT=""
         while IFS= read -r doc_file; do
           if [ -f "$doc_file" ]; then
-            DOC_CONTEXT="${DOC_CONTEXT}\n\n=== ${doc_file} ===\n$(cat "$doc_file")"
+            DOC_CONTEXT="${DOC_CONTEXT}\n\n=== ${doc_file} ===\n$(head -n 200 "$doc_file")"
           fi
         done < /tmp/doc_files.txt
 
-        # Build prompt for Claude
-        PROMPT="Analyze the following code changes and update the documentation files accordingly.
+        # Build prompt (save to file to avoid escaping issues)
+        cat > /tmp/prompt.txt << 'PROMPT_EOF'
+Analyze the following code changes and update the documentation files accordingly.
 
 ## Changed Files
-$CHANGED_FILES
+CHANGED_FILES_PLACEHOLDER
 
 ## Git Diff
-$DIFF
+DIFF_PLACEHOLDER
 
-## Current Documentation Files
-$DOC_CONTEXT
+## Current Documentation Files (first 200 lines of each)
+DOC_CONTEXT_PLACEHOLDER
 
 ## Task
 Based on the code changes, update the relevant documentation files:
 - CLAUDE.md: Update 'Current Project State', 'Tech Stack', 'Dependencies' if anything changed
-- docs/github_actions.md: Update if workflow, CI/CD, or build process changed
-- docs/plan.md: Update roadmap status if features were implemented
+- docs/ci.md: Update if workflow, CI/CD, or build process changed
+- docs/roadmap.md: Update roadmap status if features were implemented
 - Any other docs/* files that need updates
 
 For each file that needs updating:
@@ -122,7 +124,7 @@ Example format:
 [complete updated content]
 ### END FILE
 
-### FILE: docs/plan.md
+### FILE: docs/roadmap.md
 [complete updated content]
 ### END FILE
 
@@ -131,33 +133,59 @@ IMPORTANT:
 - Preserve all existing content not related to the changes
 - Update version numbers, status markers (✅/❌/⚠️), dependency lists accurately
 - Keep the same markdown formatting and structure
-- Don't mention files that don't need changes"
+- Don't mention files that don't need changes
+PROMPT_EOF
 
-        # Call Claude API
+        # Replace placeholders with actual content
+        sed -i "s|CHANGED_FILES_PLACEHOLDER|$CHANGED_FILES|g" /tmp/prompt.txt
+        sed -i "s|DIFF_PLACEHOLDER|$DIFF|g" /tmp/prompt.txt
+        sed -i "s|DOC_CONTEXT_PLACEHOLDER|$DOC_CONTEXT|g" /tmp/prompt.txt
+
+        # Read final prompt
+        FINAL_PROMPT=$(cat /tmp/prompt.txt)
+
+        # Call Claude API with properly escaped JSON
         RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
           -H "content-type: application/json" \
           -H "x-api-key: $ANTHROPIC_API_KEY" \
           -H "anthropic-version: 2023-06-01" \
-          -d "{
-            \"model\": \"claude-sonnet-4-20250514\",
-            \"max_tokens\": 8192,
-            \"messages\": [{
-              \"role\": \"user\",
-              \"content\": $(echo "$PROMPT" | jq -Rs .)
-            }]
-          }")
+          -d @- << JSON_EOF
+{
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 16384,
+  "messages": [{
+    "role": "user",
+    "content": $(echo "$FINAL_PROMPT" | jq -Rs .)
+  }]
+}
+JSON_EOF
+)
 
         # Save response
         echo "$RESPONSE" > /tmp/claude_response.json
 
-        # Extract content
-        CONTENT=$(cat /tmp/claude_response.json | jq -r '.content[0].text')
-        echo "$CONTENT" > /tmp/claude_output.txt
+        # Check for API errors
+        if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+          echo "❌ Claude API error:"
+          echo "$RESPONSE" | jq '.error'
+          exit 1
+        fi
 
-        echo "Claude analysis complete"
+        # Extract content
+        CONTENT=$(cat /tmp/claude_response.json | jq -r '.content[0].text // empty')
+
+        if [ -z "$CONTENT" ]; then
+          echo "❌ No content received from Claude API"
+          echo "Response:"
+          cat /tmp/claude_response.json
+          exit 1
+        fi
+
+        echo "$CONTENT" > /tmp/claude_output.txt
+        echo "✅ Claude analysis complete ($(echo "$CONTENT" | wc -l) lines)"
 
     - name: Apply documentation updates
-      if: steps.changes.outputs.has_code_changes == 'true'
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       run: |
         # Parse Claude's output and update files
         OUTPUT=$(cat /tmp/claude_output.txt)
@@ -175,6 +203,12 @@ IMPORTANT:
           }
           /^### END FILE/ {
             if (filename != "") {
+              # Create directory if needed
+              dir = filename
+              sub(/\/[^\/]*$/, "", dir)
+              system("mkdir -p " dir)
+
+              # Write file
               print content > filename
               close(filename)
               print "Updated: " filename
@@ -185,35 +219,39 @@ IMPORTANT:
             next
           }
           in_file {
-            content = content $0 "\n"
+            if (content != "") {
+              content = content "\n" $0
+            } else {
+              content = $0
+            }
           }
         '
 
-        echo "Documentation updates applied"
+        echo "✅ Documentation updates applied"
 
     - name: Commit documentation updates
-      if: steps.changes.outputs.has_code_changes == 'true'
+      if: steps.bot_check.outputs.skip == 'false' && steps.changes.outputs.has_code_changes == 'true'
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
 
         # Check if any docs were actually modified
-        if git diff --quiet CLAUDE.md docs/; then
+        if git diff --quiet CLAUDE.md docs/ 2>/dev/null; then
           echo "No documentation changes needed"
           exit 0
         fi
 
         # Stage all doc changes
-        git add CLAUDE.md docs/
+        git add CLAUDE.md docs/ 2>/dev/null || true
 
-        # Commit
-        git commit -m "Update documentation based on code changes
+        # Commit with [skip ci] to prevent triggering this workflow again
+        git commit -m "Update documentation based on code changes [skip ci]
 
 Automated update by update-docs workflow.
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || true
 
         # Push back to branch
-        git push origin HEAD:${{ github.head_ref || github.ref_name }}
+        git push origin HEAD
 
         echo "✅ Documentation updated and committed"
