@@ -114,9 +114,21 @@ All tasks, features, and bugs are tracked in Notion as a Kanban board. Claude Co
 - Initial feature planning
 - Anything requiring deep codebase exploration
 
-**The Feedback Loop (Commit-Back Pattern):**
+**Build Before Push (Desktop Only):**
 
-GitHub Actions commits build results back to the branch, allowing Claude Code to verify changes:
+When working from Desktop/local environment with Gradle available:
+```
+1. Claude → implements feature
+2. Claude → runs local build (`./gradlew assembleDebug`)
+3. If build passes → push to branch
+4. If build fails → fix errors and retry
+```
+
+This catches compilation errors immediately without waiting for CI/CD.
+
+**The Feedback Loop (Commit-Back Pattern - Mobile Fallback):**
+
+When working from Mobile (no local build capability), rely on GitHub Actions:
 
 ```
 1. Claude → implements feature
