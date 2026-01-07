@@ -321,7 +321,7 @@ tickets/
 ### Most Important Files
 1. **[docs/roadmap.md](docs/roadmap.md)** - Phase-by-phase implementation plan
 2. **[docs/reference.md](docs/reference.md)** - Complete implementation guide with code examples  
-3. **[docs/tickets/in-review/02-repository-interfaces.md](docs/tickets/in-review/02-repository-interfaces.md)** - Just completed interface definitions
+3. **[docs/tickets/in-review/02-repository-interfaces.md](docs/tickets/done/02-repository-interfaces.md)** - Just completed interface definitions
 
 ### API Integration Reference
 - **[docs/api/coinbase.md](docs/api/coinbase.md)** - Complete Coinbase API guide

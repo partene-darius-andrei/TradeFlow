@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Low
-Status: Done
 Blocked by: Replaced by: ⚙️ FEATURE: Settings Screen (UI Only) + ⚙️ FEATURE: Settings ViewModel (Logic)
 
 ## Objective

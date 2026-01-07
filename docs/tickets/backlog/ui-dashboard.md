@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Medium
-Status: Not started
 
 ## Objective
 

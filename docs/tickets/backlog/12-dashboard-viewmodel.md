@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
 Blocked by: FEATURE: Dashboard Screen (UI Only), EXCHANGE-API: Repository Interfaces
 Module: :feature:dashboard
 

@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
 Blocked by: EXCHANGE-API: Repository Interfaces
 Module: :exchange:coinbase
 

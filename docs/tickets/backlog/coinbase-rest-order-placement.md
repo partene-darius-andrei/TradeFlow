@@ -2,7 +2,6 @@
 
 Effort level: Large
 Priority: High
-Status: Not started
 
 ## Objective
 

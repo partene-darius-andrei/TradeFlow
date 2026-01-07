@@ -2,7 +2,6 @@
 
 Effort level: Small
 Priority: Medium
-Status: Not started
 Blocked by: SERVICE: Trading Foreground Service
 Module: :service:trading
 

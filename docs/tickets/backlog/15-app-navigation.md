@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
 Blocked by: FEATURE: Dashboard ViewModel (Logic), FEATURE: Settings ViewModel (Logic)
 Module: :app
 

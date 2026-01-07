@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Medium
-Status: Done
 Blocked by: Replaced by: 🔋 SERVICE: Battery Optimization & Doze
 
 ## Objective

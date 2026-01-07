@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Low
-Status: Done
 Blocked by: Replaced by: 📊 FEATURE: Dashboard Screen (UI Only) + 📊 FEATURE: Dashboard ViewModel (Logic)
 
 ## Objective
