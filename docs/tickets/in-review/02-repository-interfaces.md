@@ -2,9 +2,11 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
+Status: ✅ COMPLETE
+Completed: 2026-01-07
+PR: #7
 Blocked by: DOMAIN: Core Domain Models
-Module: :exchange:api
+Module: :core:domain (implemented here instead of separate :exchange:api)
 
 ## Objective
 
@@ -144,7 +146,56 @@ exchange/api/src/main/kotlin/com/tradeflow/exchange/api/
 
 ## Acceptance Criteria
 
-- [ ]  All interfaces use domain models (not DTOs)
-- [ ]  All async operations return `Result<T>`
-- [ ]  No Coinbase-specific types leak into interfaces
-- [ ]  WebSocket uses Kotlin Flow for streams
+- [x]  All interfaces use domain models (not DTOs)
+- [x]  All async operations return `Result<T>`
+- [x]  No Coinbase-specific types leak into interfaces
+- [x]  WebSocket uses Kotlin Flow for streams
+
+---
+
+## Post-Implementation Notes
+
+**Completed:** 2026-01-07
+**PR:** https://github.com/partene-darius-andrei/TradeFlow/pull/7
+
+### Implementation Summary
+
+All repository interfaces created successfully in `:core:domain` instead of separate `:exchange:api` module. This follows Clean Architecture principles where domain layer defines contracts.
+
+### Files Created
+
+**Repository Layer (3 files):**
+1. **ExchangeRepository.kt** - 12 methods (accounts, market data, orders)
+2. **BracketOrderRepository.kt** - Extends ExchangeRepository with bracket order support
+3. **ExchangeWebSocket.kt** - Real-time streams + ConnectionState enum
+
+**Auth Layer (2 files):**
+4. **AuthTokenProvider.kt** - Token generation interface (REST + WebSocket)
+5. **CredentialStore.kt** - Secure credential storage interface
+
+**Error Handling (1 file):**
+6. **ExchangeError.kt** - Sealed class with 6 error types
+
+### Key Decisions
+
+**Module Location:**
+- Placed in `:core:domain` instead of new `:exchange:api` module
+- Follows Dependency Inversion Principle (domain defines contracts, infrastructure implements)
+- Keeps architecture simple - no need for separate API module
+- `:exchange:coinbase` will depend on `:core:domain` and implement these interfaces
+
+**Result Type:**
+- All async operations return `Result<T>` (not exceptions)
+- Consistent error handling across all exchange implementations
+- Easy to map to UI states (Success, Error, Loading)
+
+**Flow vs LiveData:**
+- WebSocket uses Kotlin `Flow<T>` (not LiveData)
+- More flexible, works in pure Kotlin modules
+- Better for repository layer (LiveData is UI-focused)
+
+**ConnectionState Enum:**
+- Added to ExchangeWebSocket interface
+- 5 states: DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING, ERROR
+- Helps UI show connection status
+

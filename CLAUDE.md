@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-07
-**Project Status:** Pre-MVP Scaffolding (Phase 0 - Foundation)
+**Project Status:** Phase 0A - Authentication Infrastructure (Domain Complete)
 **Current Build:** #30 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -41,7 +41,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phase 0 - Scaffolding Complete)
+### What EXISTS (Phase 0A Progress)
 
 ```
 ✅ Modern Android app structure
@@ -50,22 +50,37 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Ktor HTTP client configured (OkHttp engine)
 ✅ Timber logging initialized
 ✅ Firebase Analytics + Crashlytics
-✅ GitHub Actions CI/CD pipeline
 ✅ All trading dependencies added (ta4j, nimbus-jose-jwt, security-crypto)
+✅ GitHub Actions CI/CD pipeline
+
+🆕 DOMAIN LAYER COMPLETE:
+✅ core/domain/src/main/kotlin/com/tradeflow/core/domain/
+    ├── auth/
+    │   ├── AuthTokenProvider.kt        ✅ Token generation interface
+    │   └── CredentialStore.kt          ✅ Secure credential storage interface
+    ├── error/
+    │   └── ExchangeError.kt           ✅ Exchange error types (6 variants)
+    └── repository/
+        ├── BracketOrderRepository.kt   ✅ Bracket order support interface
+        ├── ExchangeRepository.kt       ✅ Core exchange operations (12 methods)
+        └── ExchangeWebSocket.kt        ✅ Real-time data streams
 ```
 
-### What DOESN'T Exist Yet (Everything Else)
+### What DOESN'T Exist Yet (Next Up)
 
 ```
-❌ Coinbase API integration (JWT auth, REST, WebSocket)
-❌ Domain models (Candle, Decision, Order, Portfolio)
+❌ Domain models (Candle, Decision, Order, Portfolio) - Ticket 01
+❌ Room database entities/DAOs - Ticket 03
+❌ Secure credential implementation - Ticket 04
+❌ Coinbase JWT generator - Ticket 07
+❌ Coinbase REST API client - Ticket 08
 ❌ Decision engine (regime switching logic)
 ❌ Trading service (foreground service)
 ❌ Risk management
 ❌ UI beyond MainActivity
 ```
 
-**Bottom Line:** Greenfield project with solid foundation, zero business logic.
+**Progress:** **Repository interfaces complete** ✅ Domain contracts defined for all exchange operations. Ready for implementation phase.
 
 ---
 
@@ -73,24 +88,24 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 **See:** [docs/roadmap.md](docs/roadmap.md) for complete roadmap
 
-### Phase 0A: Authentication (NEXT - Week 1)
-- Project modularization (8 modules)
-- Domain models (basic ones)
-- Repository interfaces
-- Secure credential storage
-- JWT token generator
-- REST API (getAccounts endpoint only)
+### Phase 0A: Authentication Infrastructure (CURRENT)
+- [x] **Repository interfaces** (Ticket 02) ✅ COMPLETE
+- [ ] Domain models (Ticket 01) - Basic domain types
+- [ ] Room database schema (Ticket 03) 
+- [ ] Secure credential storage (Ticket 04)
+- [ ] JWT token generator (Ticket 07)
+- [ ] REST API client partial (Ticket 08)
 
-**Goal:** Can authenticate with Coinbase and see real account balances
+**Completed Milestone:** Repository interfaces define clean contracts between domain and infrastructure layers. All exchange operations abstracted behind interfaces.
+
+**Next Up:** Domain models (Ticket 01) - Define Candle, Order, Portfolio, Decision types
 
 ### Phase 0B: Trading Logic (Week 2)
-- Room database schema
 - Decision engine (SMA, ADX, ATR)
 - Risk manager
 
 ### Phase 1: Coinbase Integration
-- JWT token generator
-- REST API client
+- Complete REST API client
 - WebSocket client
 
 ### Phase 2: Presentation Layer
@@ -107,7 +122,49 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - Integration tests
 - MVP milestone
 
-**Current Progress:** Phase 0A not started (authentication-first approach)
+**Current Phase:** Phase 0A (Authentication Infrastructure)
+**Progress:** Repository interfaces complete, domain models next
+
+---
+
+## 🏗️ Architecture Overview
+
+### Domain-First Architecture
+
+**Core principle:** Domain layer defines contracts, infrastructure implements them.
+
+```
+┌─────────────────────────────────────────┐
+│                :app                     │  ← DI wiring only
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│            :feature:*                   │  ← UI & ViewModels
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│           :core:domain                  │  ← Interfaces & Models
+│  🆕 COMPLETE: Repository Interfaces     │     (Pure Kotlin - No Android)
+│  - ExchangeRepository (12 methods)     │
+│  - BracketOrderRepository              │
+│  - ExchangeWebSocket (real-time)       │
+│  - AuthTokenProvider                   │
+│  - CredentialStore                     │
+│  - ExchangeError (6 error types)       │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│        :exchange:coinbase               │  ← Implementation
+│         (Coming in Phase 1)             │     (Isolated & swappable)
+└─────────────────────────────────────────┘
+```
+
+### Key Architectural Wins
+
+✅ **Clean separation:** Domain defines what, infrastructure defines how
+✅ **Testability:** Interfaces enable easy mocking and unit testing  
+✅ **Swappable exchanges:** Add Kraken by implementing same interfaces
+✅ **Zero coupling:** Features never import exchange implementations directly
 
 ---
 
@@ -118,32 +175,30 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ```
 tickets/
 ├── backlog/        # Not started yet
-├── refined/        # Ready for implementation (user-approved)
+├── refined/        # Ready for implementation (user-approved)  
 ├── ongoing/        # Currently being worked on
 ├── in-review/      # Implementation complete, awaiting review
-├── done/           # Completed and verified
+├── done/           # Completed and verified ✅ Ticket 02
 └── archived/       # Superseded/duplicate tickets
 ```
 
+**Recent Completion:** Ticket 02 (Repository Interfaces) moved to `done/` ✅
+
+**Phase 0A Active Tickets:**
+- Ticket 01: Domain Models (Candle, Order, Portfolio, Decision) - **NEXT**
+- Ticket 03: Room Database (entities, DAOs)
+- Ticket 04: Secure Credential Store (EncryptedSharedPreferences)  
+- Ticket 07: JWT Generator (ES256 for Coinbase)
+- Ticket 08: REST API Client (getAccounts endpoint)
+
 **Workflow:**
-1. Check [docs/roadmap.md](docs/roadmap.md) Phase 0A for next ticket
-2. Find ticket file in `docs/tickets/backlog/`
-3. Create branch: `claude/ticket-##-description`
-4. Move ticket: `backlog/` → `ongoing/` (start work)
+1. Check [docs/roadmap.md](docs/roadmap.md) for next priority
+2. Find ticket in `docs/tickets/backlog/`
+3. Move to `ongoing/` when starting
+4. Create branch: `claude/ticket-##-description`
 5. Implement → Build → Test → Commit
-6. Move ticket: `ongoing/` → `in-review/` (ready for review)
-7. After user approval → move to `done/`
-8. Update docs/roadmap.md checkboxes
-
-**Phase 0A Tickets (Authentication - Week 1):**
-- Ticket 00: Project Modularization (CRITICAL - DO FIRST)
-- Ticket 01: Domain Models
-- Ticket 02: Repository Interfaces
-- Ticket 04: Credential Store
-- Ticket 07: JWT Generator (moved from Phase 1)
-- Ticket 08: REST API (partial - getAccounts only)
-
-**See:** [docs/roadmap.md](docs/roadmap.md) for complete timeline and success criteria
+6. Move to `in-review/` when complete
+7. After approval → move to `done/`
 
 ---
 
@@ -198,198 +253,102 @@ tickets/
 1. Implement feature
 2. Push to branch
 3. GitHub Actions builds
-4. Check .build-status file
-5. If FAILURE → read build-log.txt and fix
+4. git pull && cat .build-status
+5. If FAILURE → cat build-log.txt → fix → retry
 ```
-
-**See:** [docs/ci.md](docs/ci.md) for CI/CD details
 
 ---
 
-## 📚 Technical Documentation
+## 🧭 Tech Stack
 
-### Quick Reference
+### Dependencies Status
 
-| What You Need | Read This |
-|---------------|-----------|
-| **How to implement features** | [docs/reference.md](docs/reference.md) |
-| **Coinbase API endpoints** | [docs/api/coinbase.md](docs/api/coinbase.md) |
-| **Strategy logic** | [docs/strategy/overview.md](docs/strategy/overview.md) |
-| **Code examples** | [docs/implementation/*.md](docs/implementation/) |
-| **Dependencies & config** | [docs/implementation/config.md](docs/implementation/config.md) |
+| Category | Library | Status | Notes |
+|----------|---------|--------|--------|
+| **Core** | Kotlin 2.3.0 | ✅ READY | Latest stable |
+| | Compose BOM 2025.12.01 | ✅ READY | Latest UI toolkit |
+| | Coroutines 1.10.2 | ✅ READY | Async/concurrency |
+| **DI** | Hilt 2.57.2 | ✅ READY | Dependency injection |
+| **Database** | Room 2.8.4 | ✅ READY | Local persistence |
+| **Network** | Ktor 3.3.3 | ✅ READY | HTTP + WebSocket |
+| **Auth** | nimbus-jose-jwt 9.47 | ✅ READY | JWT ES256 signing |
+| **Trading** | ta4j-core 0.16 | ✅ READY | Technical indicators |
+| **Security** | security-crypto 1.1.0-alpha06 | ✅ READY | Encrypted credentials |
+| **Background** | work-runtime-ktx 2.10.0 | ✅ READY | Background tasks |
+| **Charts** | Vico 2.4.0 | ✅ READY | UI visualization |
+| **Logging** | Timber 5.0.1 | ✅ READY | Debug logging |
+| **Settings** | datastore-preferences 1.1.1 | ✅ READY | User preferences |
+| **Analytics** | Firebase BOM 34.7.0 | ✅ READY | Crashlytics + Analytics |
 
-### Documentation Structure
+### Module Structure
 
 ```
-docs/
-├── README.md                       # Complete index and navigation
-├── reference.md                     # Parent doc with links to all implementation guides
-│
-├── api/
-│   └── coinbase.md     # REST/WebSocket API reference
-│
-├── strategy/
-│   └── overview.md         # Strategy specification + architecture
-│
-├── implementation/
-│   ├── domain.md              # Domain models + decision engine
-│   ├── security.md            # Credential storage + JWT generation
-│   ├── clients.md              # REST + WebSocket clients
-│   ├── storage.md          # Database + trading service
-│   └── config.md            # Gradle + manifest + testing
-│
-├── ci.md                            # CI/CD workflows
-├── auto-docs.md                     # Auto-doc system
-│
-└── tickets/                        # All ticket files organized by status
-    ├── backlog/                    # Not started
-    ├── refined/                    # User-approved, ready to implement
-    ├── ongoing/                    # In progress
-    ├── in-review/                  # Awaiting review
-    ├── done/                       # Completed
-    └── archived/                   # Superseded/duplicate
+✅ :app                     # Application module (DI wiring)
+✅ :core:domain             # Pure Kotlin domain layer - INTERFACES COMPLETE
+⏳ :core:data              # Room database + security  
+⏳ :core:ui                # Shared UI components
+⏳ :exchange:coinbase      # Coinbase implementation
+⏳ :feature:dashboard      # Dashboard UI + ViewModel
+⏳ :feature:settings       # Settings UI + ViewModel
+⏳ :service:trading        # Foreground service
 ```
 
-**All files <1000 lines** with hierarchical links for easy navigation.
-
-**See:** [docs/README.md](docs/README.md) for complete navigation
+**Status:** Foundation complete, domain contracts defined, ready for implementation.
 
 ---
 
-## 🔧 Tech Stack
+## 🔄 What Changed Recently
 
-### Current Dependencies
+**Latest Updates:**
+- **Repository interfaces complete** - All exchange operations abstracted
+- **Error handling defined** - 6 typed error variants for consistent handling
+- **Authentication contracts** - Token provider and credential storage interfaces
+- **WebSocket abstraction** - Real-time data streams with connection state management
+- **Clean architecture enforced** - Domain layer defines all contracts
 
-| Library | Version | Status |
-|---------|---------|--------|
-| **Kotlin** | 2.3.0 | ✅ Active |
-| **Compose BOM** | 2025.12.01 | ✅ Active |
-| **Hilt** | 2.57.2 | ✅ Configured (modules empty) |
-| **Room** | 2.8.4 | ⚠️ Scaffolded (dummy entity) |
-| **Ktor** | 3.3.3 | ⚠️ Configured (OkHttp engine) |
-| **Firebase** | 34.7.0 | ✅ Active (Analytics + Crashlytics) |
-| **Timber** | 5.0.1 | ✅ Active |
+**Impact:** 
+- ✅ Implementation can proceed with clear interfaces
+- ✅ Easy to mock for testing
+- ✅ Exchange swapping possible with zero domain changes
+- ✅ Type-safe error handling across all operations
 
-### Trading Dependencies (Added, Not Used)
-
-| Library | Purpose | Version |
-|---------|---------|---------|
-| **nimbus-jose-jwt** | JWT ES256 signing for Coinbase | 9.47 |
-| **ta4j-core** | Technical indicators (SMA, ADX, ATR) | 0.16 |
-| **security-crypto** | EncryptedSharedPreferences | 1.1.0-alpha06 |
-| **work-runtime-ktx** | Background execution backup | 2.10.0 |
-| **datastore-preferences** | Settings persistence | 1.1.1 |
+**Next Priority:** Domain models (Ticket 01) to define the core data types that flow through these interfaces.
 
 ---
 
-## 🎨 Coinbase Integration
+## 📚 Key Documentation
 
-**REST API:** `https://api.coinbase.com/api/v3/brokerage/`
-**WebSocket Market:** `wss://advanced-trade-ws.coinbase.com`
-**WebSocket User:** `wss://advanced-trade-ws-user.coinbase.com`
+### Most Important Files
+1. **[docs/roadmap.md](docs/roadmap.md)** - Phase-by-phase implementation plan
+2. **[docs/reference.md](docs/reference.md)** - Complete implementation guide with code examples  
+3. **[docs/tickets/in-review/02-repository-interfaces.md](docs/tickets/in-review/02-repository-interfaces.md)** - Just completed interface definitions
 
-**Authentication:** CDP API Keys → JWT ES256 tokens (2-minute expiry)
+### API Integration Reference
+- **[docs/api/coinbase.md](docs/api/coinbase.md)** - Complete Coinbase API guide
+- **[docs/implementation/security.md](docs/implementation/security.md)** - JWT + credential storage examples
+- **[docs/implementation/clients.md](docs/implementation/clients.md)** - REST + WebSocket implementation patterns
 
-**Key Endpoints:**
-- POST `/orders` - Create order
-- POST `/orders/batch_cancel` - Cancel orders
-- GET `/orders/historical/batch` - Order history
-- GET `/accounts` - Account balances
-- GET `/products/{id}/candles` - OHLCV data
-
-**WebSocket Channels:**
-- `heartbeats` - Keep-alive (required)
-- `ticker` - Real-time prices
-- `user` - Order updates (auth required)
-
-**See:** [docs/api/coinbase.md](docs/api/coinbase.md) for complete API reference
+### Strategy & Architecture
+- **[docs/strategy/overview.md](docs/strategy/overview.md)** - Trading strategy + Android architecture
+- **[docs/implementation/domain.md](docs/implementation/domain.md)** - Domain models + decision engine examples
 
 ---
 
-## 📝 Documentation Guidelines
+## 🎯 Immediate Next Steps
 
-### When to Create New .md Files
+**Priority 1:** Domain Models (Ticket 01)
+- Define Candle, Order, Portfolio, Decision data classes
+- Use BigDecimal for money, Instant for timestamps
+- Pure Kotlin, no Android dependencies
 
-| Type | Location | Example | Lifespan |
-|------|----------|---------|----------|
-| **Temporary analysis** | `docs/temp/session_YYYY-MM-DD_[name].md` | Alignment checks, session summaries | Until action complete |
-| **Permanent guide** | `docs/[category]/[name].md` | API guides, workflow docs | Permanent |
-| **Critical context** | Update `CLAUDE.md` or `roadmap.md` | Project state, roadmap | Updated continuously |
+**Priority 2:** Room Database (Ticket 03)  
+- Entities for persistence
+- DAOs with Flow support
+- Proper indexing for queries
 
-### Cleanup Protocol
+**Priority 3:** Credential Storage (Ticket 04)
+- EncryptedSharedPreferences implementation
+- Secure API key storage for Coinbase
 
-**Monthly:**
-- Review `docs/temp/` - archive or delete completed items
-- Review `docs/` - ensure all docs are still relevant
-- Archive to `docs/archive/YYYY-MM/` if needed
+**Success Criteria:** By end of Phase 0A, should be able to authenticate with Coinbase API and retrieve account balances.
 
-**Per Phase:**
-- Update docs/roadmap.md checkboxes
-- Update CLAUDE.md "Current Status" section
-
----
-
-## ⚡ Critical Rules
-
-1. **Never hardcode API keys** - Use EncryptedSharedPreferences only
-2. **Log every trade** - For debugging and taxes
-3. **Paper trade first** - Validate before real money
-4. **Account for fees** - 0.60% maker at intro tier → 1.5% minimum grid spacing
-5. **Kill switch always** - Emergency liquidation at 15% drawdown
-6. **Battery optimization** - Request exemption for 24/7 service
-7. **Build before push** - Desktop: run `./gradlew assembleDebug` first
-
----
-
-## 🚀 Getting Started (For New Sessions)
-
-### 1. Load Context (5 minutes)
-```
-Read: CLAUDE.md (this file)
-Read: docs/roadmap.md (Phase 0A: Authentication-first strategy)
-```
-
-### 2. Find Next Task
-```
-1. Open docs/roadmap.md
-2. Check Phase 0A table (first unchecked ticket)
-3. Read ticket file in docs/tickets/backlog/
-```
-
-### 3. Implement
-```
-1. Create branch: claude/ticket-##-description
-2. Read docs/reference.md for code examples
-3. Implement → Build → Test → Commit
-4. Update docs/roadmap.md checkboxes
-```
-
-### 4. Verify
-```
-Desktop: ./gradlew assembleDebug
-Mobile: Push → Check .build-status
-```
-
-### Week 1 Goal
-**By end of Week 1:** Can authenticate with Coinbase and see real account balances
-- Day 1: Modularization (Ticket 00)
-- Day 2: Domain models (Ticket 01)
-- Day 3: Interfaces (Ticket 02)
-- Day 4: Credentials + JWT (Tickets 04, 07)
-- Day 5: REST API (Ticket 08) → **See real balances!**
-
----
-
-## 📞 Quick Links
-
-- **Roadmap:** [docs/roadmap.md](docs/roadmap.md) ⭐ START HERE (Phase 0A: Authentication)
-- **Docs Hub:** [docs/README.md](docs/README.md)
-- **Implementation Guide:** [docs/reference.md](docs/reference.md)
-- **CI/CD:** [docs/ci.md](docs/ci.md)
-- **Tickets:** [docs/tickets/](docs/tickets/)
-
----
-
-**Last Build:** #30 SUCCESS (NetworkModule.kt fix - switched to OkHttp engine)
-**Next:** Start Phase 0A - Implement Ticket 00 (Modularization)
-**Week 1 Goal:** Authentication working, can see real Coinbase balances

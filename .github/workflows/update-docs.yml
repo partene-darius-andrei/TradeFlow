@@ -235,11 +235,8 @@ jobs:
         git add CLAUDE.md docs/ 2>/dev/null || true
 
         # Commit with [skip ci] to prevent triggering this workflow again
-        git commit -m "Update documentation based on code changes [skip ci]
-
-Automated update by update-docs workflow.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || true
+        COMMIT_MSG="Update documentation based on code changes [skip ci]"$'\n\n'"Automated update by update-docs workflow."$'\n\n'"Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        git commit -m "$COMMIT_MSG" || true
 
         # Push back to branch
         git push origin HEAD
