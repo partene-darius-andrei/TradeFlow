@@ -14,9 +14,9 @@ android {
 
     defaultConfig {
         applicationId = "com.dpart.tradeflow"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 36
-        versionCode = 2
+        versionCode = 1
         versionName = "1.0.1"
     }
 
@@ -31,14 +31,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
@@ -50,10 +49,7 @@ android {
 
 dependencies {
     // Module dependencies
-    implementation(project(":core:domain")) {
-        // Exclude ta4j - only needed in DecisionEngine implementation, not in app
-        exclude(group = "org.ta4j", module = "ta4j-core")
-    }
+    implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(project(":exchange:coinbase"))
@@ -87,13 +83,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
-
-    // Desugaring for Java 11+ features (needed for ta4j Records)
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 apply(plugin = "com.google.firebase.appdistribution")
-
 configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
     releaseNotesFile = "release-notes.txt"
     testers = "partene.darius@gmail.com"
