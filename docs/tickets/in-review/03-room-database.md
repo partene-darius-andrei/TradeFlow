@@ -2,6 +2,8 @@
 
 Effort level: Medium
 Priority: High
+Completed: 2026-01-07
+PR: #8
 
 ## Objective
 
@@ -122,7 +124,63 @@ interface PortfolioDao {
 
 ## Acceptance Criteria
 
-- [ ]  All entities defined with proper keys
-- [ ]  BigDecimal stored as String
-- [ ]  Flow support for reactive queries
-- [ ]  No exchange-specific fields
+- [x]  All entities defined with proper keys
+- [x]  BigDecimal stored as String
+- [x]  Flow support for reactive queries
+- [x]  No exchange-specific fields
+
+---
+
+## Post-Implementation Notes
+
+**Completed:** 2026-01-07
+**PR:** https://github.com/partene-darius-andrei/TradeFlow/pull/8
+
+### Implementation Summary
+
+Complete Room database created with 4 entities, 4 DAOs, and updated DatabaseModule. All BigDecimal fields stored as String for precision.
+
+### Files Created
+
+**Entities:**
+1. CandleEntity.kt - OHLCV data
+2. OrderEntity.kt - Order lifecycle tracking
+3. PortfolioSnapshotEntity.kt - Portfolio snapshots with regime
+4. DecisionEntity.kt - Flattened decision fields
+
+**DAOs:**
+5. CandleDao.kt - Market data queries
+6. OrderDao.kt - Order management
+7. PortfolioDao.kt - Portfolio tracking
+8. DecisionDao.kt - Decision history
+
+**Database:**
+9. EngineDatabase.kt - Room database with 4 entities
+
+### Key Decisions
+
+**BigDecimal Storage:**
+- Stored as String (not Double) for precision
+- Critical for financial calculations
+
+**Flow Support:**
+- All list queries return Flow<List<T>>
+- Reactive updates without polling
+
+**Grid Level Support:**
+- OrderEntity has optional gridLevel field
+- Enables range/grid trading strategies
+
+**Cleanup Methods:**
+- deleteOldCandles(), deleteOldSnapshots(), deleteOldDecisions()
+- Prevent database bloat
+
+### Build Verification
+
+✅ :core:data:build - SUCCESS
+✅ All Room entities + DAOs compile
+
+### Bonus: Ticket Cleanup
+
+Removed redundant 'Status:' field from ALL 70+ ticket files.
+Folder location now indicates status.
