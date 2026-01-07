@@ -2,7 +2,6 @@
 
 Effort level: Small
 Priority: High
-Status: Refined
 
 ## TradeFlow Architecture Split
 

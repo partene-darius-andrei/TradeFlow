@@ -2,7 +2,6 @@
 
 Effort level: Small
 Priority: High
-Status: Not started
 
 ## Definition of Done
 

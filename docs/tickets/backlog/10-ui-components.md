@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Medium
-Status: Not started
 Blocked by: MODULE: Project Modularization Setup
 Module: :core:ui
 

@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
 Blocked by: DOMAIN: Core Domain Models
 Module: :core:domain
 

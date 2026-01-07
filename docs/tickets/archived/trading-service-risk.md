@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Done
 Blocked by: Replaced by: 🚨 DOMAIN: Risk Manager
 
 ## Objective

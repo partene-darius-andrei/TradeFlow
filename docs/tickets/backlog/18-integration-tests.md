@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: Medium
-Status: Not started
 Blocked by: COINBASE: REST API Client, COINBASE: WebSocket Client
 Module: :exchange:coinbase
 

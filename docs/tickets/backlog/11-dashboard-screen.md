@@ -2,7 +2,6 @@
 
 Effort level: Medium
 Priority: High
-Status: Not started
 Blocked by: CORE-UI: Shared Components & Theme
 Module: :feature:dashboard
 

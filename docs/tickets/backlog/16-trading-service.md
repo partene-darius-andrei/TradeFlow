@@ -2,7 +2,6 @@
 
 Effort level: Large
 Priority: High
-Status: Not started
 Blocked by: DOMAIN: Decision Engine, DOMAIN: Risk Manager, EXCHANGE-API: Repository Interfaces
 Module: :service:trading
 

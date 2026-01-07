@@ -2,7 +2,6 @@
 
 Effort level: Small
 Priority: High
-Status: Done
 Blocked by: Replaced by: 🔐 CORE-DATA: Secure Credential Store
 
 ## Objective

@@ -2,7 +2,6 @@
 
 Effort level: Large
 Priority: High
-Status: Done
 Blocked by: Replaced by: 🟡 COINBASE: WebSocket Client
 
 ## Objective

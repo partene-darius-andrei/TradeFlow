@@ -2,7 +2,6 @@
 
 Effort level: Small
 Priority: Medium
-Status: Not started
 Blocked by: FEATURE: Settings Screen (UI Only), EXCHANGE-API: Repository Interfaces
 Module: :feature:settings
 
