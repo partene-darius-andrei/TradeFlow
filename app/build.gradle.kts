@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
@@ -30,15 +29,19 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
+
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -46,65 +49,47 @@ android {
 }
 
 dependencies {
+    // Module dependencies
+    implementation(project(":core:domain")) {
+        // Exclude ta4j - only needed in DecisionEngine implementation, not in app
+        exclude(group = "org.ta4j", module = "ta4j-core")
+    }
+    implementation(project(":core:data"))
+    implementation(project(":core:ui"))
+    implementation(project(":exchange:coinbase"))
+    implementation(project(":feature:dashboard"))
+    implementation(project(":feature:trading"))
+    implementation(project(":feature:settings"))
+
+    // App-level dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
 
-    // Compose
+    // Compose (minimal for app entry point)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.ui.tooling.preview)
 
-    // Hilt
+    // Navigation (app-level NavHost)
+    implementation(libs.androidx.navigation.compose)
+
+    // Hilt (app-level DI wiring)
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
-
-    // Ktor
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.websockets)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.client.logging)
-
-    // Timber
+    // Timber (app-level logging)
     implementation(libs.timber)
 
-    // Vico Charts
-    implementation(libs.vico.compose)
-    implementation(libs.vico.compose.m3)
-    implementation(libs.vico.core)
-
-    // Coroutines
-    implementation(libs.kotlinx.coroutines.android)
-
-    // JWT (for Coinbase API authentication)
-    implementation(libs.nimbus.jose.jwt)
-
-    // Technical Analysis (for indicators like SMA, ADX, ATR)
-    implementation(libs.ta4j.core)
-
-    // Security (for encrypted credentials storage)
-    implementation(libs.security.crypto)
-
-    // WorkManager (for background tasks)
-    implementation(libs.work.runtime.ktx)
-
-    // DataStore (for settings persistence)
-    implementation(libs.datastore.preferences)
-
-    // Firebase
+    // Firebase (app-level analytics/crashlytics)
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+
+    // Desugaring for Java 11+ features (needed for ta4j Records)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 apply(plugin = "com.google.firebase.appdistribution")
