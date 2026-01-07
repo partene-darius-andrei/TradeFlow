@@ -154,49 +154,80 @@ app/src/main/java/com/dpart/tradeflow/
 
 ## Implementation Roadmap
 
-### Phase 0: Foundation [CURRENT PHASE]
+### Phase 0A: Authentication [CURRENT PHASE]
 
-**Goal:** Establish core architecture and interfaces
+**Goal:** Get Coinbase API authentication working ASAP
 
-**Tickets:** 00-06
+**Strategy:** Fast-track to working login, defer trading logic to Phase 0B
+
+**Tickets:** 00, 01, 02, 04, 07, 08
 
 | # | Ticket | Status | Priority | Effort | Files Created |
 |---|--------|--------|----------|--------|---------------|
-| 00 | **Project Modularization** | Not Started | **CRITICAL** | Medium | 7 modules, 7 build.gradle.kts files |
+| 00 | **Project Modularization** | Not Started | **CRITICAL** | Medium | 8 modules, 9 build.gradle.kts files |
 | 01 | Domain Models | Not Started | High | Small | Candle, Order, Portfolio, Ticker, Balance, Decision |
 | 02 | Repository Interfaces | Not Started | High | Medium | ExchangeRepository, ExchangeWebSocket, AuthTokenProvider |
-| 03 | Room Database | Not Started | High | Medium | Database, Entities, DAOs |
 | 04 | Credential Store | Not Started | High | Small | SecureCredentialStore (EncryptedSharedPreferences) |
-| 05 | Decision Engine | Not Started | High | Large | DecisionEngine, indicator calculators |
-| 06 | Risk Manager | Not Started | High | Medium | RiskManager (position sizing, drawdown) |
+| 07 | JWT Generator | Not Started | High | Medium | CoinbaseJwtGenerator (ES256 signing) |
+| 08 | REST API Client (Partial) | Not Started | High | Medium | CoinbaseRepository.getAccounts() only |
 
 **Dependencies Added:** ✅ All dependencies already in build.gradle.kts
 
-**Blockers:** Must complete Ticket 00 (Modularization) FIRST before starting any other Phase 0 tickets
+**Blockers:** Must complete Ticket 00 (Modularization) FIRST
 
-**Success Criteria:**
+**Success Criteria (Phase 0A):**
+- [ ] Multi-module architecture set up (8 modules)
+- [ ] `:core:domain` has ZERO Android dependencies
 - [ ] Domain models compile with NO Android imports
-- [ ] All interfaces defined with clear contracts
-- [ ] Room database creates tables on first run
-- [ ] Can save/load encrypted credentials
-- [ ] Decision engine has 100% unit test coverage
-- [ ] Risk manager validates all edge cases
+- [ ] All repository interfaces defined
+- [ ] Can save/load encrypted Coinbase credentials
+- [ ] JWT tokens generate correctly (ES256)
+- [ ] Can call `GET /accounts` and retrieve balances
+- [ ] ✅ **MILESTONE: Can authenticate and see real Coinbase data**
 
 ---
 
-### Phase 1: Coinbase Integration
+### Phase 0B: Trading Logic [DEFERRED]
 
-**Goal:** Implement Coinbase-specific code in isolation
+**Goal:** Implement decision engine and risk management
 
-**Tickets:** 07-09
+**When:** After Phase 0A milestone is reached
+
+**Tickets:** 03, 05, 06
 
 | # | Ticket | Status | Priority | Effort | Files Created |
 |---|--------|--------|----------|--------|---------------|
-| 07 | JWT Generator | Not Started | High | Medium | CoinbaseJwtGenerator (ES256 signing) |
-| 08 | REST API Client | Not Started | High | Large | CoinbaseRepository, DTOs, Mappers |
+| 03 | Room Database | Not Started | High | Medium | Database, Entities, DAOs |
+| 05 | Decision Engine | Not Started | High | Large | DecisionEngine, indicator calculators |
+| 06 | Risk Manager | Not Started | High | Medium | RiskManager (position sizing, drawdown) |
+
+**Why Deferred:**
+- Not needed for authentication/login flow
+- Decision Engine is large (3 days) - better after proving API works
+- Risk Manager only matters when placing real orders
+
+**Success Criteria (Phase 0B):**
+- [ ] Room database creates tables on first run
+- [ ] Decision engine has 100% unit test coverage (pure JVM tests)
+- [ ] Risk manager validates all edge cases
+- [ ] Can run backtests against historical data
+
+---
+
+### Phase 1: Real-Time Data & Full API [AFTER 0A]
+
+**Goal:** Complete Coinbase integration (WebSocket + remaining endpoints)
+
+**Tickets:** 08 (Complete), 09
+
+| # | Ticket | Status | Priority | Effort | Files Created |
+|---|--------|--------|----------|--------|---------------|
+| 08 | REST API Client (Full) | Not Started | High | Large | All endpoints: orders, candles, products |
 | 09 | WebSocket Client | Not Started | High | Large | CoinbaseWebSocket (market + user channels) |
 
-**Blocked By:** Phase 0 (interfaces must exist first)
+**Blocked By:** Phase 0A (basic auth + interfaces must exist first)
+
+**Note:** Ticket 07 (JWT) and Ticket 08 (partial REST) moved to Phase 0A for fast authentication
 
 **Critical Details:**
 - JWT must use ES256 algorithm (ECDSA P-256)
@@ -335,18 +366,21 @@ TradingService (Foreground Service)
 
 All tickets are in `docs/tickets/` organized by status. Below is the mapping of canonical tickets to their original Notion export files:
 
-#### Foundation (Phase 0)
-- **00-modularization** → 🏗️ MODULE Project Modularization Setup (NEW - CRITICAL)
+#### Phase 0A: Authentication (Week 1)
+- **00-modularization** → 🏗️ MODULE Project Modularization Setup (CRITICAL - DO FIRST)
 - **01-domain-models** → 📦 DOMAIN Core Domain Models
 - **02-interfaces** → 🔌 EXCHANGE-API Repository Interfaces
-- **03-room-db** → 🗄️ INFRA - Room Database (Updated)
 - **04-credentials** → 🔐 CORE-DATA Secure Credential Store
+- **07-jwt** → 🟡 COINBASE JWT Token Generator (moved from Phase 1)
+- **08-rest-api** → 🟡 COINBASE REST API Client (partial - getAccounts only)
+
+#### Phase 0B: Trading Logic (Week 2)
+- **03-room-db** → 🗄️ INFRA - Room Database (Updated)
 - **05-decision-engine** → 🧠 DOMAIN Decision Engine
 - **06-risk-manager** → 🚨 DOMAIN - Risk Manager
 
-#### Coinbase (Phase 1)
-- **07-jwt** → 🟡 COINBASE JWT Token Generator
-- **08-rest-api** → 🟡 COINBASE REST API Client
+#### Phase 1: Real-Time Data (Week 3)
+- **08-rest-api** → 🟡 COINBASE REST API Client (complete - all endpoints)
 - **09-websocket** → 🟡 COINBASE WebSocket Client
 
 #### UI (Phase 2)
@@ -397,67 +431,91 @@ Some concepts have multiple similar tickets in the backlog (likely multiple iter
 
 ## Dependency Graph
 
-### Critical Path (Longest Chain to MVP)
+### Critical Path (Authentication-First Strategy)
 
 ```
 START
   ↓
-00: Modularization (2 hours) ★ MUST DO FIRST
+00: Modularization (2.5 hours) ★ MUST DO FIRST
   ↓
-01: Domain Models (3 days)
+┌───────────────────────────────────────────┐
+│ Phase 0A: Authentication (Week 1)        │
+├───────────────────────────────────────────┤
+│ 01: Domain Models (1 day)                │
+│  ↓                                        │
+│ 02: Repository Interfaces (1 day)        │
+│  ↓                                        │
+│ 04: Credential Store (2 hours)           │
+│  ↓                                        │
+│ 07: JWT Generator (1 day) ← Jump Phase 1 │
+│  ↓                                        │
+│ 08: REST API - getAccounts() (1 day)     │
+└───────────────────────────────────────────┘
   ↓
-02: Repository Interfaces (2 days) ★ CRITICAL BLOCKER
+✅ MILESTONE 1: Can authenticate & see balances
   ↓
-03-06: Parallel Development (1 week)
-  ├→ 03: Room Database
-  ├→ 04: Credential Store
-  ├→ 05: Decision Engine (LARGE - 3 days)
-  └→ 06: Risk Manager
+┌───────────────────────────────────────────┐
+│ Phase 0B: Trading Logic (Week 2)         │
+├───────────────────────────────────────────┤
+│ 03: Room Database (2 days)               │
+│ 05: Decision Engine (3 days)             │
+│ 06: Risk Manager (2 days)                │
+└───────────────────────────────────────────┘
   ↓
-07-09: Coinbase Implementation (1 week)
-  ├→ 07: JWT Generator (2 days)
-  ├→ 08: REST API (3 days)
+✅ MILESTONE 2: Trading logic complete
+  ↓
+Phase 1: Complete API Integration (Week 3)
+  ├→ 08: REST API - Full (2 days)
   └→ 09: WebSocket (3 days)
   ↓
-10-15: UI Layer (1 week)
+✅ MILESTONE 3: Real-time data streaming
+  ↓
+Phase 2: UI Layer (Week 4)
   ├→ 10-11: Dashboard Screen
   ├→ 12: Dashboard ViewModel
   ├→ 13-14: Settings
   └→ 15: Navigation
   ↓
-16-17: Trading Service (1 week)
+✅ MILESTONE 4: Full UI functional
+  ↓
+Phase 3: Trading Service (Week 5)
   ├→ 16: Service Core (5 days)
   └→ 17: Battery Optimization (1 day)
   ↓
-18-19: Testing & Validation (1 week)
+Phase 4: Testing & Validation (Week 6)
   ├→ 18: Integration Tests
   └→ 19: MVP Validation
   ↓
-MVP READY FOR LIVE TESTING
+✅ MVP READY FOR LIVE TESTING
 ```
 
-### Parallel Development Tracks
+**Key Change:** Fast-track authentication by pulling JWT (07) and partial REST (08) into Phase 0A
 
-After **Ticket 02 (Interfaces)** is complete, these can proceed simultaneously:
+### Parallel Development Tracks (Updated for Auth-First)
 
-**Track A - Domain Logic:**
-- 05: Decision Engine
-- 06: Risk Manager
-- Unit tests
+**Phase 0A (Authentication) - Sequential:**
+```
+00 → 01 → 02 → 04 → 07 → 08 (partial)
+Must be done in order - each depends on previous
+```
 
-**Track B - Infrastructure:**
+**After Phase 0A Milestone:**
+
+**Track A - Complete API (Phase 1):**
+- 08: REST API Full (complete remaining endpoints)
+- 09: WebSocket (real-time data)
+
+**Track B - Trading Logic (Phase 0B):**
 - 03: Room Database
-- 04: Credential Store
+- 05: Decision Engine (LARGE)
+- 06: Risk Manager
 
-**Track C - Coinbase:**
-- 07: JWT Generator
-- 08: REST API (needs JWT)
-- 09: WebSocket (needs JWT)
-
-**Track D - UI (with mocks):**
+**Track C - UI (Phase 2):**
 - 10: Core UI Components
-- 11: Dashboard Screen (mock data)
-- 13: Settings Screen
+- 11-14: Dashboard + Settings screens
+- 15: Navigation
+
+**Tracks A, B, C can proceed in parallel** after Phase 0A milestone
 
 ---
 
@@ -609,15 +667,22 @@ di/
 
 ## Quality Gates
 
-### Phase 0 Exit Criteria
-- [ ] Multi-module architecture set up (7 modules)
+### Phase 0A Exit Criteria (Authentication)
+- [ ] Multi-module architecture set up (8 modules including `:exchange:coinbase`)
 - [ ] `:core:domain` has ZERO Android dependencies (verified in build.gradle.kts)
 - [ ] All domain models compile with ZERO Android imports
-- [ ] All interfaces defined with clear javadoc contracts
+- [ ] Repository interfaces defined (ExchangeRepository, AuthTokenProvider)
+- [ ] Can encrypt/decrypt Coinbase credentials with Android Keystore
+- [ ] JWT tokens generate correctly and validate on Coinbase API
+- [ ] Can call `GET /accounts` endpoint successfully
+- [ ] **Can display real account balances in console/debug**
+
+### Phase 0B Exit Criteria (Trading Logic)
 - [ ] Room database creates tables on app launch
-- [ ] Can encrypt/decrypt credentials with Android Keystore
 - [ ] Decision engine passes 20+ unit tests (pure JVM tests, no emulator)
 - [ ] Risk manager rejects invalid position sizes
+- [ ] Can calculate SMA, ADX, ATR indicators correctly
+- [ ] Regime detection works (TREND/RANGE/DEFENSE)
 
 ### Phase 1 Exit Criteria
 - [ ] JWT tokens validate against Coinbase API
@@ -727,13 +792,26 @@ di/
 4. **Archive Superseded:** Move superseded tickets to `docs/tickets/archived/`
 5. **Consolidate Duplicates:** Merge similar tickets into canonical versions
 
-### Phase 0 Start (Next Week)
+### Phase 0A Start (This Week - Authentication Fast-Track)
 
-1. Create `domain/model/` package
-2. Implement 6 domain models (Candle, Order, Portfolio, etc.)
-3. Write unit tests for domain models
-4. Define repository interfaces with clear contracts
-5. PR review + merge to main
+**Week 1 Goal:** Can authenticate with Coinbase and see account balances
+
+1. **Day 1:** Implement Ticket 00 (Modularization - 2.5 hours)
+2. **Day 2:** Implement Ticket 01 (Domain Models - basic ones only)
+3. **Day 3:** Implement Ticket 02 (Repository Interfaces)
+4. **Day 4:** Implement Ticket 04 (Credential Store) + Ticket 07 (JWT Generator)
+5. **Day 5:** Implement Ticket 08 (REST API - getAccounts endpoint only)
+
+**Milestone:** Can save credentials, generate JWT, call Coinbase API, retrieve balances ✅
+
+### Phase 0B Start (Week 2 - Trading Logic)
+
+1. Implement Ticket 03 (Room Database)
+2. Implement Ticket 05 (Decision Engine)
+3. Implement Ticket 06 (Risk Manager)
+4. Write unit tests for all trading logic
+
+**Milestone:** Trading logic complete, ready for UI ✅
 
 ### Developer Notes
 

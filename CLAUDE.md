@@ -73,11 +73,19 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 **See:** [docs/roadmap.md](docs/roadmap.md) for complete roadmap
 
-### Phase 0: Foundation (NEXT)
-- Domain models and interfaces
-- Room database schema
+### Phase 0A: Authentication (NEXT - Week 1)
+- Project modularization (8 modules)
+- Domain models (basic ones)
+- Repository interfaces
 - Secure credential storage
-- Decision engine
+- JWT token generator
+- REST API (getAccounts endpoint only)
+
+**Goal:** Can authenticate with Coinbase and see real account balances
+
+### Phase 0B: Trading Logic (Week 2)
+- Room database schema
+- Decision engine (SMA, ADX, ATR)
 - Risk manager
 
 ### Phase 1: Coinbase Integration
@@ -99,7 +107,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - Integration tests
 - MVP milestone
 
-**Current Progress:** Phase 0 not started
+**Current Progress:** Phase 0A not started (authentication-first approach)
 
 ---
 
@@ -118,21 +126,24 @@ tickets/
 ```
 
 **Workflow:**
-1. Check [docs/roadmap.md](docs/roadmap.md) for next ticket number
-2. Map ticket number to file name in [docs/README.md](docs/README.md)
-3. Find ticket file in `docs/tickets/backlog/` (or user moves it to `refined/`)
-4. Create branch: `claude/ticket-##-description`
-5. Move ticket: `backlog/` → `ongoing/` (start work)
-6. Implement → Build → Test → Commit
-7. Move ticket: `ongoing/` → `in-review/` (ready for review)
-8. After user approval → move to `done/`
-9. Update docs/roadmap.md checkboxes
+1. Check [docs/roadmap.md](docs/roadmap.md) Phase 0A for next ticket
+2. Find ticket file in `docs/tickets/backlog/`
+3. Create branch: `claude/ticket-##-description`
+4. Move ticket: `backlog/` → `ongoing/` (start work)
+5. Implement → Build → Test → Commit
+6. Move ticket: `ongoing/` → `in-review/` (ready for review)
+7. After user approval → move to `done/`
+8. Update docs/roadmap.md checkboxes
 
-**Example Mapping:**
-- Ticket 01: Domain Models → `📦 DOMAIN Core Domain Models 2e0c71f7a8c381b0b87dd20c1a51ffb2.md`
-- Ticket 07: JWT Generator → `🟡 COINBASE JWT Token Generator 2e1c71f7a8c381c7906df5b5cf0f977e.md`
+**Phase 0A Tickets (Authentication - Week 1):**
+- Ticket 00: Project Modularization (CRITICAL - DO FIRST)
+- Ticket 01: Domain Models
+- Ticket 02: Repository Interfaces
+- Ticket 04: Credential Store
+- Ticket 07: JWT Generator (moved from Phase 1)
+- Ticket 08: REST API (partial - getAccounts only)
 
-**See:** [docs/README.md](docs/README.md) for complete ticket mapping table
+**See:** [docs/roadmap.md](docs/roadmap.md) for complete timeline and success criteria
 
 ---
 
@@ -335,16 +346,14 @@ docs/
 ### 1. Load Context (5 minutes)
 ```
 Read: CLAUDE.md (this file)
-Read: docs/roadmap.md (understand roadmap)
-Check: Current phase and next ticket
+Read: docs/roadmap.md (Phase 0A: Authentication-first strategy)
 ```
 
 ### 2. Find Next Task
 ```
 1. Open docs/roadmap.md
-2. Find first unchecked ticket
-3. Map ticket number to file name (docs/README.md)
-4. Read detailed ticket file
+2. Check Phase 0A table (first unchecked ticket)
+3. Read ticket file in docs/tickets/backlog/
 ```
 
 ### 3. Implement
@@ -361,11 +370,19 @@ Desktop: ./gradlew assembleDebug
 Mobile: Push → Check .build-status
 ```
 
+### Week 1 Goal
+**By end of Week 1:** Can authenticate with Coinbase and see real account balances
+- Day 1: Modularization (Ticket 00)
+- Day 2: Domain models (Ticket 01)
+- Day 3: Interfaces (Ticket 02)
+- Day 4: Credentials + JWT (Tickets 04, 07)
+- Day 5: REST API (Ticket 08) → **See real balances!**
+
 ---
 
 ## 📞 Quick Links
 
-- **Roadmap:** [docs/roadmap.md](docs/roadmap.md)
+- **Roadmap:** [docs/roadmap.md](docs/roadmap.md) ⭐ START HERE (Phase 0A: Authentication)
 - **Docs Hub:** [docs/README.md](docs/README.md)
 - **Implementation Guide:** [docs/reference.md](docs/reference.md)
 - **CI/CD:** [docs/ci.md](docs/ci.md)
@@ -374,4 +391,5 @@ Mobile: Push → Check .build-status
 ---
 
 **Last Build:** #30 SUCCESS (NetworkModule.kt fix - switched to OkHttp engine)
-**Next:** Start Phase 0 - Implement Ticket 01 (Domain Models)
+**Next:** Start Phase 0A - Implement Ticket 00 (Modularization)
+**Week 1 Goal:** Authentication working, can see real Coinbase balances
