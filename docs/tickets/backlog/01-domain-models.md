@@ -3,7 +3,7 @@
 Effort level: Small
 Priority: High
 Status: Not started
-Blocked by: MODULE: Project Modularization Setup
+Blocked by: Ticket 00 (Project Modularization Setup)
 Module: :core:domain
 
 ## Objective

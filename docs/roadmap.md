@@ -3,7 +3,7 @@
 **Last Updated:** 2026-01-07
 **Project Status:** Phase 0 - Foundation
 **Current Build:** #30 (SUCCESS)
-**Architecture:** Single-module app (NOT multi-module)
+**Architecture:** Multi-module app (7 modules: app, core:domain, core:data, core:ui, feature:dashboard, feature:trading, feature:settings)
 
 ---
 
@@ -158,10 +158,11 @@ app/src/main/java/com/dpart/tradeflow/
 
 **Goal:** Establish core architecture and interfaces
 
-**Tickets:** 01-06
+**Tickets:** 00-06
 
 | # | Ticket | Status | Priority | Effort | Files Created |
 |---|--------|--------|----------|--------|---------------|
+| 00 | **Project Modularization** | Not Started | **CRITICAL** | Medium | 7 modules, 7 build.gradle.kts files |
 | 01 | Domain Models | Not Started | High | Small | Candle, Order, Portfolio, Ticker, Balance, Decision |
 | 02 | Repository Interfaces | Not Started | High | Medium | ExchangeRepository, ExchangeWebSocket, AuthTokenProvider |
 | 03 | Room Database | Not Started | High | Medium | Database, Entities, DAOs |
@@ -171,7 +172,7 @@ app/src/main/java/com/dpart/tradeflow/
 
 **Dependencies Added:** ✅ All dependencies already in build.gradle.kts
 
-**Blockers:** None - can start immediately
+**Blockers:** Must complete Ticket 00 (Modularization) FIRST before starting any other Phase 0 tickets
 
 **Success Criteria:**
 - [ ] Domain models compile with NO Android imports
@@ -335,6 +336,7 @@ TradingService (Foreground Service)
 All tickets are in `docs/tickets/` organized by status. Below is the mapping of canonical tickets to their original Notion export files:
 
 #### Foundation (Phase 0)
+- **00-modularization** → 🏗️ MODULE Project Modularization Setup (NEW - CRITICAL)
 - **01-domain-models** → 📦 DOMAIN Core Domain Models
 - **02-interfaces** → 🔌 EXCHANGE-API Repository Interfaces
 - **03-room-db** → 🗄️ INFRA - Room Database (Updated)
@@ -399,6 +401,8 @@ Some concepts have multiple similar tickets in the backlog (likely multiple iter
 
 ```
 START
+  ↓
+00: Modularization (2 hours) ★ MUST DO FIRST
   ↓
 01: Domain Models (3 days)
   ↓
@@ -606,11 +610,13 @@ di/
 ## Quality Gates
 
 ### Phase 0 Exit Criteria
+- [ ] Multi-module architecture set up (7 modules)
+- [ ] `:core:domain` has ZERO Android dependencies (verified in build.gradle.kts)
 - [ ] All domain models compile with ZERO Android imports
 - [ ] All interfaces defined with clear javadoc contracts
 - [ ] Room database creates tables on app launch
 - [ ] Can encrypt/decrypt credentials with Android Keystore
-- [ ] Decision engine passes 20+ unit tests
+- [ ] Decision engine passes 20+ unit tests (pure JVM tests, no emulator)
 - [ ] Risk manager rejects invalid position sizes
 
 ### Phase 1 Exit Criteria
