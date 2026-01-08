@@ -46,6 +46,10 @@ dependencies {
     // JWT ES256 (Coinbase authentication)
     implementation(libs.nimbus.jose.jwt)
 
+    // BouncyCastle (required by Nimbus for PEM parsing)
+    implementation(libs.bcprov.jdk18on)
+    implementation(libs.bcpkix.jdk18on)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 

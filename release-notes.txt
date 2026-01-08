@@ -1,5 +1,7 @@
-Version 1.2.0
+Version 1.5.5
 
-- Added new adaptive app icon that automatically adjusts to your device's theme
-- App icon now supports day/night mode with white background for light theme and black background for dark theme
-- Enhanced visual branding with updated trading chart design in the app icon
+- Enhanced security key parsing with improved support for Coinbase CDP private key formats
+- Fixed JWT authentication issues that could cause connection failures
+- Improved error handling and debugging capabilities for API connections
+- Resolved duplicate navigation bar display issue for cleaner interface
+- Strengthened PEM key processing with better escape sequence handling

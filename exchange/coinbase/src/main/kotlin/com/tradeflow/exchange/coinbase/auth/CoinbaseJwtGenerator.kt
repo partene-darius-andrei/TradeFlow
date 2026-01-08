@@ -78,16 +78,31 @@ class CoinbaseJwtGenerator @Inject constructor(
             val claims = claimsBuilder.build()
 
             // Parse EC private key from PEM format
-            val ecKey = ECKey.parse(secret)
+            val ecKey = parseECKey(secret)
 
             // Sign JWT with ES256
             val signedJWT = SignedJWT(header, claims)
-            val signer = ECDSASigner(ecKey.toECPrivateKey())
+            val signer = ECDSASigner(ecKey)
             signedJWT.sign(signer)
 
             signedJWT.serialize()
         } catch (e: Exception) {
             throw ExchangeError.AuthenticationFailed("Failed to generate JWT: ${e.message}")
+        }
+    }
+
+    private fun parseECKey(pemString: String): ECKey {
+        try {
+            // Handle escaped newlines and normalize formatting
+            val normalizedPem = pemString
+                .replace("\\n", "\n")
+                .trim()
+
+            // Use Nimbus library to parse PEM format EC key
+            val jwk = ECKey.parseFromPEMEncodedObjects(normalizedPem)
+            return jwk as ECKey
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Failed to parse EC private key: ${e.message}", e)
         }
     }
 
