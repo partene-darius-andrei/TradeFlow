@@ -1,6 +1,6 @@
 # TradeFlow - Claude Code Entry Point
 
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-08
 **Project Status:** Phase 0A - Authentication Infrastructure Complete (Static Credentials)
 **Current Build:** #30 SUCCESS
 
@@ -60,6 +60,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Firebase Analytics + Crashlytics
 ✅ All trading dependencies added (ta4j, nimbus-jose-jwt, security-crypto)
 ✅ GitHub Actions CI/CD pipeline with environment credentials
+✅ Adaptive app icon with trading chart design (day/night variants)
 
 🆕 DOMAIN LAYER COMPLETE:
 ✅ core/domain/src/main/kotlin/com/tradeflow/core/domain/
@@ -98,6 +99,12 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── extension/
         └── BigDecimalExt.kt           ✅ Currency/percentage formatting
 
+🆕 APP BRANDING COMPLETE:
+✅ Adaptive app icon with trading chart design
+✅ Day/night background variants (white/black)
+✅ Android 8.0+ adaptive icon support
+✅ Proper launcher configuration
+
 🆕 CREDENTIALS SYSTEM COMPLETE:
 ✅ app/build.gradle.kts                 ✅ Build-time credential injection
 ✅ app/src/main/java/com/dpart/tradeflow/di/
@@ -135,7 +142,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ❌ App navigation setup
 ```
 
-**Progress:** **Authentication infrastructure complete** ✅ JWT token generation, static credential injection, repository contracts, and UI components all implemented. Login screen removed in favor of build-time configuration. Ready for domain models, database schema, and REST API client methods.
+**Progress:** **Authentication infrastructure and app branding complete** ✅ JWT token generation, static credential injection, repository contracts, UI components, and adaptive app icon all implemented. Login screen removed in favor of build-time configuration. Ready for domain models, database schema, and REST API client methods.
 
 ---
 
@@ -149,13 +156,13 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - [x] **JWT generator** (Ticket 07) ✅ COMPLETE - ES256 signing with proper nonce generation
 - [x] **UI components** ✅ COMPLETE - ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard
 - [x] **Credential system** ✅ COMPLETE - Build-time injection replacing UI input
+- [x] **App branding** ✅ COMPLETE - Adaptive icon with trading chart design
 
-**Latest Changes:** Static Credential System ✅
-- **Removed Login Screen:** No longer needed - credentials injected at build time
-- **StaticCredentialStore:** Replaces SecureCredentialStore, returns build-injected credentials
-- **CredentialsModule:** New DI module providing credentials from BuildConfig
-- **Build Integration:** Environment variables and local.properties support
-- **Simplified Navigation:** Direct to Dashboard, no authentication flow needed
+**Latest Changes:** App Icon and Branding ✅
+- **Adaptive Icon:** Professional trading chart design with candlesticks and trend flows
+- **Day/Night Variants:** White background (day), black background (night)
+- **Android Manifest:** Proper launcher icon configuration
+- **Professional Polish:** App now has distinct visual identity
 
 **Next Up:** Domain models (Ticket 01) - Define Candle, Order, Portfolio, Decision types
 
@@ -182,7 +189,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - MVP milestone
 
 **Current Phase:** Phase 0A Complete → Phase 0B (Core Foundation)
-**Progress:** Authentication infrastructure complete with static credentials. Domain models and database schema next.
+**Progress:** Authentication infrastructure and app branding complete with static credentials. Domain models and database schema next.
 
 ---
 
@@ -198,205 +205,216 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 │  🆕 di/CredentialsModule.kt            │
 │  - Provides API key from BuildConfig   │
 │  - Provides API secret from BuildConfig│
-│  🆕 build.gradle.kts                   │
-│  - Injects env vars → BuildConfig      │
-│  - Supports local.properties fallback  │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│            :feature:*                   │  ← UI & ViewModels (no login needed)
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│           :core:domain                  │  ← Interfaces & Models
-│  🆕 COMPLETE: Repository Interfaces     │     (Pure Kotlin - No Android)
-│  - ExchangeRepository (12 methods)     │
-│  - BracketOrderRepository              │
-│  - ExchangeWebSocket (real-time)       │
-│  - AuthTokenProvider                   │
-│  - CredentialStore                     │
-│  - ExchangeError (6 error types)       │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│           :core:data                    │  ← Data layer implementations
-│  🆗 UPDATED: Static Credential Store   │
-│  - StaticCredentialStore (no encryption)│
-│  - SecurityModule (DI)                 │
-│  - Room database schema (pending)      │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│       :exchange:coinbase                │  ← Coinbase-specific implementation
-│  🆕 COMPLETE: JWT Authentication       │     (ISOLATED - swappable)
-│  - CoinbaseJwtGenerator (ES256)        │
-│  - AuthModule (DI binding)             │
-│  - REST API methods (pending)          │
-│  - WebSocket client (pending)          │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│           :core:ui                      │  ← Shared UI components
-│  🆕 COMPLETE: Base Components          │
-│  - StatusCard, LoadingButton           │
-│  - PriceDisplay, ModeIndicator         │
-│  - ErrorDisplay, BigDecimalExt         │
+│  🆕 Adaptive app icon (ic_launcher)    │
+│  - Trading chart design                │
+│  - Day/night background variants       │
+└─────────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────┐
+│           :core:domain ✅               │  ← Domain contracts (pure Kotlin)
+│  - ExchangeRepository interface        │
+│  - BracketOrderRepository interface    │
+│  - ExchangeWebSocket interface         │
+│  - AuthTokenProvider interface         │
+│  - CredentialStore interface           │
+│  - ExchangeError sealed class          │
+└─────────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────┐
+│  :exchange:coinbase (auth only) ✅      │  ← Coinbase implementation
+│  - CoinbaseJwtGenerator ✅ ES256       │
+│  - AuthModule ✅ DI binding            │
+│  ❌ CoinbaseRepository (REST methods)  │  ← Next to implement
+│  ❌ CoinbaseWebSocket                  │
 └─────────────────────────────────────────┘
 ```
 
-### Key Architectural Decisions
-
-**Static Credentials (New):**
-- **Build-time injection** replaces runtime credential entry
-- **Environment priority:** CI/CD env vars → local.properties → empty
-- **No encryption needed** - credentials never stored on device
-- **Simplified UX** - no login screen, direct to trading UI
-
-**Exchange Isolation:**
-- All Coinbase code in `:exchange:coinbase` module
-- Domain layer defines contracts, Coinbase implements
-- Easy to swap exchanges (add `:exchange:kraken`)
-- DI binding in `:app` module only
-
-**Domain Purity:**
-- `:core:domain` has ZERO Android dependencies
-- Pure Kotlin interfaces and models only
-- Testable without Android SDK
+**Key insight:** Authentication infrastructure is complete. REST API methods and domain models are next critical blockers.
 
 ---
 
-## ⚙️ Tech Stack
+## 🔧 Tech Stack
 
-### Core Android
-- ✅ **Kotlin 2.3.0** (compilation target)
-- ✅ **Compose BOM 2025.12.01** (UI framework)
-- ✅ **Hilt 2.57.2** (dependency injection)
-- ✅ **Room 2.8.4** (local database)
-- ✅ **Material 3** (design system)
+### Dependencies Status
 
-### Networking & Serialization
-- ✅ **Ktor 3.3.3** (HTTP client + WebSocket)
-  - Uses OkHttp engine for reliability
-  - Coroutines integration
-  - Unified client for REST + WebSocket
-- ✅ **kotlinx.serialization** (JSON parsing)
+| Library | Version | Status | Purpose |
+|---------|---------|---------|---------|
+| **Kotlin** | 2.3.0 | ✅ Active | Language |
+| **Compose BOM** | 2025.12.01 | ✅ Active | UI framework |
+| **Hilt** | 2.57.2 | ✅ Active | Dependency injection |
+| **Room** | 2.8.4 | ✅ Ready | Local database |
+| **Ktor** | 3.3.3 + OkHttp | ✅ Active | HTTP client |
+| **Timber** | 5.0.1 | ✅ Active | Logging |
+| **Vico** | 2.4.0 | ✅ Ready | Charts for UI |
+| **Coroutines** | 1.10.2 | ✅ Active | Async operations |
+| **nimbus-jose-jwt** | 9.47 | ✅ Active | JWT ES256 signing |
+| **ta4j-core** | 0.16 | ✅ Ready | Technical analysis indicators |
+| **security-crypto** | 1.1.0-alpha06 | ❌ Unused | Replaced by static credentials |
+| **work-runtime-ktx** | 2.10.0 | ✅ Ready | Background tasks |
+| **datastore-preferences** | 1.1.1 | ✅ Ready | Settings persistence |
+| **material-icons-extended** | Via BOM | ✅ Active | Icons for ModeIndicator |
+| **Firebase** | BOM 34.7.0 | ✅ Active | Analytics + Crashlytics |
 
-### Trading & Security
-- ✅ **nimbus-jose-jwt 9.47** (ES256 JWT signing for Coinbase)
-- ✅ **ta4j-core 0.16** (technical analysis indicators)
-- ✅ **security-crypto 1.1.0-alpha06** (credential encryption - now static)
-
-### Background Processing
-- ✅ **work-runtime-ktx 2.10.0** (background tasks)
-- ✅ **Coroutines 1.10.2** (async/concurrency)
-
-### Development & Monitoring
-- ✅ **Timber 5.0.1** (logging)
-- ✅ **Firebase BOM 34.7.0** (Analytics + Crashlytics)
-- ✅ **Vico 2.4.0** (charts/graphs)
-- ✅ **datastore-preferences 1.1.1** (settings)
-- ✅ **material-icons-extended** (UI icons)
-
-### Build System
-- ✅ **Gradle 8.13.2**
-- ✅ **Android Gradle Plugin 8.8.0**
-- ✅ **KSP 2.3.0-1.0.29** (Room compiler)
-
-**Build-time Configuration:**
-- Environment variable injection → BuildConfig
-- Local properties fallback for development
-- CI/CD secrets integration
+**Note:** `security-crypto` dependency still exists but StaticCredentialStore doesn't use it (credentials come from BuildConfig).
 
 ---
 
-## 🔧 Development Workflow
+## 🛠️ Development Workflow
 
-### Credential Setup
+### For Claude Code (Mobile/Web)
 
-**For CI/CD (GitHub Actions):**
-```yaml
-# Set in GitHub repo → Settings → Secrets
-COINBASE_API_KEY: "organizations/your-org/apiKeys/your-key-id"
-COINBASE_API_SECRET: "your-ec-private-key-pem"
-```
-
-**For Local Development:**
-```properties
-# Create/edit local.properties
-coinbase.api.key=organizations/your-org/apiKeys/your-key-id
-coinbase.api.secret=-----BEGIN EC PRIVATE KEY-----\nYourBase64EncodedKey\n-----END EC PRIVATE KEY-----
-```
-
-### Build & Test Flow
+**Primary Pattern:** Push → Actions Build → Pull Results
 
 ```bash
-# 1. Set credentials (see above)
+# 1. Implement feature
+git add . && git commit -m "Add domain models" && git push
 
-# 2. Build app
-./gradlew assembleDebug
-# Credentials automatically injected into BuildConfig
+# 2. Wait for Actions (~3-5 minutes)
+# GitHub Actions will:
+# - Inject credentials from secrets
+# - Build APK with embedded credentials
+# - Upload to Firebase App Distribution
+# - Update documentation via Claude API
+# - Commit status back
 
-# 3. Install and test
-adb install app/build/outputs/apk/debug/app-debug.apk
+# 3. Pull results
+git pull
 
-# 4. Push for CI/CD
-git push origin claude/your-feature-branch
-# GitHub Actions builds with CI credentials
+# 4. Check build status
+cat .build-status
+# Outputs: SUCCESS or FAILURE
+
+# If failed:
+cat build-log.txt
+# Shows last 200 lines of build output
+
+# 5. Test APK on device
+# Download from Firebase App Distribution email
+# Or download from GitHub Actions artifacts
 ```
 
-### CI/CD Pipeline
+**Benefits:**
+- ✅ **No local Gradle needed** - Perfect for mobile development
+- ✅ **Real credentials injected** - APK works with live Coinbase API
+- ✅ **Immediate device testing** - Firebase distributes to registered devices
+- ✅ **Auto-documentation** - Claude API updates docs based on code changes
+- ✅ **Commit-back pattern** - Results available via git pull
 
-**Build Workflow (.github/workflows/build.yml):**
-1. ✅ Checks out code
-2. ✅ Sets up JDK 17
-3. ✅ **Injects credentials** from GitHub secrets → environment
-4. ✅ Builds debug APK with credentials
-5. ✅ Uploads to Firebase App Distribution
-6. ✅ Commits build status back to branch
-7. ✅ Uploads APK artifact (7-day retention)
+### Credential Configuration
 
-**Documentation Workflow (.github/workflows/update-docs.yml):**
-1. ✅ Analyzes git diff
-2. ✅ Calls Claude API to update documentation
-3. ✅ Commits updated docs back to branch
+**For CI/CD (GitHub Actions):**
+1. Go to repo → Settings → Secrets and variables → Actions
+2. Add secrets:
+   - `COINBASE_API_KEY=organizations/your-org/apiKeys/your-key`
+   - `COINBASE_API_SECRET=-----BEGIN EC PRIVATE KEY-----...`
+   - `ANTHROPIC_API_KEY=your-claude-api-key` (for auto-docs)
 
----
-
-## 🔍 Missing Dependencies
-
-*None currently - all required dependencies are added and configured.*
-
-**Recently Added/Updated:**
-- ✅ Build-time credential injection system
-- ✅ Static credential store (replaces encrypted storage)
-- ✅ Environment variable and local properties support
+**For local development:**
+1. Create `local.properties`:
+   ```properties
+   coinbase.api.key=organizations/your-org/apiKeys/your-key
+   coinbase.api.secret=-----BEGIN EC PRIVATE KEY-----...
+   ```
+2. Run `./gradlew assembleDebug`
 
 ---
 
-## 📁 Key File Locations
+## 📚 Quick Code Patterns
 
-### Recently Modified
-- `app/build.gradle.kts` - Build-time credential injection
-- `app/src/main/java/com/dpart/tradeflow/di/CredentialsModule.kt` - NEW: Credential DI
-- `app/src/main/java/com/dpart/tradeflow/MainActivity.kt` - Simplified (no credential check)
-- `app/src/main/java/com/dpart/tradeflow/navigation/AppNavHost.kt` - Direct to Dashboard
-- `app/src/main/java/com/dpart/tradeflow/navigation/Screen.kt` - Removed Login route
-- `core/data/src/main/kotlin/com/tradeflow/core/data/security/StaticCredentialStore.kt` - NEW: Static store
-- `core/data/src/main/kotlin/com/tradeflow/core/data/di/SecurityModule.kt` - Updated DI binding
+### JWT Token Generation (Complete ✅)
+```kotlin
+// exchange/coinbase/auth/CoinbaseJwtGenerator.kt
+class CoinbaseJwtGenerator @Inject constructor(
+    private val credentialStore: CredentialStore
+) : AuthTokenProvider {
+    override suspend fun generateRestToken(method: String, path: String): String {
+        val header = mapOf(
+            "alg" to "ES256",
+            "typ" to "JWT", 
+            "kid" to credentialStore.getApiKey(),
+            "nonce" to generateNonce()
+        )
+        // ... ES256 signing implementation
+    }
+}
+```
 
-### Removed Files
-- `app/src/main/java/com/dpart/tradeflow/presentation/login/LoginScreen.kt` - No longer needed
-- `app/src/main/java/com/dpart/tradeflow/presentation/login/LoginViewModel.kt` - No longer needed
-- `app/src/main/java/com/dpart/tradeflow/presentation/login/LoginUiState.kt` - No longer needed
+### Static Credentials (Complete ✅)
+```kotlin
+// core/data/security/StaticCredentialStore.kt
+class StaticCredentialStore @Inject constructor() : CredentialStore {
+    override suspend fun getApiKey(): String? = BuildConfig.COINBASE_API_KEY.takeIf { it.isNotBlank() }
+    override suspend fun getSecret(): String? = BuildConfig.COINBASE_API_SECRET.takeIf { it.isNotBlank() }
+    override suspend fun hasCredentials(): Boolean = 
+        !BuildConfig.COINBASE_API_KEY.isNullOrBlank() && 
+        !BuildConfig.COINBASE_API_SECRET.isNullOrBlank()
+}
+```
 
-### Core Architecture Files
-- `core/domain/src/main/kotlin/com/tradeflow/core/domain/` - All interface definitions
-- `core/data/src/main/kotlin/com/tradeflow/core/data/` - Data layer implementations
-- `core/ui/src/main/kotlin/com/tradeflow/core/ui/` - Shared UI components
-- `exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/` - Coinbase integration
+### UI Components (Complete ✅)
+```kotlin
+// Example: Using existing components
+@Composable
+fun PortfolioSection() {
+    StatusCard(title = "Portfolio") {
+        PriceDisplay(
+            price = BigDecimal("50000.00"),
+            previousPrice = BigDecimal("49500.00") // Shows green
+        )
+        ModeIndicator(mode = TradingMode.TREND) // Shows green trend icon
+    }
+}
+```
 
-### Documentation
-- `docs/roadmap.md` - Implementation phases and progress tracking
-- `docs/reference.md` - Technical implementation guide
-- `docs/README.md` - Documentation index and navigation
-- `docs/ci.md` - CI/CD pipeline documentation
+---
+
+## ❗ Known Issues & Limitations
+
+### Current Blockers
+
+1. **No domain models yet** - Need Candle, Order, Portfolio, Decision types (Ticket 01)
+2. **Room database empty** - Need entity schema and DAOs (Ticket 03)  
+3. **JWT tokens untested** - Need REST client to verify authentication works
+4. **No trading logic** - Decision engine and risk management not implemented
+
+### Dependencies Ready But Unused
+
+- **ta4j-core:** Ready for technical indicators (SMA, ADX, ATR)
+- **Room:** Database configured but no entities yet
+- **Vico:** Chart library ready for portfolio graphs
+- **WorkManager:** Ready for background task scheduling
+- **DataStore:** Ready for settings persistence
+
+### Design Decisions Made
+
+1. **Static credentials over UI input** - Simplifies UX, better for CI/CD
+2. **Ktor over Retrofit** - Already configured, good Kotlin integration  
+3. **Domain-first architecture** - Clean separation, easy to test
+4. **Build-time configuration** - No runtime credential management needed
+
+---
+
+## 📞 Integration Points
+
+### External APIs
+
+| API | Purpose | Status | Implementation |
+|-----|---------|---------|----------------|
+| **Coinbase Advanced Trade** | Order execution, market data | ✅ Auth ready | JWT complete, REST methods next |
+| **Firebase** | Analytics, crash reporting | ✅ Active | Build metrics collection |
+| **Claude API** | Auto-documentation | ✅ Active | Updates docs on code changes |
+
+### System Integration
+
+| System | Purpose | Status |
+|---------|---------|---------|
+| **Android Keystore** | Not used (static credentials) | ❌ Unused |
+| **Foreground Service** | 24/7 trading loop | ❌ Not implemented |
+| **Battery Optimization** | Doze survival | ❌ Not implemented |
+| **Notifications** | Trade alerts | ❌ Not implemented |
+
+---
+
+**Next Steps:** Implement domain models (Candle, Order, Portfolio, Decision) in `:core:domain` module to enable database schema and REST API implementation.

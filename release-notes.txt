@@ -1,6 +1,5 @@
-Version 1.1.0
+Version 1.2.0
 
-- Removed login screen - credentials are now configured at build time
-- Streamlined app startup by eliminating credential input requirement
-- Enhanced security with build-time credential injection system
-- Simplified navigation flow with direct access to dashboard
+- Added new adaptive app icon that automatically adjusts to your device's theme
+- App icon now supports day/night mode with white background for light theme and black background for dark theme
+- Enhanced visual branding with updated trading chart design in the app icon
