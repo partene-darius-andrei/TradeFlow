@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.2)
+**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.3)
 **Current Build:** #31 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -49,7 +49,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phases 0A, 0B, & 1: COMPLETE - v1.5.2)
+### What EXISTS (Phases 0A, 0B, & 1: COMPLETE - v1.5.3)
 
 ```
 ✅ Modern Android app structure
@@ -99,18 +99,18 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── di/
         └── SecurityModule.kt           ✅ Static credential DI binding
 
-🆕 COINBASE INTEGRATION COMPLETE (v1.5.2):
+🆕 COINBASE INTEGRATION COMPLETE (v1.5.3):
 ✅ exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/
     ├── auth/
-    │   └── CoinbaseJwtGenerator.kt     ✅ ES256 JWT with ADVANCED BouncyCastle PEM parsing + comprehensive error recovery + multiple key formats
+    │   └── CoinbaseJwtGenerator.kt     ✅ ES256 JWT with ADVANCED BouncyCastle PEM parsing + enhanced escape handling + comprehensive error recovery
     ├── api/
-    │   └── CoinbaseApiClient.kt        ✅ Complete Ktor-based API client with enhanced error handling + improved stability
+    │   └── CoinbaseApiClient.kt        ✅ Complete Ktor-based API client (accounts) with robust error handling
     ├── dto/
-    │   └── AccountDto.kt               ✅ Account DTOs with complete response structure
+    │   └── AccountDto.kt               ✅ Account DTOs for API responses  
     ├── mapper/
     │   └── AccountMapper.kt            ✅ DTO to domain mapping
     ├── repository/
-    │   └── CoinbaseRepository.kt       ✅ Enhanced implementation with better error handling
+    │   └── CoinbaseRepository.kt       ✅ Implementation (getBalances working, others TODO for Phase 2)
     └── di/
         ├── AuthModule.kt               ✅ JWT generator DI binding
         └── ExchangeModule.kt           ✅ Repository DI binding
@@ -118,23 +118,23 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 🆕 UI COMPONENTS COMPLETE:
 ✅ core/ui/src/main/kotlin/com/tradeflow/core/ui/
     ├── component/
-    │   ├── ErrorDisplay.kt             ✅ Error state UI with retry button
+    │   ├── ErrorDisplay.kt             ✅ Error state with retry button
     │   ├── LoadingButton.kt            ✅ Button with loading spinner
-    │   ├── ModeIndicator.kt            ✅ Trading mode visual indicator
-    │   ├── PriceDisplay.kt             ✅ Price with color coding (+/-)
+    │   ├── ModeIndicator.kt            ✅ Trading mode badges (DEFENSE/TREND/RANGE)
+    │   ├── PriceDisplay.kt             ✅ Price with +/- color coding
     │   └── StatusCard.kt               ✅ Reusable card container
     └── extension/
         └── BigDecimalExt.kt           ✅ Currency/percentage formatting
 
-🆕 PRESENTATION LAYER WITH ENHANCED LIVE DATA (v1.5.2):
+🆕 PRESENTATION LAYER WITH ENHANCED LIVE DATA (v1.5.3):
 ✅ app/src/main/java/com/dpart/tradeflow/
     ├── navigation/
-    │   └── AppNavHost.kt               ✅ Complete navigation with CENTRALIZED TopAppBar + cleaner UI architecture
+    │   └── AppNavHost.kt               ✅ Complete navigation with CENTRALIZED TopAppBar ("TradeFlow" title)
     └── presentation/dashboard/
-        ├── DashboardScreen.kt          ✅ Enhanced implementation with IMPROVED real data integration + professional error handling
-        ├── DashboardViewModel.kt       ✅ Complete state management with ENHANCED error handling + robust loading states
+        ├── DashboardScreen.kt          ✅ Complete implementation with ENHANCED real data integration
+        ├── DashboardViewModel.kt       ✅ Full state management + ROBUST error handling + loading states
         └── components/
-            ├── PortfolioCard.kt        ✅ Live balance data with enhanced formatting + better "Live Data" indicators
+            ├── PortfolioCard.kt        ✅ Live data, BTC/USD balances with "Live Data" indicator + enhanced formatting
             ├── ModeCard.kt             ✅ Trading mode + current price
             ├── ServiceCard.kt          ✅ Service status + start/stop button
             └── OrdersList.kt           ✅ Recent orders + empty state
@@ -145,51 +145,51 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Android 8.0+ adaptive icon support
 ✅ Proper launcher configuration
 
-🆕 ENHANCED CREDENTIALS SYSTEM (v1.5.2):
-✅ app/build.gradle.kts                 ✅ ADVANCED build-time credential injection with ENHANCED PEM escape handling + improved security
+🆕 ENHANCED CREDENTIALS SYSTEM (v1.5.3):
+✅ app/build.gradle.kts                 ✅ ADVANCED build-time credential injection with ENHANCED PEM key escaping + security improvements
 ✅ app/src/main/java/com/dpart/tradeflow/di/
     └── CredentialsModule.kt            ✅ Provides credentials from BuildConfig
 
-🆕 COINBASE API DEPENDENCIES (v1.5.2):
+🆕 COINBASE API DEPENDENCIES (v1.5.3):
 ✅ BouncyCastle PEM key parsing libraries (bcprov-jdk18on, bcpkix-jdk18on) 1.78 ✅ ACTIVE
-✅ ENHANCED PEM key parsing with ADVANCED format detection (raw base64 + PEM) + comprehensive error recovery
-✅ JWT token generation with ES256 and ROBUST error handling + enhanced debugging capabilities
-✅ Authentication flow FULLY HARDENED with multiple key format support + fallback mechanisms
-✅ Connection stability STRENGTHENED with improved retry logic and error recovery
+✅ ENHANCED security key parsing with improved support for Coinbase CDP private key formats
+✅ JWT authentication issues RESOLVED with better connection failure handling
+✅ STRENGTHENED PEM key processing with better escape sequence handling
+✅ Authentication flow fully hardened for production stability
+✅ Enhanced error handling and debugging capabilities for API connections
 ```
 
-### Major Milestone: Enhanced Security & Reliability (v1.5.2)
+### Major Milestone: Enhanced Security & Reliability (v1.5.3)
 
 **Latest stability and security enhancements now live in the app:**
 
-✅ **Advanced Authentication (v1.5.2):**
-- ENHANCED PEM key parsing with BouncyCastle libraries (bcprov-jdk18on, bcpkix-jdk18on 1.78)
-- Support for both raw base64 and PEM formats with automatic detection
-- Comprehensive error handling in JWT generation with multiple fallback mechanisms
-- Build-time credential injection with IMPROVED security key processing
+✅ **Enhanced Security Key Parsing (v1.5.3):**
+- STRENGTHENED support for Coinbase CDP private key formats
+- JWT authentication issues RESOLVED that could cause connection failures
+- Improved error handling and debugging capabilities for API connections
+- Enhanced PEM key processing with better escape sequence handling
 
-✅ **Improved API Integration:**
-- CoinbaseApiClient with enhanced Ktor HTTP client and robust error handling
-- AccountsResponseDto with complete Coinbase API response structure  
-- Domain mapping from DTOs to Balance models with better error recovery
-- Professional UX flow with enhanced loading states and retry mechanisms
+✅ **UI & Navigation Improvements:**
+- RESOLVED duplicate navigation bar display issue for cleaner interface
+- Centralized TopAppBar configuration with "TradeFlow" title
+- Enhanced dashboard with complete state management and loading indicators
+- Portfolio card shows BTC/USD balances with "Live Data" indicator and enhanced formatting
 
-✅ **Navigation & UI Improvements:**
-- Centralized TopAppBar configuration to resolve duplicate display issues
-- Cleaner navigation architecture with better user experience
-- Enhanced dashboard with improved real-time data display
-- Better error state management with user-friendly retry options
+✅ **API Integration Enhancements:**
+- App now displays real Coinbase account balances with ENHANCED error handling
+- ViewModel with complete state management (loading, error, success states)
+- IMPROVED error handling with better retry functionality for network failures
+- Professional UX flow with robust state management and error recovery
 
 ### Current App Version
 
-**Version:** 1.5.2 (latest stable)
+**Version:** 1.5.3 (latest stable)
 **Key Improvements:**
-- Enhanced security key parsing supporting multiple key formats (raw base64 + PEM)
-- Improved connection stability and error recovery mechanisms
-- Fixed navigation display issues with centralized TopAppBar architecture
-- Strengthened JWT token generation with comprehensive error handling
-- Enhanced debugging capabilities for better troubleshooting
-- Professional error recovery with improved retry functionality
+- Enhanced security key parsing with improved support for Coinbase CDP private key formats
+- Fixed JWT authentication issues that could cause connection failures
+- Improved error handling and debugging capabilities for API connections
+- Resolved duplicate navigation bar display issue for cleaner interface
+- Strengthened PEM key processing with better escape sequence handling
 
 ### What DOESN'T Exist Yet (Next Up)
 
@@ -198,185 +198,222 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Room database - Ticket 03 ✅ DONE
 ✅ UI Foundation - Tickets 05-09 ✅ DONE
 ✅ Dashboard screen - Ticket 10 ✅ DONE (with enhanced real data + professional error handling)
-✅ Dashboard ViewModel - Ticket 12 ✅ DONE (complete state management + robust error handling)
-✅ Coinbase REST API client - Ticket 13 ✅ DONE (accounts endpoint complete with enhanced security)
-❌ Decision engine (regime switching logic) - Ticket 15
-❌ Risk manager - Ticket 16
-❌ Backtest validation - Phase 1B
-❌ Coinbase WebSocket - Ticket 14 (full REST API comes first)
-❌ Full REST API implementation (candles, orders, market data) - Phase 2
-❌ Settings screen - Ticket 11 (refined, ready to implement)
-❌ Trading service (foreground service) - Tickets 17-18
+✅ Coinbase API Integration - Phase 1 ✅ COMPLETE (accounts endpoint working)
 
-## Next Priorities (Post-v1.5.2)
-
-1. **Full REST API Implementation** (remaining endpoints for candles, orders, market data)
-2. **Decision Engine Implementation** (Ticket 15)
-3. **Settings Screen Implementation** (Ticket 11)
+❌ NEXT PRIORITIES:
+13. Full REST API Client - Complete Coinbase implementation (candles, orders, market data)
+05. Decision Engine - SMA/ADX/ATR indicators + regime switching logic
+06. Risk Manager - Position sizing, drawdown limits, emergency stop
+15. Trading Service - 24/7 background execution with foreground service
 ```
 
 ---
 
 ## 🏗️ Tech Stack
 
-### Core Dependencies (All Added ✅)
+### Core Dependencies
 
-| Library | Version | Status | Usage |
-|---------|---------|--------|-------|
-| **Kotlin** | 2.3.0 | ✅ Active | Language |
-| **Compose BOM** | 2025.12.01 | ✅ Active | UI framework |
-| **Hilt** | 2.57.2 | ✅ Active | Dependency injection |
-| **Room** | 2.8.4 | ✅ Active | Database (4 entities, 4 DAOs) |
-| **Ktor** | 3.3.3 (OkHttp) | ✅ Active | HTTP client + WebSocket |
-| **Timber** | 5.0.1 | ✅ Active | Logging |
+| Component | Library | Version | Status |
+|-----------|---------|---------|---------|
+| **Language** | Kotlin | 2.3.0 | ✅ Active |
+| **UI Framework** | Compose BOM | 2025.12.01 | ✅ Active |
+| **DI Framework** | Hilt | 2.57.2 | ✅ Active |
+| **Database** | Room | 2.8.4 | ✅ Active (4 entities + 4 DAOs) |
+| **HTTP Client** | Ktor | 3.3.3 | ✅ Active (OkHttp engine) |
+| **JSON** | kotlinx.serialization | 1.7.3 | ✅ Active |
+| **Logging** | Timber | 5.0.1 | ✅ Active |
 
-### Trading-Specific Dependencies
+### Coinbase API Integration
 
-| Library | Version | Status | Usage |
-|---------|---------|--------|-------|
-| **ta4j-core** | 0.16 | ⏳ Ready | Technical indicators (SMA, ADX, ATR) |
-| **nimbus-jose-jwt** | 9.47 | ✅ Active | JWT ES256 signing |
-| **BouncyCastle** | 1.78 | ✅ Active | PEM key parsing (bcprov-jdk18on, bcpkix-jdk18on) |
-| **security-crypto** | 1.1.0-alpha06 | ⏳ Ready | EncryptedSharedPreferences |
-| **work-runtime-ktx** | 2.10.0 | ⏳ Ready | Background tasks |
-| **datastore-preferences** | 1.1.1 | ⏳ Ready | Settings persistence |
+| Component | Library | Version | Status |
+|-----------|---------|---------|--------|
+| **JWT Signing** | nimbus-jose-jwt | 9.47 | ✅ Active (ES256 JWT generation) |
+| **PEM Parsing** | BouncyCastle bcprov-jdk18on | 1.78 | ✅ Active (enhanced key parsing) |
+| **PEM Parsing** | BouncyCastle bcpkix-jdk18on | 1.78 | ✅ Active (enhanced key parsing) |
 
-### Development & Analytics
+### Trading & Technical Analysis
 
-| Library | Version | Status | Usage |
-|---------|---------|--------|-------|
-| **Vico** | 2.4.0 | ⏳ Ready | Charts (dashboard) |
-| **Firebase BOM** | 34.7.0 | ✅ Active | Analytics + Crashlytics |
-| **Coroutines** | 1.10.2 | ✅ Active | Async programming |
-| **material-icons-extended** | - | ✅ Active | Icons for ModeIndicator |
+| Component | Library | Version | Status |
+|-----------|---------|---------|---------|
+| **Technical Indicators** | ta4j-core | 0.16 | ⚠️ Ready (pending decision engine) |
+| **Security** | security-crypto | 1.1.0-alpha06 | ⚠️ Replaced (using build-time injection) |
+
+### Background Services & Utilities
+
+| Component | Library | Version | Status |
+|-----------|---------|---------|---------|
+| **Background Work** | work-runtime-ktx | 2.10.0 | ⚠️ Ready (pending trading service) |
+| **Settings Storage** | datastore-preferences | 1.1.1 | ⚠️ Ready (pending settings) |
+| **Charts** | Vico | 2.4.0 | ⚠️ Ready (pending advanced UI) |
+
+### Development & CI/CD
+
+| Component | Library | Version | Status |
+|-----------|---------|---------|---------|
+| **Icons** | material-icons-extended | Compose BOM | ✅ Active (ModeIndicator icons) |
+| **Analytics** | Firebase BOM | 34.7.0 | ✅ Active (Analytics + Crashlytics) |
+| **CI/CD** | GitHub Actions | - | ✅ Active (auto-build + Firebase distribution) |
 
 **Legend:**
 - ✅ Active = Currently used in code
-- ⏳ Ready = Configured, awaiting implementation
+- ⚠️ Ready = Configured, awaiting feature implementation
+- ❌ Missing = Not yet added/configured
 
 ---
 
-## 🔧 Development Workflow
+## 🔗 Key File Locations
 
-### For Claude Code Mobile
-
-**Pattern:** Remote development with GitHub Actions building APKs
+### Application Layer
 
 ```
-Claude Code → Push branch → GitHub Actions → Firebase Distribution → Test on device
+app/src/main/java/com/dpart/tradeflow/
+├── MainActivity.kt                     # Compose entry point
+├── TradeFlowApp.kt                     # Application class (Timber, Hilt)
+├── navigation/
+│   └── AppNavHost.kt                   # Navigation setup with centralized TopAppBar
+├── presentation/dashboard/
+│   ├── DashboardScreen.kt              # Main dashboard UI with enhanced live data
+│   ├── DashboardViewModel.kt           # Complete state management with robust error handling
+│   └── components/                     # Dashboard UI components
+└── di/
+    └── CredentialsModule.kt            # Build-time credential injection
 ```
 
-**No local Gradle needed.** CI/CD handles all building with embedded credentials.
+### Domain Layer (Pure Kotlin)
 
-### Key Files to Watch
+```
+core/domain/src/main/kotlin/com/tradeflow/core/domain/
+├── model/                              # All domain models (Candle, Order, etc.)
+├── repository/                         # Repository interfaces
+└── auth/                               # Authentication interfaces
+```
 
-| File | Purpose | Change Frequency |
-|------|---------|------------------|
-| **`.build-status`** | Build success/failure | Every push |
-| **`build-log.txt`** | Gradle errors (if build fails) | On failures |
-| **`docs/roadmap.md`** | Implementation progress | Weekly |
-| **`CLAUDE.md`** | This file - project context | As needed |
+### Data Layer
 
-### After Every Push
+```
+core/data/src/main/kotlin/com/tradeflow/core/data/
+├── local/                              # Room database (4 entities + 4 DAOs)
+└── security/                           # Static credential store
+```
+
+### UI Layer
+
+```
+core/ui/src/main/kotlin/com/tradeflow/core/ui/
+└── component/                          # Reusable components (5 components complete)
+```
+
+### Coinbase Integration
+
+```
+exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/
+├── auth/CoinbaseJwtGenerator.kt        # Enhanced ES256 JWT with BouncyCastle
+├── api/CoinbaseApiClient.kt            # Ktor HTTP client wrapper  
+├── repository/CoinbaseRepository.kt    # ExchangeRepository implementation
+├── dto/AccountDto.kt                   # Account DTOs
+└── mapper/AccountMapper.kt             # DTO to domain mapping
+```
+
+---
+
+## 🚀 Development Workflow
+
+### Using Claude Code with TradeFlow
+
+1. **Check current status:**
+   ```bash
+   cat .build-status  # SUCCESS or FAILURE
+   ```
+
+2. **Read roadmap for next priority:**
+   ```bash
+   head -50 docs/roadmap.md
+   ```
+
+3. **Implement features following docs/reference.md patterns**
+
+4. **Push to trigger build:**
+   ```bash
+   git push origin claude/feature-name
+   ```
+
+5. **Check build result:**
+   ```bash
+   cat .build-status
+   # If FAILURE: cat build-log.txt
+   ```
+
+6. **Test APK distributed to Firebase automatically**
+
+### Key Commands
 
 ```bash
-git pull                    # Get CI results
-cat .build-status          # Check build result
-# If FAILURE:
-cat build-log.txt          # Check error details
+# Project overview
+find . -name "*.kt" | grep -v test | wc -l  # Count source files
+
+# Check module structure  
+find . -name build.gradle.kts | head -10
+
+# See recent changes
+git log --oneline -10
+
+# Check dependencies
+grep -r "implementation(" */build.gradle.kts | head -10
 ```
 
 ---
 
-## 📋 File Structure (What Exists)
+## 📋 Current Priorities
 
-```
-TradeFlow/
-├── app/                                    ✅ Main app module
-│   ├── build.gradle.kts                   ✅ Enhanced credential injection (v1.5.2)
-│   ├── src/main/java/com/dpart/tradeflow/
-│   │   ├── MainActivity.kt                ✅ Minimal (just hosts Compose)
-│   │   ├── TradeFlowApp.kt               ✅ Application class
-│   │   ├── di/
-│   │   │   ├── AppModule.kt              ✅ Empty Hilt module
-│   │   │   ├── DatabaseModule.kt         ✅ Room database DI
-│   │   │   ├── NetworkModule.kt          ✅ Ktor HTTP client DI
-│   │   │   └── CredentialsModule.kt      ✅ Static credential injection
-│   │   ├── navigation/
-│   │   │   └── AppNavHost.kt             ✅ Navigation with enhanced TopAppBar
-│   │   └── presentation/dashboard/
-│   │       ├── DashboardScreen.kt        ✅ Enhanced UI with real data
-│   │       ├── DashboardViewModel.kt     ✅ Complete state management
-│   │       └── components/               ✅ PortfolioCard, ModeCard, etc.
-│   └── src/main/res/                     ✅ App icon, strings, themes
-│
-├── core/
-│   ├── domain/                           ✅ Pure Kotlin domain layer
-│   │   └── src/main/kotlin/.../domain/
-│   │       ├── auth/                     ✅ AuthTokenProvider, CredentialStore
-│   │       ├── error/                    ✅ ExchangeError types
-│   │       ├── model/                    ✅ Candle, Order, Portfolio, etc.
-│   │       └── repository/               ✅ ExchangeRepository, WebSocket
-│   ├── data/                             ✅ Room + Security
-│   │   └── src/main/kotlin/.../data/
-│   │       ├── local/                    ✅ Room entities + DAOs
-│   │       ├── security/                 ✅ StaticCredentialStore
-│   │       └── di/                       ✅ Database + Security modules
-│   └── ui/                               ✅ Shared UI components
-│       └── src/main/kotlin/.../ui/
-│           ├── component/                ✅ StatusCard, PriceDisplay, etc.
-│           └── extension/                ✅ BigDecimal formatting
-│
-├── exchange/coinbase/                    ✅ Coinbase API implementation (v1.5.2)
-│   └── src/main/kotlin/.../coinbase/
-│       ├── auth/
-│       │   └── CoinbaseJwtGenerator.kt   ✅ Enhanced ES256 JWT with BouncyCastle
-│       ├── api/
-│       │   └── CoinbaseApiClient.kt      ✅ Ktor HTTP client wrapper
-│       ├── dto/
-│       │   └── AccountDto.kt             ✅ API response DTOs
-│       ├── mapper/
-│       │   └── AccountMapper.kt          ✅ DTO → Domain mapping
-│       ├── repository/
-│       │   └── CoinbaseRepository.kt     ✅ Enhanced implementation
-│       └── di/                           ✅ Auth + Exchange modules
-│
-└── docs/                                 ✅ All documentation
-    ├── README.md                         ✅ Complete doc index
-    ├── roadmap.md                        ✅ Implementation roadmap
-    ├── reference.md                      ✅ Implementation blueprint
-    ├── ci.md                             ✅ CI/CD documentation
-    └── tickets/                          ✅ All ticket files
-```
+### Next Implementation (Phase 2)
+
+1. **Full REST API Client (Ticket 13)** - Complete CoinbaseRepository:
+   - Implement getCandles(), getCurrentPrice()
+   - Implement order placement (placeLimitOrder, placeMarketOrder, placeBracketOrder)
+   - Implement order management (cancelOrder, getOpenOrders)
+
+2. **Decision Engine (Ticket 05)** - SMA/ADX/ATR indicators:
+   - Integrate ta4j library for technical indicators
+   - Implement regime switching logic (DEFENSE/TREND/RANGE)
+   - Add hysteresis to prevent mode switching whipsaws
+
+3. **Risk Manager (Ticket 06)** - Position sizing and limits:
+   - 1-2% risk per trade calculation
+   - 15% drawdown emergency stop
+   - Position size validation
+
+### Quality Gates
+
+- **No crashes** in 8-hour device test
+- **Authentication works** with real Coinbase API
+- **Database persists** data across app restarts
+- **UI responsive** on phone + tablet
+- **Build succeeds** in CI/CD pipeline
 
 ---
 
-## 🚀 Current Development Phase
+## 🔍 Troubleshooting
 
-### Phase 1 COMPLETE: Enhanced Coinbase Integration (v1.5.2)
+### Build Issues
 
-**Major achievements:**
-- ✅ **Enhanced authentication** with advanced PEM key parsing and multiple format support
-- ✅ **Improved API integration** with robust error handling and retry mechanisms
-- ✅ **Professional user experience** with better loading states and error recovery
-- ✅ **Centralized navigation** architecture resolving TopAppBar display issues
-- ✅ **Live portfolio data** integration with Coinbase Advanced Trade API
-- ✅ **Comprehensive error handling** throughout the authentication and API layers
+- Check `.build-status` file for SUCCESS/FAILURE
+- Read `build-log.txt` for error details (last 200 lines)
+- Verify environment secrets in GitHub repo settings
 
-**What this means:**
-- App now displays real Coinbase account balances
-- Authentication is hardened with multiple fallback mechanisms
-- User interface provides professional error handling and recovery options
-- Navigation is clean and consistent across the app
-- Foundation is solid for implementing remaining trading features
+### Common Issues
 
-### Next Phase: Full Trading Implementation
+1. **Build fails with credential issues:**
+   - Check GitHub Secrets: `COINBASE_API_KEY`, `COINBASE_API_SECRET`, `ANTHROPIC_API_KEY`
+   - Verify PEM key format (must include headers and newlines)
 
-**Ready for:**
-1. **Full REST API** - Complete Coinbase API client (candles, orders, market data)
-2. **Decision Engine** - Implement the trading strategy logic
-3. **Settings Screen** - Configuration and preferences
-4. **Trading Service** - Background execution for autonomous trading
+2. **App crashes on launch:**
+   - Check Timber logs in logcat
+   - Verify Hilt modules are properly configured
+   - Check Room database schema
 
-The enhanced v1.5.2 release provides a robust foundation for implementing the remaining trading features with confidence in the stability and security of the core systems.
+3. **Navigation issues:**
+   - AppNavHost is centralized in navigation/AppNavHost.kt
+   - Bottom navigation handled in same file
+   - TopAppBar centralized to prevent duplicates
 
+For more details, see [docs/ci.md](docs/ci.md) for CI/CD troubleshooting.
