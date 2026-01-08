@@ -1,8 +1,8 @@
 # TradeFlow - Master Implementation Plan
 
 **Last Updated:** 2026-01-08  
-**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.3)  
-**Current Build:** #31 SUCCESS (Version 1.5.3)
+**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.4)  
+**Current Build:** #31 SUCCESS (Version 1.5.4)
 **Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
 ---
@@ -52,7 +52,7 @@ Year 10: $10,000-20,000    (Passive income: $500-1,000/month)
 
 ### ✅ What Exists (January 2026)
 
-**Phase 1 COMPLETE - Enhanced Coinbase Integration (v1.5.3):**
+**Phase 1 COMPLETE - Enhanced Coinbase Integration (v1.5.4):**
 
 ```
 app/src/main/java/com/dpart/tradeflow/
@@ -71,7 +71,7 @@ app/src/main/java/com/dpart/tradeflow/
 │   ├── AppDatabase.kt           ✅ Complete Room DB with 4 entities
 │   └── PlaceholderEntity.kt     ✅ Removed (no longer needed)
 └── navigation/
-    ├── AppNavHost.kt            ✅ Complete navigation with CENTRALIZED TopAppBar ("TradeFlow" title)
+    ├── AppNavHost.kt            ✅ Complete navigation with UNIFIED TopAppBar ("TradeFlow" title)
     └── Screen.kt                ✅ Dashboard + Settings routes
 
 ✅ COMPLETE: Domain Layer Foundation
@@ -114,10 +114,10 @@ app/src/main/java/com/dpart/tradeflow/
         ├── SecurityModule.kt        ✅ Hilt DI for credential store
         └── DatabaseModule.kt        ✅ Hilt DI for Room database
 
-✅ COMPLETE: Enhanced Coinbase API Integration (v1.5.3)
+✅ COMPLETE: Enhanced Coinbase API Integration (v1.5.4)
 └── exchange/coinbase/
     ├── auth/
-    │   └── CoinbaseJwtGenerator.kt  ✅ ES256 JWT with ADVANCED BouncyCastle PEM parsing + enhanced escape handling + comprehensive error recovery
+    │   └── CoinbaseJwtGenerator.kt  ✅ ES256 JWT with COMPREHENSIVE BouncyCastle PEM parsing + enhanced escape handling + robust error recovery + format detection
     ├── api/
     │   └── CoinbaseApiClient.kt     ✅ Complete Ktor-based API client (accounts) with robust error handling
     ├── dto/
@@ -141,14 +141,14 @@ app/src/main/java/com/dpart/tradeflow/
     └── extension/
         └── BigDecimalExt.kt        ✅ Currency/percentage formatting
 
-✅ COMPLETE: Enhanced Live Portfolio Data Integration (v1.5.3)
-├── App now displays real Coinbase account balances with ENHANCED error handling
+✅ COMPLETE: Enhanced Live Portfolio Data Integration (v1.5.4)
+├── App now displays real Coinbase account balances with COMPREHENSIVE error handling
 ├── ViewModel with complete state management (loading, error, success states) 
-├── IMPROVED error handling with better retry functionality for network failures
+├── ENHANCED error handling with better retry functionality for network failures
 ├── Loading indicators during API calls with better UX
 ├── Portfolio card shows BTC/USD balances with "Live Data" indicator + enhanced formatting
-├── Navigation FIXED - resolved duplicate TopAppBar issue for cleaner UI
-├── STRENGTHENED authentication with advanced PEM key parsing
+├── Navigation OPTIMIZED - resolved duplicate TopAppBar issue for cleaner UI
+├── COMPREHENSIVE authentication with advanced PEM key parsing supporting all formats
 └── Professional UX flow with robust state management and error recovery
 ```
 
@@ -162,7 +162,7 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ Vico 2.4.0 (charts)
 - ✅ Coroutines 1.10.2
 - ✅ **nimbus-jose-jwt 9.47** ✅ ACTIVE (for JWT ES256 signing)
-- ✅ **BouncyCastle 1.78** ✅ ACTIVE (for ENHANCED PEM key parsing - bcprov-jdk18on, bcpkix-jdk18on)
+- ✅ **BouncyCastle 1.78** ✅ ACTIVE (for COMPREHENSIVE PEM key parsing - bcprov-jdk18on, bcpkix-jdk18on)
 - ✅ **ta4j-core 0.16** (for technical indicators - pending decision engine)
 - ✅ **security-crypto 1.1.0-alpha06** (replaced by build-time injection)
 - ✅ **work-runtime-ktx 2.10.0** (for background tasks)
@@ -171,7 +171,7 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ Firebase Analytics + Crashlytics (BOM 34.7.0)
 
 **CI/CD:**
-- ✅ GitHub Actions: Enhanced build workflow with ADVANCED credential injection and PEM key escaping
+- ✅ GitHub Actions: Enhanced build workflow with COMPREHENSIVE credential injection and PEM key escaping
 - ✅ Auto-build + Firebase App Distribution on PR
 - ✅ Commit-back pattern (`.build-status` + `build-log.txt`)
 - ✅ Auto-documentation workflow (updates CLAUDE.md + docs/)
@@ -184,251 +184,290 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ docs/auto-docs.md (auto-doc workflow)
 - ✅ docs/tickets/ (all Notion tickets organized by status)
 
-### 🆕 MAJOR MILESTONE: Enhanced Security & Reliability (v1.5.3)
+### 🆕 MAJOR MILESTONE: Enhanced Security & Reliability (v1.5.4)
 
 **Latest stability and security enhancements now live in the app:**
 
-✅ **Enhanced Authentication (v1.5.3):**
-- ADVANCED PEM key parsing with BouncyCastle libraries (bcprov-jdk18on, bcpkix-jdk18on 1.78)
+✅ **Enhanced Authentication (v1.5.4):**
+- COMPREHENSIVE PEM key parsing with BouncyCastle libraries (bcprov-jdk18on, bcpkix-jdk18on 1.78)
 - Support for both raw base64 and PEM formats with automatic format detection
 - Comprehensive error handling in JWT generation with multiple fallback mechanisms
-- Build-time credential injection with IMPROVED security key processing
+- Build-time credential injection with ENHANCED security key processing
 
 ✅ **Improved API Integration:**
 - CoinbaseApiClient with enhanced Ktor HTTP client and robust error handling
 - AccountsResponseDto with complete Coinbase API response structure
 - Domain mapping from DTOs to Balance models with better error recovery
-- Professional UX flow with enhanced loading states and retry mechanisms
 
-✅ **UI & Navigation Improvements:**
-- RESOLVED duplicate navigation bar display issue for cleaner interface
-- Centralized TopAppBar configuration with "TradeFlow" title
-- Enhanced dashboard with complete state management and loading indicators
-- Portfolio card shows BTC/USD balances with "Live Data" indicator and enhanced formatting
+✅ **UI & Navigation Refinements:**
+- Resolved duplicate TopAppBar display issue for unified interface
+- Enhanced dashboard with comprehensive state management
+- Portfolio card refined with better balance formatting and "Live Data" indicator
+- Professional error handling with graceful user feedback
 
-### 🔄 What's CHANGED Recently (v1.5.3)
+### What DOESN'T Exist Yet (Phase 2 Ready)
 
-**Version Updates:**
-- ✅ **app/build.gradle.kts**: Version bumped from 1.5.2 → **1.5.3**
-- ✅ **Enhanced PEM key escaping**: Improved support for Coinbase CDP private key formats
-- ✅ **UI Navigation**: Fixed duplicate TopAppBar display issue with centralized configuration
+```
+❌ NEXT UP - Phase 2: Core Trading Logic
 
-**Security Improvements:**
-- ✅ **JWT Authentication**: Fixed authentication issues that could cause connection failures
-- ✅ **Error Handling**: Improved error handling and debugging capabilities for API connections  
-- ✅ **PEM Processing**: Strengthened PEM key processing with better escape sequence handling
+⚠️ Decision Engine (HIGH PRIORITY):
+└── Algorithm Implementation (SMA, ADX, ATR + regime switching with hysteresis)
 
-**Release Notes Updated:**
-- ✅ **release-notes.txt**: Updated to reflect v1.5.3 improvements including enhanced security key parsing, fixed JWT authentication issues, improved error handling, resolved navigation issues, and strengthened PEM key processing
+⚠️ Risk Management (HIGH PRIORITY):
+├── Position sizing calculator (1-2% risk per trade)
+├── Drawdown monitoring (15% emergency stop)
+└── Portfolio value tracking
 
-### ❌ What's MISSING (Next Phase)
+❌ READY FOR Phase 3: Full API Integration
 
-**Phase 2: Complete REST API Client + Decision Engine (HIGHEST PRIORITY)**
+⚠️ Complete REST API Client:
+├── Order placement (market, limit, bracket orders)
+├── Market data fetching (candles, current prices)
+├── Order management (cancel, status updates)
+└── Historical data retrieval
 
-| Ticket | Component | Status | Effort | Priority |
-|--------|-----------|--------|---------|----------|
-| **13** | **Full REST API Client** | ❌ TODO | Large | CRITICAL |
-| **05** | **Decision Engine** | ❌ TODO | Large | HIGH |
-| **06** | **Risk Manager** | ❌ TODO | Medium | HIGH |
+⚠️ WebSocket Integration:
+├── Real-time price feeds
+├── Order status updates
+└── Connection management with auto-reconnect
 
-**Ticket 13 - Full REST API Client** (BLOCKING ALL TRADING):
+❌ Phase 4: Trading Service (24/7 Operation)
+
+⚠️ Foreground Service:
+├── Trading loop execution (every 15 minutes)
+├── Battery optimization handling
+├── Background processing
+└── Notification management
+
+⚠️ Testing & Validation:
+├── Integration tests with live API
+├── Paper trading validation
+├── Small real trade testing
+└── MVP milestone completion
+```
+
+---
+
+## 📋 Implementation Phases
+
+### ✅ Phase 1: COMPLETE - Enhanced Coinbase Integration (v1.5.4)
+
+**Status:** 100% COMPLETE ✅
+
+**Major Achievements:**
+- ✅ Complete UI foundation with dashboard showing real Coinbase data
+- ✅ Full Coinbase authentication with comprehensive JWT generation
+- ✅ Enhanced PEM key parsing supporting all Coinbase CDP formats
+- ✅ Professional error handling and state management
+- ✅ Unified navigation with clean interface design
+- ✅ Build-time credential injection with comprehensive security
+
+---
+
+### 🎯 Phase 2: Core Trading Logic (NEXT - 0% Complete)
+
+**Goal:** Implement the decision-making brain and risk management
+
+**Priority Order:**
+1. **Decision Engine** (HIGH) - The core algorithm that determines DEFENSE/TREND/RANGE modes
+2. **Risk Manager** (HIGH) - Position sizing, stop losses, drawdown limits
+
+**Phase 2 Tickets:**
+| Ticket | Component | Status | Effort | Description |
+|--------|-----------|--------|--------|-------------|
+| **05** | **Decision Engine** | ❌ TODO | Large | SMA(200), ADX(14), ATR(14) + regime switching with 3-candle hysteresis |
+| **06** | **Risk Manager** | ❌ TODO | Medium | Position sizing (1-2% risk), drawdown monitoring (15% stop), portfolio tracking |
+
+**Success Criteria:**
+- ✅ Engine correctly identifies DEFENSE (price < SMA200), TREND (ADX > 25), RANGE (ADX < 25) modes
+- ✅ Hysteresis prevents rapid mode switching (requires 3 consecutive candles for confirmation)
+- ✅ Risk manager enforces 1-2% risk per trade, 15% portfolio drawdown limit
+- ✅ Unit tests validate all regime switching logic with historical data
+
+**Estimated Time:** 2-3 weeks
+
+---
+
+### Phase 3: Full API Integration (0% Complete)
+
+**Goal:** Complete Coinbase REST API and WebSocket integration
+
+**Phase 3 Tickets:**
+| Ticket | Component | Status | Effort | Description |
+|--------|-----------|--------|--------|-------------|
+| **08** | **Full REST API Client** | ❌ TODO | Large | Order placement, candles, market data, order management |
+| **09** | **WebSocket Client** | ❌ TODO | Large | Real-time price feeds, order updates, connection management |
+| **10** | **Market Data Integration** | ❌ TODO | Medium | Candle fetching, price monitoring, data storage |
+
+**Dependencies:** Requires Phase 2 (Decision Engine + Risk Manager) complete
+
+**Success Criteria:**
+- ✅ Can place market, limit, and bracket orders
+- ✅ Real-time price updates via WebSocket
+- ✅ Historical candle data fetching (350 H4 candles for SMA200)
+- ✅ Order status tracking and updates
+
+**Estimated Time:** 3-4 weeks
+
+---
+
+### Phase 4: Trading Service (0% Complete)
+
+**Goal:** 24/7 automated trading execution
+
+**Phase 4 Tickets:**
+| Ticket | Component | Status | Effort | Description |
+|--------|-----------|--------|--------|-------------|
+| **15** | **Trading Service** | ❌ TODO | Large | Foreground service with 15-minute trading loop |
+| **16** | **Battery Optimization** | ❌ TODO | Medium | Doze mode survival, wake locks, service persistence |
+
+**Dependencies:** Requires Phase 2 & 3 complete
+
+**Success Criteria:**
+- ✅ Service runs 24/7 without interruption
+- ✅ Trading decisions executed automatically every 15 minutes
+- ✅ Survives device sleep, battery optimization, app switching
+- ✅ Emergency stop on 15% drawdown
+
+**Estimated Time:** 2-3 weeks
+
+---
+
+### Phase 5: Testing & MVP (0% Complete)
+
+**Goal:** Validate system works end-to-end
+
+**Phase 5 Components:**
+- Integration testing with live Coinbase API
+- Paper trading validation (small amounts)
+- Real trade testing ($10-50 positions)
+- Performance monitoring and optimization
+- MVP milestone - first profitable trade
+
+**Success Criteria:**
+- ✅ End-to-end trading flow works (decision → order → execution → tracking)
+- ✅ No crashes during 24-hour operation test
+- ✅ Correct regime detection on historical data
+- ✅ Risk limits enforced (no position > 2% risk)
+
+**Estimated Time:** 2-3 weeks
+
+---
+
+## 📊 Current Progress Summary
+
+```
+Phase 1 (Coinbase Integration): ████████████████████ 100% ✅ COMPLETE
+Phase 2 (Trading Logic):        ░░░░░░░░░░░░░░░░░░░░   0% ← YOU ARE HERE
+Phase 3 (Full API):             ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 4 (Trading Service):      ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 5 (Testing & MVP):        ░░░░░░░░░░░░░░░░░░░░   0%
+
+Overall Progress: 1/5 phases (20%)
+```
+
+### Critical Path to MVP
+
+**Next 4 Tickets (Must complete in order):**
+1. ❌ **Ticket 05: Decision Engine** ← IMMEDIATE NEXT STEP
+2. ❌ **Ticket 06: Risk Manager**
+3. ❌ **Ticket 08: Full REST API Client**
+4. ❌ **Ticket 15: Trading Service**
+
+**Estimated Time to MVP:** 8-12 weeks
+
+---
+
+## 🎯 Immediate Next Steps
+
+### 1. Ticket 05: Decision Engine (CURRENT FOCUS)
+
+**File:** `core/domain/src/main/kotlin/com/tradeflow/core/domain/strategy/TradingDecisionEngine.kt`
+
+**Requirements:**
+- Implement regime switching logic using ta4j indicators
+- SMA(200) for trend filter (price above = bullish regime)
+- ADX(14) for trend strength (>25 = trending, <25 = ranging)  
+- ATR(14) for volatility-based position sizing
+- 3-candle hysteresis to prevent whipsawing (except DEFENSE = instant)
+
+**Algorithm:**
 ```kotlin
-// MISSING: Complete CoinbaseRepository implementation
-class CoinbaseRepository {
-    // ✅ DONE: getBalances() - returns live account balances
-    // ❌ TODO: getCandles() - fetch OHLCV data for analysis  
-    // ❌ TODO: getCurrentPrice() - real-time BTC price
-    // ❌ TODO: placeLimitOrder() - grid trading orders
-    // ❌ TODO: placeMarketOrder() - emergency liquidation
-    // ❌ TODO: placeBracketOrder() - trend trading (entry + TP + SL)
-    // ❌ TODO: cancelOrder() - cancel single order
-    // ❌ TODO: cancelOrders() - cancel multiple orders  
-    // ❌ TODO: getOpenOrders() - check active orders
+fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
+    val sma200 = calculateSMA(candles, 200)
+    val adx14 = calculateADX(candles, 14) 
+    val atr14 = calculateATR(candles, 14)
+    
+    // Rule 1: DEFENSE (instant, no hysteresis)
+    if (currentPrice < sma200) {
+        resetCounters()
+        return Decision.Defense("Price below SMA200")
+    }
+    
+    // Rule 2: TREND (requires 3 candles with ADX > 25)
+    if (adx14 > 25.0) {
+        trendConfirmCount++
+        if (trendConfirmCount >= 3) {
+            return Decision.Trend(...)
+        }
+    }
+    
+    // Rule 3: RANGE (requires 3 candles with ADX < 25)  
+    // ...
 }
 ```
 
-**Ticket 05 - Decision Engine** (CORE TRADING LOGIC):
-```kotlin  
-// MISSING: SMA/ADX/ATR analysis with ta4j
-class TradingDecisionEngine {
-    // ❌ TODO: SMA(200) - bull/bear trend filter
-    // ❌ TODO: ADX(14) - trend strength measurement  
-    // ❌ TODO: ATR(14) - volatility for position sizing
-    // ❌ TODO: Regime switching (DEFENSE/TREND/RANGE)
-    // ❌ TODO: Hysteresis logic (prevent whipsaws)
-}
-```
+**Testing:** Unit tests with mock candle data to verify all 4 modes work correctly.
 
-**Phase 3: Trading Service (24/7 EXECUTION)**
+### 2. Ticket 06: Risk Manager
 
-| Ticket | Component | Status |
-|--------|-----------|--------|
-| **15** | **Trading Service** | ❌ TODO |
-| **16** | **Battery Optimization** | ❌ TODO |
+**File:** `core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/TradingRiskManager.kt`
 
-### 💎 What's WORKING NOW
+**Requirements:**
+- Position sizing: 1-2% risk per trade (not position size - risk amount)
+- Portfolio tracking with high-water mark
+- Emergency stop at 15% drawdown from peak
+- Validation of all orders before placement
 
-**Live Features (v1.5.3):**
-- ✅ **Real Portfolio Data**: Dashboard shows actual Coinbase BTC/USD balances
-- ✅ **Robust Authentication**: JWT tokens generated with enhanced security
-- ✅ **Professional UI**: Complete dashboard with loading states, error handling, retry functionality
-- ✅ **Database Persistence**: All trading data stored in Room database
-- ✅ **Build Pipeline**: Automated APK builds with embedded credentials
-- ✅ **Error Recovery**: Comprehensive error handling with user-friendly retry options
+### 3. Planning Ticket 08: Full REST API
 
-**Testing Status:**
-- ✅ **API Connection**: Successfully connects to live Coinbase Advanced Trade API
-- ✅ **JWT Generation**: ES256 tokens accepted by Coinbase
-- ✅ **Account Access**: Live BTC/USD balance retrieval working
-- ✅ **UI Stability**: No crashes, responsive design, professional UX
+**Goal:** Extend current `CoinbaseRepository` with full order placement capabilities
+- Market orders (emergency liquidation)
+- Limit orders (grid/range trading with post_only=true)
+- Bracket orders (trend trading with stop-loss + take-profit)
 
 ---
 
-## Next Sprint: Complete REST API Client (Ticket 13)
+## ⚠️ Risk Management Notes
 
-### **🎯 Priority 1: Implement Missing API Methods**
+### Financial Reality Check
+- **This is educational/experimental** - Not financial advice
+- **97% of algorithmic traders lose money** - Respect this statistic  
+- **Starting capital: $500** - Treat as education cost, not investment
+- **Maximum risk: 1-2% per trade** - $5-10 loss maximum per position
+- **Monthly target: 3-5%** - Exceptional performance, difficult to achieve
+- **Timeline: 5-10 years** - Path to meaningful passive income
 
-**Goal:** Enable order placement and market data fetching
+### Development Priorities
+- **Simplicity over complexity** - Avoid over-engineering
+- **Risk management first** - Never trade without proper stops
+- **Small position sizes** - Learn with minimal capital at risk
+- **Comprehensive logging** - Track every decision for analysis
+- **Tax record keeping** - Every trade is a taxable event
 
-**Files to implement:**
-```kotlin
-// exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/
-├── api/CoinbaseApiClient.kt          # Add missing HTTP methods
-├── dto/                              # Add DTOs for candles, orders
-│   ├── CandleDto.kt                 # OHLCV response structure
-│   ├── OrderDto.kt                  # Order placement request/response
-│   └── ProductDto.kt                # Market data responses
-├── mapper/                           # Add domain mappers  
-│   ├── CandleMapper.kt              # CandleDto → Candle
-│   └── OrderMapper.kt               # OrderDto → Order
-└── repository/CoinbaseRepository.kt  # Complete implementation
-```
-
-**API Methods to Add:**
-1. **Market Data:**
-   - `getCandles(productId, granularity, limit)` → `List<Candle>`
-   - `getCurrentPrice(productId)` → `Ticker`
-
-2. **Order Management:**
-   - `placeLimitOrder(productId, side, size, price)` → `Order`
-   - `placeMarketOrder(productId, side, size)` → `Order` 
-   - `placeBracketOrder(...)` → `Order`
-   - `cancelOrder(orderId)` → `Unit`
-   - `cancelOrders(orderIds)` → `Int`
-   - `getOpenOrders(productId)` → `List<Order>`
-
-**Testing Strategy:**
-- Start with **getCandles()** (no risk, just market data)
-- Then **small limit orders** ($10-20, far from market price)
-- Test **order cancellation** immediately after placement
-- **Never risk large amounts** during development
-
-### **🧠 Priority 2: Decision Engine (Ticket 05)**
-
-**Goal:** Implement SMA/ADX/ATR analysis with regime switching
-
-**Files to create:**
-```kotlin
-// core/domain/src/main/kotlin/com/tradeflow/core/domain/
-├── strategy/
-│   ├── DecisionEngine.kt             # Interface
-│   ├── TradingDecisionEngine.kt      # Implementation  
-│   └── StrategyConfig.kt             # Configuration
-└── indicator/                        # ta4j wrappers
-    ├── SMACalculator.kt              # Simple Moving Average
-    ├── ADXCalculator.kt              # Average Directional Index
-    └── ATRCalculator.kt              # Average True Range
-```
-
-**Implementation approach:**
-1. **Start simple:** SMA(200) bull/bear filter only
-2. **Add ADX:** Trend strength measurement (>25 = trending)
-3. **Add ATR:** Position sizing based on volatility  
-4. **Add hysteresis:** Prevent rapid mode switching
-
-**Validation:**
-- **Unit tests** with known candle data
-- **Historical backtesting** with 2023-2024 BTC data
-- **Paper trading** before live deployment
-
-### **⚖️ Priority 3: Risk Manager (Ticket 06)**
-
-**Goal:** Prevent catastrophic losses
-
-**Key components:**
-- **Position sizing:** Max 2% risk per trade  
-- **Drawdown monitoring:** Emergency stop at 15%
-- **Order validation:** Prevent oversized orders
-- **Emergency liquidation:** Market sell all BTC if needed
+### Technical Risk Management
+- **15% portfolio drawdown = EMERGENCY STOP** - Hardcoded limit
+- **Multiple exchange isolation** - Only `:app` module knows about Coinbase
+- **Real-time monitoring** - Dashboard shows current status
+- **Manual override** - Always ability to stop service manually
 
 ---
 
-## Success Metrics
+## 📚 Documentation References
 
-### Phase 2 Complete When:
-- [ ] **getCandles()** fetches 350 H4 candles successfully
-- [ ] **getCurrentPrice()** returns real-time BTC price  
-- [ ] **placeLimitOrder()** places $20 test order at 50% below market
-- [ ] **cancelOrder()** cancels test order within 30 seconds
-- [ ] **Decision engine** correctly identifies DEFENSE/TREND/RANGE on historical data
-- [ ] **Risk manager** prevents orders >2% of account value
+- **[docs/reference.md](reference.md)** - Complete implementation examples
+- **[docs/strategy/bitcoin-first-strategy.md](strategy/bitcoin-first-strategy.md)** - Why BTC-only trading
+- **[docs/tickets/refined/](tickets/refined/)** - Detailed ticket requirements  
+- **[docs/api/coinbase.md](api/coinbase.md)** - Coinbase API integration guide
+- **[docs/ci.md](ci.md)** - GitHub Actions and credential injection
 
-### MVP Complete When:
-- [ ] **Trading service** runs 24/7 without crashes
-- [ ] **Live trading** with $100 for 1 week (monitoring only)
-- [ ] **Break-even or better** performance after 30 days
-- [ ] **Complete audit trail** of all trades for tax reporting
-
-### Long-term Success:
-- [ ] **3% monthly returns** sustained for 6 months
-- [ ] **Account growth** from $500 → $1,000+ 
-- [ ] **Automated operation** requiring <1 hour/week maintenance
-- [ ] **Tax reporting** fully automated with CSV exports
-
----
-
-## Risk Management
-
-### Development Risks
-- **API changes:** Coinbase updates breaking integration → Monitor API changelog
-- **Market volatility:** 2025 election/regulation changes → Start very small ($100-500)
-- **Technical complexity:** Over-engineering → Keep strategy simple (SMA/ADX only)
-
-### Trading Risks  
-- **Capital loss:** Bot makes bad decisions → 2% max per trade, 15% drawdown stop
-- **Fee erosion:** High-frequency trading → Target 3-5 trades/day maximum
-- **Overconfidence:** Early wins → Stick to position sizing rules always
-
-### Personal Risks
-- **Time investment:** 6+ months development → Treat as learning, not guaranteed income
-- **Emotional attachment:** Watching trades 24/7 → Set rules and trust system
-- **Tax compliance:** Complex crypto reporting → Keep detailed records from day 1
-
----
-
-## Development Guidelines
-
-### Code Quality Standards
-- ✅ **100% build success** in CI/CD pipeline
-- ✅ **Unit tests** for all domain logic (decision engine, risk manager)
-- ✅ **Integration tests** for API clients (small real trades)
-- ✅ **Error handling** for all network operations
-- ✅ **Logging** for all trading decisions and outcomes
-
-### Security Requirements  
-- ✅ **Never log credentials** or API keys
-- ✅ **Encrypted storage** for all sensitive data (using build-time injection)
-- ✅ **HTTPS only** for all API communication
-- ✅ **Input validation** for all user-entered data
-- ✅ **Production safeguards** (max order size, daily loss limits)
-
-### Documentation Standards
-- ✅ **Keep CLAUDE.md updated** with every major change
-- ✅ **Update roadmap.md** when phases complete  
-- ✅ **Document all API integrations** with example requests/responses
-- ✅ **Track all architectural decisions** and rationale
-- ✅ **Maintain ticket status** in docs/tickets/ folders
-
----
-
-This roadmap is a living document. Update status as features are implemented and priorities shift based on real-world testing results.
