@@ -33,22 +33,76 @@ data class Candle(
 package com.dpart.tradeflow.domain.model
 
 sealed class Decision {
-    data class Wait(val reason: String) : Decision()
+    abstract val confidence: Double  // 0.0 to 1.0 - drives position sizing
 
-    data class Defense(val reason: String) : Decision()
+    data class Wait(
+        val reason: String,
+        override val confidence: Double = 0.0
+    ) : Decision()
+
+    data class Defense(
+        val reason: String,
+        override val confidence: Double = 0.0  // No trades in defense
+    ) : Decision()
 
     data class Trend(
         val stopLossPrice: Double,
         val takeProfitPrice: Double,
-        val atr: Double
+        val atr: Double,
+        override val confidence: Double  // Based on ADX strength + confirmation
     ) : Decision()
 
     data class Range(
         val gridSpacing: Double,
-        val atr: Double
+        val atr: Double,
+        override val confidence: Double  // Based on ADX weakness + confirmation
     ) : Decision()
 }
 ```
+
+### Confidence Calculation
+
+**Critical:** Confidence score determines position size. Must be accurate.
+
+```kotlin
+// Confidence scoring for TREND mode
+fun calculateTrendConfidence(
+    adx: Double,
+    confirmationCount: Int,
+    maxConfirmations: Int = 3
+): Double {
+    val adxStrength = ((adx - 25.0) / 50.0).coerceIn(0.0, 1.0)  // 25 = 0.0, 75+ = 1.0
+    val confirmationFactor = confirmationCount.toDouble() / maxConfirmations
+
+    // Weighted combination: 60% ADX strength, 40% confirmations
+    return (0.6 * adxStrength + 0.4 * confirmationFactor).coerceIn(0.75, 1.0)
+}
+
+// Confidence scoring for RANGE mode
+fun calculateRangeConfidence(
+    adx: Double,
+    confirmationCount: Int,
+    maxConfirmations: Int = 3
+): Double {
+    val adxWeakness = ((25.0 - adx) / 25.0).coerceIn(0.0, 1.0)  // 25 = 0.0, 0 = 1.0
+    val confirmationFactor = confirmationCount.toDouble() / maxConfirmations
+
+    // Weighted combination: 60% ADX weakness, 40% confirmations
+    return (0.6 * adxWeakness + 0.4 * confirmationFactor).coerceIn(0.75, 1.0)
+}
+```
+
+**Examples:**
+
+| Scenario | ADX | Confirmations | Confidence | Result |
+|----------|-----|---------------|------------|--------|
+| Strong trend | 60 | 3/3 | 0.88 | 3.9% position |
+| Weak trend | 28 | 3/3 | 0.78 | 2.2% position |
+| Strong range | 10 | 3/3 | 0.88 | 3.9% position |
+| Weak range | 22 | 3/3 | 0.77 | 2.1% position |
+| Unconfirmed | 50 | 1/3 | 0.53 | No trade (< 0.75) |
+
+**Validation:** Track confidence vs. win rate correlation. If no correlation exists after 50+ trades, disable confidence-based sizing.
 
 ---
 
@@ -132,7 +186,10 @@ class EngineDecisionEngine {
             // DEFENSE: Instant switch (safety first, no hysteresis)
             !isPriceAboveSma -> {
                 resetCounters()
-                Decision.Defense("Price ($currentPrice) below SMA ($sma200)")
+                Decision.Defense(
+                    reason = "Price ($currentPrice) below SMA ($sma200)",
+                    confidence = 0.0  // No trading in defense
+                )
             }
 
             // TREND: Requires 3 consecutive confirmations
@@ -141,13 +198,23 @@ class EngineDecisionEngine {
                 rangeConfirmCount = 0
 
                 if (trendConfirmCount >= HYSTERESIS_CANDLES) {
+                    val confidence = calculateTrendConfidence(
+                        adx = adx14,
+                        confirmationCount = trendConfirmCount,
+                        maxConfirmations = HYSTERESIS_CANDLES
+                    )
+
                     Decision.Trend(
                         stopLossPrice = currentPrice - (STOP_LOSS_ATR_MULT * atr14),
                         takeProfitPrice = currentPrice + (TAKE_PROFIT_ATR_MULT * atr14),
-                        atr = atr14
+                        atr = atr14,
+                        confidence = confidence
                     )
                 } else {
-                    Decision.Wait("Trend confirming: $trendConfirmCount/$HYSTERESIS_CANDLES")
+                    Decision.Wait(
+                        reason = "Trend confirming: $trendConfirmCount/$HYSTERESIS_CANDLES",
+                        confidence = 0.0
+                    )
                 }
             }
 
@@ -162,12 +229,56 @@ class EngineDecisionEngine {
                     val minSpacing = currentPrice * MIN_GRID_SPACING_PERCENT
                     val spacing = maxOf(atrSpacing, minSpacing)
 
-                    Decision.Range(gridSpacing = spacing, atr = atr14)
+                    val confidence = calculateRangeConfidence(
+                        adx = adx14,
+                        confirmationCount = rangeConfirmCount,
+                        maxConfirmations = HYSTERESIS_CANDLES
+                    )
+
+                    Decision.Range(
+                        gridSpacing = spacing,
+                        atr = atr14,
+                        confidence = confidence
+                    )
                 } else {
-                    Decision.Wait("Range confirming: $rangeConfirmCount/$HYSTERESIS_CANDLES")
+                    Decision.Wait(
+                        reason = "Range confirming: $rangeConfirmCount/$HYSTERESIS_CANDLES",
+                        confidence = 0.0
+                    )
                 }
             }
         }
+    }
+
+    private fun calculateTrendConfidence(
+        adx: Double,
+        confirmationCount: Int,
+        maxConfirmations: Int
+    ): Double {
+        // ADX strength: 25 = minimum (0.0), 75+ = maximum (1.0)
+        val adxStrength = ((adx - 25.0) / 50.0).coerceIn(0.0, 1.0)
+
+        // Confirmation progress: 3/3 = 1.0, 1/3 = 0.33
+        val confirmationFactor = confirmationCount.toDouble() / maxConfirmations
+
+        // Weighted: 60% ADX strength, 40% confirmations
+        // Result always >= 0.75 (minimum tradeable confidence)
+        return (0.6 * adxStrength + 0.4 * confirmationFactor).coerceIn(0.75, 1.0)
+    }
+
+    private fun calculateRangeConfidence(
+        adx: Double,
+        confirmationCount: Int,
+        maxConfirmations: Int
+    ): Double {
+        // ADX weakness: 25 = minimum (0.0), 0 = maximum (1.0)
+        val adxWeakness = ((25.0 - adx) / 25.0).coerceIn(0.0, 1.0)
+
+        // Confirmation progress
+        val confirmationFactor = confirmationCount.toDouble() / maxConfirmations
+
+        // Weighted: 60% ADX weakness, 40% confirmations
+        return (0.6 * adxWeakness + 0.4 * confirmationFactor).coerceIn(0.75, 1.0)
     }
 
     private fun resetCounters() {

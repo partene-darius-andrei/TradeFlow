@@ -16,7 +16,7 @@ Strategy specification and Android architecture for TradeFlow.
 | Trend strength | ADX(14) on H4 candles |
 | Volatility sizing | ATR(14) on H4 candles |
 | Mode switching | 3-candle hysteresis (except DEFENSE) |
-| Position sizing | Fixed 5% per trade |
+| Position sizing | **Confidence-based scaling** (see below) |
 | Grid spacing | max(1.5%, ATR-based) |
 | Risk limit | 15% drawdown kills service |
 
@@ -62,11 +62,52 @@ Every H4 candle (4 hours):
 
 ---
 
+## Confidence-Based Position Sizing
+
+**Core Principle:** Position size scales with confidence score. Higher confidence = larger allocation (within risk limits).
+
+### Formula
+
+```kotlin
+val baseSize = 0.02  // 2% base position
+val maxSize = 0.05   // 5% max position
+val minConfidence = 0.75  // Only trade if confidence >= 0.75
+
+// Linear scaling from base to max
+val positionSize = when {
+    confidence < minConfidence -> 0.0  // Don't trade
+    else -> baseSize + (maxSize - baseSize) * ((confidence - minConfidence) / (1.0 - minConfidence))
+}
+```
+
+### Examples
+
+| Confidence | Position Size | Rationale |
+|-----------|---------------|-----------|
+| 0.70 | 0% | Below threshold - don't trade |
+| 0.75 | 2.0% | Minimum conviction - base size |
+| 0.85 | 3.2% | Medium conviction - scaled up |
+| 0.95 | 4.6% | High conviction - near max |
+| 1.00 | 5.0% | Maximum conviction - max size |
+
+### Critical Assumption
+
+**This ONLY works if confidence scoring is accurate.**
+
+If confidence is poorly calibrated (e.g., always returns 0.95), this becomes reckless position sizing.
+
+**Validation Required:**
+- Backtest: Do 0.95 confidence trades actually win more than 0.75 trades?
+- Track: Confidence vs. actual win rate correlation
+- Adjust: If no correlation, fall back to fixed 2% sizing
+
+---
+
 ## Risk Limits (Hardcoded)
 
 | Limit | Value | Enforcement |
 |-------|-------|-------------|
-| Max position/trade | 5% portfolio | Reject if exceeded |
+| Max position/trade | 5% portfolio | Reject if exceeded (confidence = 1.0) |
 | Max total exposure | 10% portfolio | No new orders |
 | Max correlated assets | 1 | Block second asset |
 | Portfolio drawdown | 15% from HWM | Emergency liquidate + stop |
