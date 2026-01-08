@@ -2,8 +2,11 @@ package com.tradeflow.exchange.coinbase.auth
 
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
-import com.nimbusds.jose.crypto.ECDSASigner
-import com.nimbusds.jose.jwk.ECKey
+import com.nimbusds.jose.crypto.Ed25519Signer
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.KeyUse
+import com.nimbusds.jose.jwk.OctetKeyPair
+import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import com.tradeflow.core.domain.auth.AuthTokenProvider
@@ -11,15 +14,9 @@ import com.tradeflow.core.domain.auth.CredentialStore
 import com.tradeflow.core.domain.error.ExchangeError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo
-import org.bouncycastle.openssl.PEMKeyPair
-import org.bouncycastle.openssl.PEMParser
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
-import java.io.StringReader
-import java.security.SecureRandom
-import java.security.interfaces.ECPrivateKey
-import java.time.Instant
+import java.util.Base64
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 class CoinbaseJwtGenerator @Inject constructor(
@@ -63,32 +60,33 @@ class CoinbaseJwtGenerator @Inject constructor(
         uri: String?
     ): String = withContext(Dispatchers.Default) {
         try {
-            val now = Instant.now().epochSecond
-
-            // Build JWT header with nonce
-            val header = JWSHeader.Builder(JWSAlgorithm.ES256)
-                .keyID(apiKey)
-                .customParam("nonce", generateNonce())
-                .build()
+            val now = Date()
+            val expiration = Date(System.currentTimeMillis() + 120000) // 120 seconds
 
             // Build JWT claims
             val claimsBuilder = JWTClaimsSet.Builder()
                 .issuer("cdp")
                 .subject(apiKey)
-                .claim("nbf", now)
-                .expirationTime(Date.from(Instant.ofEpochSecond(now + 120))) // 2 minutes
+                .notBeforeTime(now)
+                .expirationTime(expiration)
 
             // Add URI claim only for REST API (not WebSocket)
             uri?.let { claimsBuilder.claim("uri", it) }
 
             val claims = claimsBuilder.build()
 
-            // Parse EC private key from PEM format
-            val privateKey = parsePemPrivateKey(secret)
+            // Build JWT header with nonce
+            val header = JWSHeader.Builder(JWSAlgorithm.EdDSA)
+                .keyID(apiKey)
+                .customParam("nonce", generateNonce())
+                .build()
 
-            // Sign JWT with ES256
+            // Parse Ed25519 private key from base64
+            val keyPair = parseEd25519Key(secret)
+
+            // Sign JWT with EdDSA
             val signedJWT = SignedJWT(header, claims)
-            val signer = ECDSASigner(privateKey)
+            val signer = Ed25519Signer(keyPair)
             signedJWT.sign(signer)
 
             signedJWT.serialize()
@@ -97,41 +95,31 @@ class CoinbaseJwtGenerator @Inject constructor(
         }
     }
 
-    private fun parsePemPrivateKey(pemString: String): ECPrivateKey {
+    private fun parseEd25519Key(base64Secret: String): OctetKeyPair {
         try {
-            // Handle escaped newlines and normalize formatting
-            val normalizedPem = pemString
-                .replace("\\n", "\n")
-                .trim()
-                .lines()
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .joinToString("\n")
+            // Decode the Ed25519 private key from base64
+            val decoded = Base64.getDecoder().decode(base64Secret)
 
-            StringReader(normalizedPem).use { reader ->
-                PEMParser(reader).use { pemParser ->
-                    val pemObject = pemParser.readObject()
-                        ?: throw IllegalArgumentException("No PEM object found in string")
-
-                    val converter = JcaPEMKeyConverter()
-                    val privateKey = when (pemObject) {
-                        is PEMKeyPair -> converter.getKeyPair(pemObject).private
-                        is PrivateKeyInfo -> converter.getPrivateKey(pemObject)
-                        else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}")
-                    }
-
-                    return privateKey as? ECPrivateKey
-                        ?: throw IllegalArgumentException("Private key is not an EC key")
-                }
+            // Ed25519 keys are 64 bytes (32 bytes seed + 32 bytes public key)
+            if (decoded.size != 64) {
+                throw IllegalArgumentException("Invalid Ed25519 key length: ${decoded.size} (expected 64)")
             }
+
+            // Extract the seed (first 32 bytes) and public key (last 32 bytes)
+            val seed = decoded.copyOfRange(0, 32)
+            val publicKey = decoded.copyOfRange(32, 64)
+
+            // Create OctetKeyPair for Ed25519
+            return OctetKeyPair.Builder(Curve.Ed25519, Base64URL.encode(publicKey))
+                .d(Base64URL.encode(seed))
+                .keyUse(KeyUse.SIGNATURE)
+                .build()
         } catch (e: Exception) {
-            throw IllegalArgumentException("Failed to parse PEM private key: ${e.message}", e)
+            throw IllegalArgumentException("Failed to parse Ed25519 private key: ${e.message}", e)
         }
     }
 
     private fun generateNonce(): String {
-        val bytes = ByteArray(16)
-        SecureRandom().nextBytes(bytes)
-        return bytes.joinToString("") { "%02x".format(it) }
+        return java.util.UUID.randomUUID().toString().replace("-", "")
     }
 }
