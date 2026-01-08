@@ -1,7 +1,7 @@
-Version 1.5.0
+Version 1.5.1
 
-- Improved authentication reliability with enhanced security key parsing
-- Fixed app crashes related to JWT token generation
-- Resolved duplicate navigation bar display issue
-- Enhanced error handling for better user experience when API calls fail
-- Strengthened connection stability with Coinbase API integration
+- Enhanced security key parsing for more robust authentication
+- Improved error handling and stability when connecting to Coinbase API
+- Fixed navigation display issues for cleaner user interface
+- Strengthened JWT token generation reliability
+- Better debugging capabilities for troubleshooting connection issues

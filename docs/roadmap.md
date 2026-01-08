@@ -1,7 +1,7 @@
 # TradeFlow - Master Implementation Plan
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 1 Complete - Coinbase Integration
+**Project Status:** Phase 1 Complete - Live Portfolio Integration
 **Current Build:** #30 (SUCCESS)
 **Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
@@ -58,20 +58,20 @@ app/src/main/java/com/dpart/tradeflow/
 ├── MainActivity.kt              ✅ Simplified (no auth check)
 ├── TradeFlowApp.kt              ✅ Initializes Timber logging + Hilt
 ├── presentation/dashboard/
-│   ├── DashboardScreen.kt       ✅ Main screen with real data integration
-│   ├── DashboardViewModel.kt    ✅ State management + API integration
-│   └── components/              ✅ PortfolioCard, ModeCard, ServiceCard, OrdersList
+│   ├── DashboardScreen.kt       ✅ Complete implementation with real data integration
+│   ├── DashboardViewModel.kt    ✅ Full state management + error handling + live data
+│   └── components/              ✅ PortfolioCard (live data), ModeCard, ServiceCard, OrdersList
 ├── di/
 │   ├── AppModule.kt             ✅ Empty Hilt module
 │   ├── DatabaseModule.kt        ✅ Provides Room database
 │   ├── NetworkModule.kt         ✅ Provides Ktor HttpClient (OkHttp engine)
 │   └── CredentialsModule.kt     ✅ Provides build-injected credentials
 ├── data/local/
-│   ├── AppDatabase.kt           ✅ Empty Room DB
-│   └── PlaceholderEntity.kt     ✅ Dummy entity
+│   ├── AppDatabase.kt           ✅ Complete Room DB with 4 entities
+│   └── PlaceholderEntity.kt     ✅ Removed (no longer needed)
 └── navigation/
-    ├── AppNavHost.kt            ✅ Complete navigation with TopAppBar
-    └── Screen.kt                ✅ Dashboard + Settings routes only
+    ├── AppNavHost.kt            ✅ Complete navigation with TopAppBar ("TradeFlow" title)
+    └── Screen.kt                ✅ Dashboard + Settings routes
 
 ✅ COMPLETE: Domain Layer Foundation
 └── core/domain/                 ✅ Complete domain layer
@@ -124,7 +124,7 @@ app/src/main/java/com/dpart/tradeflow/
     ├── mapper/
     │   └── AccountMapper.kt         ✅ DTO to domain mapping
     ├── repository/
-    │   └── CoinbaseRepository.kt    ✅ Partial implementation (getBalances working)
+    │   └── CoinbaseRepository.kt    ✅ Implementation (getBalances working, others TODO for Phase 2)
     └── di/
         ├── AuthModule.kt            ✅ Hilt DI for JWT provider
         └── ExchangeModule.kt        ✅ Repository DI binding
@@ -140,25 +140,14 @@ app/src/main/java/com/dpart/tradeflow/
     └── extension/
         └── BigDecimalExt.kt        ✅ Currency/percentage formatting
 
-✅ COMPLETE: Live Data Dashboard
-├── App now displays real Coinbase account balances
-├── ViewModel with proper state management
-├── Error handling with retry functionality
-├── Loading states during API calls
+✅ COMPLETE: Live Portfolio Data Integration
+├── App now displays real Coinbase account balances with proper error handling
+├── ViewModel with complete state management (loading, error, success states)
+├── Error handling with retry functionality for network failures
+├── Loading indicators during API calls
 ├── Portfolio card shows BTC/USD balances with "Live Data" indicator
-└── Navigation with TopAppBar ("TradeFlow" title)
-
-✅ COMPLETE: Credential System
-├── Build-time injection          ✅ Environment vars → BuildConfig → DI
-├── Local development support     ✅ local.properties fallback
-├── CI/CD integration            ✅ GitHub secrets → environment vars
-├── No UI credential entry       ✅ Simplified UX flow
-└── PEM key escape handling      ✅ Proper newline escaping for environment variables
-
-✅ COMPLETE: App Branding
-├── Adaptive app icon            ✅ Trading chart design
-├── Day/night variants           ✅ White/black backgrounds
-└── Version 1.4.0               ✅ Live portfolio data with enhanced PEM key parsing
+├── Navigation restructured with TopAppBar moved to AppNavHost (fixes duplicate navbar)
+└── Professional UX flow with proper state management
 ```
 
 **Dependencies (ALL already added in build.gradle.kts):**
@@ -172,15 +161,15 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ Coroutines 1.10.2
 - ✅ **nimbus-jose-jwt 9.47** ✅ ACTIVE (for JWT ES256 signing)
 - ✅ **BouncyCastle 1.78** ✅ ACTIVE (for PEM key parsing - bcprov-jdk18on, bcpkix-jdk18on)
-- ✅ **ta4j-core 0.16** (for technical indicators)
-- ✅ **security-crypto 1.1.0-alpha06** (for encrypted storage - now unused)
+- ✅ **ta4j-core 0.16** (for technical indicators - pending decision engine)
+- ✅ **security-crypto 1.1.0-alpha06** (replaced by build-time injection)
 - ✅ **work-runtime-ktx 2.10.0** (for background tasks)
 - ✅ **datastore-preferences 1.1.1** (for settings)
 - ✅ **material-icons-extended** ✅ ACTIVE (for ModeIndicator icons)
 - ✅ Firebase Analytics + Crashlytics (BOM 34.7.0)
 
 **CI/CD:**
-- ✅ GitHub Actions: Build workflow on `claude/*` branches with credential injection
+- ✅ GitHub Actions: Enhanced build workflow with credential injection and PEM key escaping
 - ✅ Auto-build + Firebase App Distribution on PR
 - ✅ Commit-back pattern (`.build-status` + `build-log.txt`)
 - ✅ Auto-documentation workflow (updates CLAUDE.md + docs/)
@@ -193,304 +182,362 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ docs/auto-docs.md (auto-doc workflow)
 - ✅ docs/tickets/ (all Notion tickets organized by status)
 
-### 🆕 MAJOR MILESTONE: Live Coinbase Integration Complete
+### 🆕 MAJOR MILESTONE: Complete Live Portfolio Integration
 
-**Dashboard now displays real Coinbase account balances with proper error handling!**
+**Live Coinbase account balances now display in the app with professional error handling!**
 
 **What was accomplished:**
-✅ **BouncyCastle Integration** - Added PEM key parsing libraries to JWT generator
-✅ **Advanced PEM Parsing** - Handles traditional EC format and PKCS8 format
-✅ **Build Escape Handling** - Proper escape sequence handling for environment variables
-✅ **Error State Management** - Loading states, error display with retry functionality
-✅ **Real Data Integration** - Portfolio card shows actual BTC/USD balances from API
-✅ **Version Increment** - Updated to version 1.4.0 reflecting new capabilities
+
+✅ **Enhanced Authentication (v1.5.0):**
+- Advanced PEM key parsing with BouncyCastle libraries
+- Proper escape sequence handling for environment variable injection
+- Comprehensive error handling in JWT generation
+- Build-time credential injection with enhanced security
+
+✅ **Complete API Integration:**
+- CoinbaseApiClient with Ktor HTTP client 
+- AccountsResponseDto with full Coinbase API response structure
+- Domain mapping from DTOs to Balance models
+- Dependency injection binding ExchangeRepository → CoinbaseRepository
+
+✅ **Professional UI/UX:**
+- DashboardViewModel with complete state management (loading, error, success)
+- Error states with retry functionality
+- Loading indicators during API calls
+- PortfolioCard updated to show real BTC/USD balances
+- "Live Data" indicator to show real-time information
+- Navigation structure improved (TopAppBar moved to AppNavHost)
+
+✅ **Architecture Validation:**
+- Clean Architecture working end-to-end (Domain ← Data ← External)
+- Repository pattern enables easy exchange swapping
+- Dependency injection working properly with Hilt
+- State management with StateFlow and Compose integration
 
 **Technical Improvements:**
-- Enhanced CoinbaseJwtGenerator with comprehensive PEM key support
-- Build configuration now properly escapes private key newlines for environment variables
-- Added detailed error logging and troubleshooting for PEM key parsing
-- Improved DashboardViewModel with proper state management and error recovery
+- Fixed duplicate navigation bar issue (TopAppBar centralized in AppNavHost)
+- Enhanced PEM key parsing for CI/CD environment variable injection  
+- Comprehensive error handling for network failures
+- Professional loading states throughout the app
+- Version bump to 1.5.0 reflecting major functionality additions
 
-This represents the **first successful live data integration** - a critical foundation for all future trading functionality.
+**This milestone proves the entire authentication and data flow architecture works with real Coinbase data.**
 
-### 🎯 What's Missing (Prioritized)
+### 🎯 What's NEXT (Current Priorities)
 
-#### Phase 2A: Complete REST API (HIGH Priority)
-**Goal:** Full Coinbase API integration for trading operations
+**Ready to start immediately (no blockers):**
 
-| Ticket | Component | Status | Description |
-|--------|-----------|--------|-------------|
-| **13-Extended** | Complete REST API Client | ⏳ Next | candles, orders, market data endpoints |
-| **14** | WebSocket Client | ⏳ Later | Real-time price + order updates |
+```
+❌ Phase 1B: Strategy Implementation (NEXT PHASE)
+├── Ticket 15: Decision Engine (SMA, ADX, ATR + regime switching logic)
+├── Ticket 16: Risk Manager (position sizing, stop-loss, drawdown monitoring)
+└── Backtesting Framework (historical validation)
 
-#### Phase 2B: Trading Intelligence (HIGH Priority)
-**Goal:** Implement core trading strategy logic
+❌ Phase 2: Trading Infrastructure  
+├── Ticket 14: WebSocket Client (real-time price streams)
+├── Full REST API (orders, market data, candles - extending current implementation)
+├── Ticket 11: Settings Screen (credential management, trading parameters)
+└── Order placement + management
 
-| Ticket | Component | Status | Description |
-|--------|-----------|--------|-------------|
-| **15** | Decision Engine | ⏳ Critical | SMA/ADX/ATR regime switching |
-| **16** | Risk Manager | ⏳ Critical | Position sizing + drawdown limits |
+❌ Phase 3: Live Trading Service
+├── Ticket 17: Trading Service (foreground service, 24/7 loops)
+├── Ticket 18: Battery optimization (Doze exemption, wake locks)
+└── Integration testing with small real trades
 
-#### Phase 2C: Service Layer (MEDIUM Priority)  
-**Goal:** 24/7 automated operation
+❌ Phase 4: Production Readiness
+├── Comprehensive backtesting with historical data
+├── Paper trading validation
+├── Live testing with $50-100 capital
+└── Performance monitoring and optimization
+```
 
-| Ticket | Component | Status | Description |
-|--------|-----------|--------|-------------|
-| **17** | Trading Service | ⏳ Important | Foreground service for background trading |
-| **18** | Battery Optimization | ⏳ Important | Doze mode survival |
+**Next Immediate Focus: Decision Engine (Ticket 15)**
 
-#### Phase 3: User Interface Completion (LOW Priority)
-**Goal:** Complete user control and monitoring
+This is now the critical path blocker. We have:
+- ✅ Live data from Coinbase (prices, balances)
+- ✅ UI to display trading mode
+- ✅ Database to store decisions
 
-| Ticket | Component | Status | Description |
-|--------|-----------|--------|-------------|
-| **11** | Settings Screen | ⏳ Nice-to-have | View credentials, preferences |
-| **19** | Integration Tests | ⏳ Validation | End-to-end testing |
-| **20** | MVP Milestone | ⏳ Release | Production readiness |
-
----
-
-## Phase-by-Phase Implementation
-
-### ✅ Phase 0: Foundation (COMPLETE - 100%)
-**Delivered:** Jan 2026
-
-**What was built:**
-- ✅ Multi-module architecture (8 modules)
-- ✅ Domain models and interfaces
-- ✅ Room database (4 entities + DAOs)  
-- ✅ JWT authentication with BouncyCastle
-- ✅ Basic Coinbase API integration (accounts endpoint)
-- ✅ Dashboard UI with live portfolio data
-- ✅ Build-time credential injection system
-- ✅ CI/CD pipeline with Firebase distribution
-
-**Key Achievements:**
-1. **Live Data Integration** - App shows real account balances from Coinbase
-2. **Secure Authentication** - ES256 JWT tokens with advanced PEM key parsing
-3. **Clean Architecture** - Modular design supporting easy exchange swapping
-4. **Professional UI** - Adaptive icon, error handling, loading states
-5. **DevOps Pipeline** - Automated builds with credential injection
+We need:
+- ❌ Logic to analyze data and make decisions (DEFENSE/TREND/RANGE)
+- ❌ Integration with ta4j for technical indicators (SMA, ADX, ATR)
+- ❌ Regime switching with hysteresis (prevent whipsawing)
 
 ---
 
-### ⏳ Phase 1: Trading Core (0% - Next Up)
+## Phase Breakdown
 
-**Timeline:** 4-6 weeks  
-**Goal:** Complete trading functionality
+### Phase 0: Foundation (✅ COMPLETE)
 
-#### Milestone 1.1: Complete API Integration (2-3 weeks)
-- ✅ REST endpoints: candles, orders, market data  
-- ✅ Order placement: market, limit, bracket orders
-- ✅ WebSocket: real-time prices and order updates
-- ✅ Integration testing with small real trades ($10-20)
+**Goal:** Core infrastructure and live data integration
 
-#### Milestone 1.2: Strategy Engine (2-3 weeks)  
-- ✅ Decision Engine: SMA(200) + ADX(14) + ATR(14)
-- ✅ Risk Manager: 2% position sizing + 15% drawdown limit
-- ✅ Backtesting framework with historical data validation
-- ✅ Paper trading with mock orders
+| Ticket | Component | Status |
+|--------|-----------|--------|
+| 00 | Project modularization | ✅ Complete |
+| 01 | Domain models | ✅ Complete |  
+| 02 | Repository interfaces | ✅ Complete |
+| 03 | Room database | ✅ Complete |
+| 04 | Credential storage | ✅ Complete (build-time injection) |
+| 07 | JWT generator | ✅ Complete |
+| - | UI components | ✅ Complete |
+| 10A | Dashboard + ViewModel with live data | ✅ Complete |
 
-#### **Phase 1 Success Criteria:**
-- [ ] Can place real orders on Coinbase via app
-- [ ] Strategy correctly identifies DEFENSE/TREND/RANGE modes
-- [ ] Risk limits properly enforced (no position > 2%)
-- [ ] Backtesting shows 52%+ win rate on historical data
-- [ ] Paper trading runs without crashes for 24 hours
-
-**Estimated completion:** Mid-March 2026
+**Outcome:** ✅ App displays real Coinbase portfolio data with proper error handling
 
 ---
 
-### ⏳ Phase 2: Autonomous Operation (0%)
+### Phase 1A: Strategy Logic (🎯 CURRENT FOCUS)
 
-**Timeline:** 2-3 weeks  
-**Goal:** 24/7 background trading service
+**Goal:** Implement decision-making brain of the trading system
 
-#### Milestone 2.1: Service Layer
-- ✅ Foreground service with proper notifications
-- ✅ Battery optimization and Doze mode survival
-- ✅ Service start/stop controls from Dashboard
-- ✅ Automatic restart after device reboot
+| Ticket | Component | Priority | Estimated Days |
+|--------|-----------|----------|----------------|
+| 15 | **Decision Engine** | CRITICAL | 3-4 days |
+| 16 | Risk Manager | HIGH | 2-3 days |
+| - | Backtesting Framework | HIGH | 2-3 days |
 
-#### Milestone 2.2: Monitoring & Control
-- ✅ Settings screen for parameter adjustment
-- ✅ Real-time portfolio tracking
-- ✅ Emergency stop functionality
-- ✅ Trading history and performance metrics
+**Decision Engine Requirements:**
+```kotlin
+// What we need to implement
+interface DecisionEngine {
+    fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision
+}
 
-#### **Phase 2 Success Criteria:**
-- [ ] Service runs 24/7 without user intervention
-- [ ] Survives device sleep/wake cycles
-- [ ] Can be controlled entirely from mobile UI
-- [ ] Emergency stop works within 60 seconds
-- [ ] Complete audit trail of all trading decisions
+sealed class Decision {
+    data class Wait(val reason: String) : Decision()
+    data class Defense(val reason: String) : Decision()  // Price < SMA(200) 
+    data class Trend(val direction: OrderSide, val stopLoss: BigDecimal, val takeProfit: BigDecimal) : Decision()
+    data class Range(val gridSpacing: BigDecimal, val levels: Int) : Decision()
+}
 
-**Estimated completion:** End of March 2026
+// Implementation with ta4j
+class EngineDecisionEngine {
+    fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
+        val sma200 = calculateSMA(candles, 200)
+        val adx14 = calculateADX(candles, 14) 
+        val atr14 = calculateATR(candles, 14)
+        
+        // Decision tree logic:
+        // 1. Price < SMA(200) → DEFENSE (instant)
+        // 2. Price > SMA(200) AND ADX > 25 for 3 candles → TREND  
+        // 3. Price > SMA(200) AND ADX < 25 for 3 candles → RANGE
+        // 4. Otherwise → WAIT
+    }
+}
+```
 
----
+**Risk Manager Requirements:**
+```kotlin
+interface RiskManager {
+    fun validateOrder(order: OrderRequest, portfolio: Portfolio): OrderValidation
+    fun calculatePositionSize(portfolioValue: BigDecimal, riskPercent: BigDecimal): BigDecimal
+    fun checkDrawdown(currentEquity: BigDecimal, highWaterMark: BigDecimal): DrawdownStatus
+}
 
-### ⏳ Phase 3: Production & Validation (0%)
+// Risk limits (hardcoded for safety)
+object RiskLimits {
+    const val MAX_POSITION_PERCENT = 0.10        // 10% of portfolio per trade
+    const val MAX_RISK_PER_TRADE = 0.02          // 2% risk per trade
+    const val EMERGENCY_DRAWDOWN_LIMIT = 0.15    // 15% drawdown stops everything
+}
+```
 
-**Timeline:** 2-4 weeks  
-**Goal:** Live trading with real money
-
-#### Milestone 3.1: Live Trading Preparation
-- ✅ Comprehensive integration tests
-- ✅ Small-capital live testing ($50-100)
-- ✅ Performance monitoring and alerts
-- ✅ Tax record generation
-
-#### Milestone 3.2: Strategy Validation  
-- ✅ 30-day live performance tracking
-- ✅ Compare actual vs. backtested performance
-- ✅ Risk limit validation under real conditions
-- ✅ Strategy parameter optimization
-
-#### **Phase 3 Success Criteria:**  
-- [ ] 30 consecutive days of live trading without major issues
-- [ ] Actual performance within 10% of backtested results
-- [ ] No risk limit breaches (no position > 2%, no drawdown > 15%)
-- [ ] Complete trade records for tax reporting
-- [ ] Strategy profitable net of fees over 30-day period
-
-**Estimated completion:** End of April 2026
-
----
-
-## Success Metrics & Risk Gates
-
-### Phase Gates (Must Pass to Continue)
-
-**Phase 0 → Phase 1:** ✅ PASSED
-- ✅ Live API connection working
-- ✅ Dashboard showing real account data
-- ✅ Authentication flow complete
-
-**Phase 1 → Phase 2:**
-- [ ] Backtesting shows 52%+ win rate over 1000+ trades
-- [ ] Paper trading runs 7 days without crashes
-- [ ] Strategy correctly handles all market conditions (bull, bear, sideways)
-- [ ] Risk manager never allows position > 2% or drawdown > 15%
-
-**Phase 2 → Phase 3:**
-- [ ] Service runs 7 days uninterrupted
-- [ ] Battery optimization works on test device
-- [ ] All UI controls functional
-- [ ] Emergency stop tested and verified
-
-**Phase 3 → Production Scaling:**
-- [ ] 30-day live period with net profit (after fees)
-- [ ] No major bugs or risk limit breaches
-- [ ] Performance matches backtesting within reason
-- [ ] User comfortable with system operation
-
-### Performance Targets
-
-**Conservative Targets (Phase 1):**
-- Win rate: 52-55%
-- Average return per trade: 0.5-1.0% (net of fees)
-- Max drawdown: < 10% (emergency stop at 15%)
-- Sharpe ratio: > 0.8
-
-**Optimistic Targets (Phase 3):**
-- Win rate: 55-58% 
-- Monthly return: 3-5%
-- Max drawdown: < 8%
-- Sharpe ratio: > 1.0
-
-**Reality Check:**
-- These targets are EXTREMELY difficult to achieve
-- Most algo traders fail completely
-- Success means beating 97% of retail traders
-- Even 2-3% monthly returns would be excellent
+**Deliverable:** Dashboard shows current mode (DEFENSE/TREND/RANGE) based on real market analysis
 
 ---
 
-## Risk Management
+### Phase 1B: Strategy Validation (After Phase 1A)
 
-### Technical Risks
+**Goal:** Prove strategy works on historical data before risking real money
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|---------|------------|
-| API changes | Medium | High | Monitor Coinbase developer updates |
-| Rate limiting | High | Medium | Implement backoff, use WebSocket for real-time |
-| Authentication failure | Low | High | JWT refresh logic, credential validation |
-| Service crashes | Medium | High | Comprehensive error handling, auto-restart |
-| Battery optimization | High | High | User education, doze exemption |
+| Component | Description | Success Criteria |
+|-----------|-------------|------------------|
+| Historical data fetching | Get 2+ years of BTC H4 candles | 4,000+ candles stored |
+| Backtest framework | Run strategy on historical data | Win rate, Sharpe ratio, max drawdown |
+| Performance analysis | Statistical validation | 52%+ win rate, 1.0+ Sharpe, <20% max drawdown |
 
-### Financial Risks
+**Key Questions to Answer:**
+- Does the strategy actually work on historical data?
+- What's the realistic win rate and risk-adjusted return?
+- How often does it trade? (too much = fees kill profits)
+- What's the maximum historical drawdown?
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|---------|------------|  
-| Strategy failure | High | High | Start with $500 max, extensive backtesting |
-| Market crashes | Medium | High | 15% drawdown emergency stop |
-| Exchange insolvency | Low | High | Only use reputable exchanges, limited capital |
-| Regulatory changes | Low | Medium | Stay informed, personal use only |
-| Tax compliance | Medium | Medium | Complete record keeping |
-
-### Operational Risks
-
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|---------|------------|
-| Phone loss/damage | Medium | Medium | Cloud backup, multiple devices |
-| Internet outage | Medium | Low | Mobile data backup |
-| User error | High | Medium | Extensive testing, simple UI |
-| Over-optimization | High | High | Simple strategy, avoid curve fitting |
+**Go/No-Go Decision Point:** If backtest shows <50% win rate or excessive drawdown, stop here and redesign strategy.
 
 ---
 
-## Long-term Roadmap (6+ months)
+### Phase 2: Trading Infrastructure (After validation)
 
-### Phase 4: Multi-Exchange Support (Optional)
-- Add Kraken or Binance integration
+**Goal:** Complete Coinbase integration for live trading
+
+| Ticket | Component | Dependencies |
+|--------|-----------|--------------|
+| 14 | WebSocket client | Phase 1A complete |
+| - | Full REST API (candles, orders) | Ticket 14 |
+| 11 | Settings screen | UI foundation |
+| - | Order placement logic | All above |
+
+**Deliverable:** Can place and manage real orders (paper trading level)
+
+---
+
+### Phase 3: Live Trading Service (Final phase)
+
+**Goal:** 24/7 autonomous operation
+
+| Ticket | Component | Risk Level |
+|--------|-----------|------------|
+| 17 | Trading Service (foreground) | High - handles real money |
+| 18 | Battery optimization | Medium - reliability |
+| - | Performance monitoring | Medium - observability |
+
+**Deliverable:** System trades autonomously with $50-100 test capital
+
+---
+
+## 🎯 Success Criteria by Phase
+
+### Phase 1A Success (Current Goal)
+- [ ] Decision engine correctly identifies DEFENSE when BTC < SMA(200)  
+- [ ] Decision engine correctly identifies TREND when ADX > 25 for 3+ H4 candles
+- [ ] Decision engine correctly identifies RANGE when ADX < 25 for 3+ H4 candles
+- [ ] Risk manager enforces 10% position limit and 2% risk per trade
+- [ ] Dashboard displays current mode based on real-time analysis
+- [ ] Unit tests cover all decision paths with >90% coverage
+
+### Phase 1B Success (Validation Gate)
+- [ ] Backtest shows 52%+ win rate over 2+ years historical data
+- [ ] Sharpe ratio > 1.0 (risk-adjusted returns)
+- [ ] Maximum historical drawdown < 20%
+- [ ] Strategy trades 1-4 times per week (not overtrading)
+- [ ] Positive expectancy after 0.25% trading fees
+
+### Phase 2 Success (Trading Ready)
+- [ ] Can place and cancel orders on Coinbase successfully
+- [ ] WebSocket provides real-time price updates with <1s latency
+- [ ] Order status updates tracked in real-time
+- [ ] Settings screen allows parameter adjustments
+- [ ] Paper trading shows positive results over 30 days
+
+### Phase 3 Success (Production)
+- [ ] Service runs for 48+ hours without crashes
+- [ ] Survives device sleep/doze mode
+- [ ] Places orders according to decision engine
+- [ ] Respects risk limits in live trading
+- [ ] Emergency stop triggers at 15% drawdown
+
+---
+
+## 🚨 Risk Management Throughout
+
+### Code Quality Gates
+- **No commit without tests** for decision engine logic
+- **Code review required** for order placement logic  
+- **Staging environment** required for live trading features
+- **Rollback plan** for every production deployment
+
+### Financial Risk Controls
+- **Hardcoded limits** in code (no user configuration for critical limits)
+- **Circuit breakers** - stop trading after consecutive losses
+- **Position sizing** - never risk >2% per trade, >10% per position
+- **Drawdown stops** - emergency liquidation at 15% loss
+
+### Development Risk Controls  
+- **Small iteration cycles** - test each component thoroughly
+- **Progressive deployment** - $50 → $100 → $250 → $500 test amounts
+- **Kill switches** - multiple ways to stop trading immediately
+- **Comprehensive logging** - audit trail for every decision and trade
+
+---
+
+## 📈 Long-term Vision (Years 2-5)
+
+### Year 2: Strategy Refinement
+- Add multiple timeframe analysis (H1 + H4 confirmation)
+- Implement volatility-based position sizing
+- Add mean reversion component for ranging markets
+- Optimize parameters based on live trading data
+
+### Year 3: Multi-Exchange Support  
+- Add Kraken integration (via existing ExchangeRepository interface)
 - Cross-exchange arbitrage opportunities
-- Portfolio diversification across exchanges
+- Portfolio allocation across exchanges
+- Advanced risk management (correlation, VaR)
 
-### Phase 5: Strategy Enhancement (Optional)
-- Additional technical indicators
-- Multi-timeframe analysis
-- Options trading integration (if profitable)
+### Year 4: Advanced Features
+- Options/futures integration for hedging
+- DeFi yield farming for idle cash
+- Tax optimization (wash sale rules, FIFO/LIFO)
+- Performance analytics dashboard
 
-### Phase 6: Scale & Optimize (Optional)
-- Larger capital deployment ($2,500+)
-- Advanced risk management
-- Tax optimization strategies
+### Year 5: Scaling & Automation
+- Multi-asset support (ETH, SOL, major altcoins)  
+- Machine learning for regime detection
+- Cloud deployment for 24/7 reliability
+- Multiple strategy portfolio (trend + mean reversion + arbitrage)
 
----
-
-## Current Focus: Phase 1 Implementation
-
-**Immediate next tickets to complete (in order):**
-
-1. **Ticket 13 Extension - Complete REST API Client** (2-3 weeks)
-   - Implement candles endpoint for historical data
-   - Add order placement endpoints (market, limit, bracket)
-   - Add order management (cancel, status, fills)
-   - Comprehensive integration testing
-
-2. **Ticket 15 - Decision Engine** (1-2 weeks)
-   - Implement SMA/ADX/ATR calculations with ta4j
-   - Add regime switching logic with hysteresis
-   - Handle edge cases and market gaps
-   - Comprehensive unit testing
-
-3. **Ticket 16 - Risk Manager** (1 week)  
-   - Position sizing calculations
-   - Drawdown monitoring
-   - Emergency liquidation logic
-   - Integration with decision engine
-
-4. **Phase 1B - Strategy Validation** (1-2 weeks)
-   - Backtesting framework
-   - Historical data validation
-   - Paper trading setup
-   - Performance metrics
-
-**Total Phase 1 Estimate:** 5-8 weeks to complete
-
-**Critical success factor:** Phase 1 backtesting must show consistent profitability before proceeding to live trading. If strategy doesn't work on historical data, it won't work with real money.
+**Reality Check:** Most traders never make it past Year 1. Focus on building something that works consistently with BTC before expanding.
 
 ---
 
-This roadmap represents a measured, professional approach to automated trading. The emphasis is on proper risk management, thorough testing, and realistic expectations rather than promises of quick profits.
+## 📚 Key Resources & References
+
+### Technical Documentation
+- [docs/reference.md](reference.md) - Complete implementation blueprint
+- [docs/api/coinbase.md](api/coinbase.md) - Coinbase API integration guide  
+- [docs/strategy/overview.md](strategy/overview.md) - Trading strategy specification
+- [docs/ci.md](ci.md) - CI/CD pipeline documentation
+
+### Market Analysis  
+- [docs/strategy/bitcoin-first-strategy.md](strategy/bitcoin-first-strategy.md) - Why BTC-only initially
+- [docs/case-studies/polymarket-bot-analysis.md](case-studies/polymarket-bot-analysis.md) - Lessons from successful trading bot
+
+### Implementation Examples
+- [docs/implementation/](implementation/) - Complete code examples organized by layer
+- [docs/tickets/](tickets/) - Detailed requirements for each component
+
+---
+
+## 🎯 Current Action Items
+
+### Immediate (This Week)
+1. **Implement Decision Engine (Ticket 15)**
+   - Create `EngineDecisionEngine.kt` class
+   - Integrate ta4j for SMA(200), ADX(14), ATR(14) calculations
+   - Implement decision tree logic with hysteresis
+   - Add unit tests for all decision paths
+   - Integrate with Dashboard to show current mode
+
+2. **Implement Risk Manager (Ticket 16)**  
+   - Create `TradingRiskManager.kt` class
+   - Implement position sizing calculator
+   - Add drawdown monitoring logic
+   - Create risk validation for order requests
+   - Add comprehensive unit tests
+
+### Next Week
+3. **Strategy Validation**
+   - Fetch historical BTC H4 data (2+ years)
+   - Build backtesting framework
+   - Run strategy against historical data
+   - Analyze win rate, Sharpe ratio, maximum drawdown
+   - Make go/no-go decision on strategy viability
+
+### Following Weeks (If validation successful)
+4. **Complete Coinbase Integration**
+   - Extend REST API for order placement and market data
+   - Implement WebSocket client for real-time data
+   - Build order management system
+   - Add comprehensive error handling and reconnection logic
+
+---
+
+## 🔄 Review & Update Schedule
+
+- **Weekly:** Update progress on current phase tickets  
+- **Monthly:** Review overall roadmap and timelines
+- **Quarterly:** Analyze live trading performance and strategy adjustments
+- **Annually:** Strategic review of goals, risk tolerance, and technology stack
+
+**Last Review:** 2026-01-08 - Updated to reflect Phase 1 completion and live portfolio integration
+**Next Review:** 2026-01-15 - After Decision Engine implementation

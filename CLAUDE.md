@@ -110,7 +110,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     ├── mapper/
     │   └── AccountMapper.kt            ✅ DTO to domain mapping
     ├── repository/
-    │   └── CoinbaseRepository.kt       ✅ Complete implementation with TODO placeholders
+    │   └── CoinbaseRepository.kt       ✅ Complete implementation for account balances
     └── di/
         ├── AuthModule.kt               ✅ JWT generator DI binding
         └── ExchangeModule.kt           ✅ Repository DI binding
@@ -131,10 +131,10 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     ├── navigation/
     │   └── AppNavHost.kt               ✅ Complete navigation with TopAppBar
     └── presentation/dashboard/
-        ├── DashboardScreen.kt          ✅ UPDATED: No TopAppBar (moved to AppNavHost)
+        ├── DashboardScreen.kt          ✅ Full implementation with real data integration
         ├── DashboardViewModel.kt       ✅ Complete state management + error handling
         └── components/
-            ├── PortfolioCard.kt        ✅ UPDATED: Live balance data with "Live Data" indicator
+            ├── PortfolioCard.kt        ✅ Live balance data with "Live Data" indicator
             ├── ModeCard.kt             ✅ Trading mode + current price
             ├── ServiceCard.kt          ✅ Service status + start/stop button
             └── OrdersList.kt           ✅ Recent orders + empty state
@@ -146,39 +146,41 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Proper launcher configuration
 
 🆕 CREDENTIALS SYSTEM COMPLETE:
-✅ app/build.gradle.kts                 ✅ Build-time credential injection with PEM escape handling
+✅ app/build.gradle.kts                 ✅ Enhanced build-time credential injection with PEM escape handling
 ✅ app/src/main/java/com/dpart/tradeflow/di/
     └── CredentialsModule.kt            ✅ Provides credentials from BuildConfig
 
 🆕 COINBASE API DEPENDENCIES:
-✅ BouncyCastle PEM key parsing libraries added to exchange/coinbase/build.gradle.kts
-✅ JWT token generation now supports EC private key from PEM format with proper escaping
+✅ BouncyCastle PEM key parsing libraries (bcprov-jdk18on, bcpkix-jdk18on)
+✅ Advanced PEM key parsing with proper escape sequence handling for environment variables
+✅ JWT token generation with ES256 and comprehensive error handling
 ✅ Authentication flow fully implemented and tested
 ```
 
-### Major Milestone: Live Data Integration Complete
+### Major Milestone: Live Portfolio Integration Complete
 
-**Dashboard now displays real Coinbase account balances!**
+**Dashboard now displays real Coinbase account balances with full error handling!**
 
 ✅ **Authentication working** - JWT tokens generated with ES256 and BouncyCastle
-✅ **API integration working** - Successfully fetching account data
-✅ **Error handling** - Loading states, error display with retry
-✅ **UI updates** - Portfolio card shows actual BTC/USD balances
-✅ **Clean architecture** - Repository pattern enables easy exchange swapping
-✅ **PEM key parsing** - Advanced PEM key handling with proper escape sequences
+✅ **API integration working** - Successfully fetching account data with proper error handling
+✅ **Loading states** - Proper loading indicators during API calls
+✅ **Error handling** - Error display with retry functionality for network issues
+✅ **Real-time data** - Portfolio card shows actual BTC/USD balances with live data indicator
+✅ **Clean architecture** - Repository pattern with dependency injection enables easy exchange swapping
+✅ **Advanced PEM parsing** - Enhanced PEM key handling with escape sequence support for CI/CD
 
-This represents the first successful connection to live Coinbase data - a critical foundation milestone.
+This represents a complete working connection to live Coinbase data with professional error handling.
 
 ### Current App Version
 
-**Version:** 1.4.0 (updated from 1.3.0)
-**Features:**
-- Live portfolio data from Coinbase - view real account balances instead of mock data
-- Dashboard now displays actual BTC and USD holdings with loading states
-- Implemented automatic portfolio refresh when opening the app
-- Added error handling with retry functionality for network issues
-- Enhanced portfolio display with "Live Data" indicator for real-time information
-- Improved PEM key parsing with proper escape sequence handling for build-time injection
+**Version:** 1.5.0 (updated from 1.4.0)
+**Key Features:**
+- Improved authentication reliability with enhanced security key parsing
+- Fixed app crashes related to JWT token generation  
+- Resolved duplicate navigation bar display issue
+- Enhanced error handling for better user experience when API calls fail
+- Strengthened connection stability with Coinbase API integration
+- Professional loading states and error recovery
 
 ### What DOESN'T Exist Yet (Next Up)
 
@@ -186,8 +188,8 @@ This represents the first successful connection to live Coinbase data - a critic
 ✅ Domain models - Ticket 01 ✅ DONE
 ✅ Room database - Ticket 03 ✅ DONE
 ✅ UI Foundation - Tickets 05-09 ✅ DONE
-✅ Dashboard screen - Ticket 10 ✅ DONE (with real data)
-✅ Dashboard ViewModel - Ticket 12 ✅ DONE (real API integration)
+✅ Dashboard screen - Ticket 10 ✅ DONE (with real data + error handling)
+✅ Dashboard ViewModel - Ticket 12 ✅ DONE (complete state management)
 ✅ Coinbase REST API client - Ticket 13 ✅ DONE (accounts endpoint complete)
 ❌ Decision engine (regime switching logic) - Ticket 15
 ❌ Risk manager - Ticket 16
@@ -198,173 +200,261 @@ This represents the first successful connection to live Coinbase data - a critic
 ❌ Trading service (foreground service) - Tickets 17-18
 ```
 
-**Progress:** **13/20 tickets done (65% complete)**. Major milestone reached - dashboard shows real account data from Coinbase API with proper error handling and loading states. **Next up:** Decision Engine (Ticket 15) for trading logic implementation.
-
 ---
 
-## 🔧 Tech Stack & Dependencies
+## 🏗️ Tech Stack
 
-### Current Dependencies (All Added & Configured)
+### Core Platform
+- **Android API 29+** (Android 10+) - Modern device support
+- **Kotlin 2.3.0** - Latest stable with coroutines
+- **Jetpack Compose BOM 2025.12.01** ✅ ACTIVE - Modern declarative UI
+- **Hilt 2.57.2** ✅ ACTIVE - Dependency injection
 
-| Library | Version | Status | Purpose |
-|---------|---------|--------|---------|
-| **Kotlin** | 2.3.0 | ✅ ACTIVE | Language |
-| **Compose BOM** | 2025.12.01 | ✅ ACTIVE | UI framework |
-| **Hilt** | 2.57.2 | ✅ ACTIVE | DI (8 modules configured) |
-| **Room** | 2.8.4 | ✅ ACTIVE | Database (4 entities + 4 DAOs) |
-| **Ktor** | 3.3.3 | ✅ ACTIVE | HTTP client (OkHttp engine, accounts API) |
-| **ta4j-core** | 0.16 | ⚠️ READY | Technical indicators (pending Ticket 15) |
-| **nimbus-jose-jwt** | 9.47 | ✅ ACTIVE | ES256 JWT signing |
-| **BouncyCastle** | 1.78 | ✅ ACTIVE | PEM key parsing (bcprov-jdk18on, bcpkix-jdk18on) |
-| **Timber** | 5.0.1 | ✅ ACTIVE | Logging |
-| **Vico** | 2.4.0 | ⚠️ READY | Charts (pending full UI) |
-| **Coroutines** | 1.10.2 | ✅ ACTIVE | Async programming |
-| **security-crypto** | 1.1.0-alpha06 | ⚠️ READY | Encrypted storage (now unused - static credentials) |
-| **work-runtime-ktx** | 2.10.0 | ⚠️ READY | Background tasks |
-| **datastore-preferences** | 1.1.1 | ⚠️ READY | Settings persistence |
-| **material-icons-extended** | ✅ ACTIVE | ModeIndicator icons |
-| **Firebase BOM** | 34.7.0 | ✅ ACTIVE | Analytics + Crashlytics |
+### Persistence & Data
+- **Room 2.8.4** ✅ ACTIVE - 4 entities + 4 DAOs implemented
+- **DataStore Preferences 1.1.1** ⚠️ READY - Settings storage (pending settings screen)
+
+### Networking & Auth
+- **Ktor 3.3.3** ✅ ACTIVE - HTTP client with OkHttp engine, used for Coinbase API
+- **nimbus-jose-jwt 9.47** ✅ ACTIVE - ES256 JWT signing for Coinbase authentication
+- **BouncyCastle (bcprov-jdk18on, bcpkix-jdk18on) 1.78** ✅ ACTIVE - PEM key parsing with escape handling
+
+### UI & User Experience
+- **Material 3** ✅ ACTIVE - Design system implemented
+- **Navigation Compose** ✅ ACTIVE - App navigation with TopAppBar
+- **Vico 2.4.0** ⚠️ READY - Charts (pending decision engine visualization)
+- **Timber 5.0.1** ✅ ACTIVE - Logging throughout app
+
+### Trading & Analysis
+- **ta4j-core 0.16** ⚠️ READY - Technical indicators (pending decision engine)
+- **WorkManager 2.10.0** ⚠️ READY - Background tasks (pending trading service)
+
+### Security & Credentials
+- **Security-Crypto 1.1.0-alpha06** ⚠️ REPLACED - Replaced by build-time credential injection
+- **Build-time credential injection** ✅ ACTIVE - GitHub secrets → environment variables → BuildConfig
+
+### Observability
+- **Firebase BOM 34.7.0** ✅ ACTIVE - Analytics + Crashlytics
+- **CI/CD: GitHub Actions** ✅ ACTIVE - Auto-build + Firebase App Distribution
 
 **Legend:**
-- ✅ ACTIVE: Currently used in code
-- ⚠️ READY: Configured, awaiting implementation
-
-### Architecture Highlights
-
-**Clean Architecture:** 8 modules with clear dependency rules
-```
-:app (DI wiring)
-├── :core:domain (pure Kotlin - no Android)
-├── :core:data (Room + security)
-├── :core:ui (reusable components)
-├── :exchange:coinbase (isolated - swappable)
-└── feature modules (dashboard, trading, settings)
-```
-
-**Key Architectural Decisions:**
-- **Build-time credential injection** (no UI credential entry needed)
-- **Repository pattern** for easy exchange swapping
-- **Hilt DI** with 8 configured modules
-- **Room** for local persistence (4 entities)
-- **Ktor** for HTTP (not Retrofit - better Kotlin integration)
-- **BouncyCastle** for advanced PEM key parsing
+- ✅ ACTIVE - Currently used in implemented code
+- ⚠️ READY - Configured but pending implementation
+- ❌ REMOVED - No longer needed
 
 ---
 
-## 📱 Development Workflow
+## 🔄 Development Workflow
 
-### Local Development
+### Working with Live Credentials
 
-**1. Prerequisites:**
-```bash
-# Android Studio Electric Eel or later
-# JDK 17
-# Android SDK 26+
+TradeFlow uses **build-time credential injection** (no runtime credential entry UI).
+
+**For GitHub Actions (Automated):**
+```yaml
+# Credentials automatically injected from repo secrets
+env:
+  COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+  COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
 ```
 
-**2. Credential Setup (local.properties):**
+**For Local Development:**
 ```properties
-coinbase.api.key=organizations/{org}/apiKeys/{key}
-coinbase.api.secret=-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----
+# local.properties (NOT committed)
+coinbase.api.key=organizations/your-org/apiKeys/your-key
+coinbase.api.secret=-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEI...
+-----END EC PRIVATE KEY-----
 ```
 
-**3. Build & Run:**
+### Build & Test Cycle
+
 ```bash
-./gradlew assembleDebug
-./gradlew installDebug
+# 1. Implement feature locally
+git add -A && git commit -m "Implement X"
+
+# 2. Push to trigger CI/CD
+git push origin claude/feature-name
+
+# 3. Check build status
+cat .build-status  # SUCCESS or FAILURE
+cat build-log.txt  # If build failed
+
+# 4. APK automatically uploaded to Firebase App Distribution
+# Check phone for app update notification
 ```
 
-### CI/CD (GitHub Actions)
+### Key Commands
 
-**Automated on every push to `main` or `claude/*` branches:**
+```bash
+# Quick status check
+git status && cat .build-status
 
-1. ✅ **Credential injection** from GitHub secrets
-2. ✅ **Build debug APK** with embedded credentials  
-3. ✅ **Firebase App Distribution** (partene.darius@gmail.com)
-4. ✅ **Documentation updates** via Claude API
-5. ✅ **Commit-back pattern** (build status + docs)
+# View last build log
+cat build-log.txt
 
-**Secrets Required:**
-- `COINBASE_API_KEY` (organizations/abc/apiKeys/123)
-- `COINBASE_API_SECRET` (full PEM with -----BEGIN EC PRIVATE KEY-----)
-- `ANTHROPIC_API_KEY` (for doc updates)
+# Trigger manual build
+gh workflow run build.yml
 
-### Current Build Status
-
-**Build #30: SUCCESS** ✅
-- ✅ Credential injection working
-- ✅ PEM key parsing working
-- ✅ Dashboard showing live data
-- ✅ APK distributed to Firebase
+# Download APK locally  
+gh run download --name debug-apk
+```
 
 ---
 
-## 🎯 Next Actions
+## 📁 Project Structure
 
-### Immediate Priority (Phase 2)
-
-**1. Complete REST API Implementation (Ticket 13 extension)**
-- Add candles endpoint for historical data
-- Add order placement endpoints (limit, market, bracket)
-- Add order management endpoints (cancel, status)
-- Full integration testing with small real trades
-
-**2. Decision Engine (Ticket 15)**
-- Implement regime switching logic (SMA, ADX, ATR)
-- Add hysteresis to prevent whipsawing
-- Unit test all decision paths
-
-**3. Trading Service (Tickets 17-18)**
-- Foreground service for 24/7 operation
-- Battery optimization for reliability
-- Service start/stop from Dashboard UI
-
-### Mid-term (Phases 3-4)
-
-**4. Settings Screen (Ticket 11)**
-- View current credentials
-- Trading parameter display
-- Notification preferences
-
-**5. Risk Management (Ticket 16)**
-- Position sizing calculations
-- Drawdown monitoring
-- Emergency stop functionality
-
-**6. WebSocket Integration (Ticket 14)**
-- Real-time price updates
-- Order status streaming
-- Connection resilience
+```
+TradeFlow/
+├── app/                              # Main app module
+│   ├── src/main/java/com/dpart/tradeflow/
+│   │   ├── MainActivity.kt           ✅ Simple host activity
+│   │   ├── TradeFlowApp.kt           ✅ Application class
+│   │   ├── di/CredentialsModule.kt   ✅ Build-time credential injection
+│   │   ├── navigation/AppNavHost.kt  ✅ Compose navigation with TopAppBar
+│   │   └── presentation/
+│   │       └── dashboard/            ✅ Complete dashboard with real data
+│   └── build.gradle.kts              ✅ Enhanced credential injection + escape handling
+│
+├── core/
+│   ├── domain/                       ✅ Pure Kotlin domain layer
+│   ├── data/                         ✅ Room database + static credentials
+│   └── ui/                           ✅ Shared UI components
+│
+├── exchange/
+│   └── coinbase/                     ✅ Complete Coinbase integration
+│       ├── auth/CoinbaseJwtGenerator.kt     ✅ ES256 JWT with BouncyCastle
+│       ├── api/CoinbaseApiClient.kt         ✅ Ktor HTTP client
+│       ├── repository/CoinbaseRepository.kt ✅ Domain interface implementation
+│       └── dto/AccountDto.kt                ✅ API response DTOs
+│
+└── docs/                             ✅ Complete documentation
+    ├── roadmap.md                    # Implementation phases
+    ├── reference.md                  # Technical blueprint
+    └── tickets/                      # All requirements
+```
 
 ---
 
-## 💡 Key Insights
+## 🎯 Current Development Focus
 
-### What's Working Well
+### NEXT: Trading Logic Implementation
 
-1. **Clean Architecture** - Domain layer has zero Android dependencies
-2. **Build-time Credentials** - No UI credential entry needed (simplified UX)
-3. **CI/CD Pipeline** - Fully automated testing with real credentials
-4. **BouncyCastle Integration** - Advanced PEM key parsing handles all edge cases
-5. **Repository Pattern** - Easy to swap Coinbase for other exchanges
-6. **Live Data Integration** - Dashboard successfully shows real account balances
+**Priority Order:**
+1. **Decision Engine (Ticket 15)** - SMA/ADX/ATR regime switching
+2. **Risk Manager (Ticket 16)** - Position sizing + stop losses
+3. **Strategy Backtesting** - Historical validation
+4. **Full REST API** - Orders, candles, market data
+5. **Trading Service** - 24/7 background execution
 
-### Lessons Learned
+**Why This Order:**
+- Logic layer foundational (can unit test without API)
+- Risk management critical before live trading
+- Backtesting proves strategy before real money
+- Service layer last (orchestrates everything)
 
-1. **PEM Key Parsing** - Required BouncyCastle libraries for proper EC key support
-2. **Build Credential Escaping** - Special handling needed for newlines in environment variables
-3. **JWT Nonce Requirements** - Coinbase requires random nonce in header for security
-4. **Error Handling** - UI needs loading states and retry functionality for network operations
-5. **Version Management** - Increment app version with each major feature milestone
+### Key Files to Implement Next
 
-### Next Big Milestones
+```kotlin
+// Ticket 15: Decision Engine
+core/domain/src/main/kotlin/com/tradeflow/core/domain/strategy/
+├── DecisionEngine.kt           # Interface
+├── EngineDecisionEngine.kt     # Implementation with ta4j
+└── StrategyConfig.kt           # Risk parameters
 
-1. **🎯 Full API Integration** - Complete Coinbase REST endpoints for trading
-2. **🧠 Trading Logic** - Implement decision engine with technical indicators  
-3. **⚙️ Service Layer** - 24/7 background trading service
-4. **📊 Risk Management** - Position sizing and drawdown protection
-5. **🚀 Live Trading** - First automated trade with real money (small amount)
+// Ticket 16: Risk Manager  
+core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/
+├── RiskManager.kt              # Interface
+├── TradingRiskManager.kt       # Implementation
+└── RiskConfig.kt               # Limits (15% drawdown, 5% position)
+```
+
+### Success Criteria for Next Phase
+
+- [ ] Decision engine correctly detects DEFENSE/TREND/RANGE modes
+- [ ] Risk manager enforces 15% drawdown limit
+- [ ] Backtesting shows 52%+ win rate on historical data  
+- [ ] Unit tests cover all decision logic paths
+- [ ] Integration with existing dashboard (show current mode)
 
 ---
 
-This project represents a sophisticated approach to automated trading with proper architecture, security, and risk management. The foundation is solid - now building the intelligence layer.
+## 🚨 Risk Management Philosophy
+
+**Core Principle:** Assume 97% failure rate. Build for the 3% who succeed.
+
+**Account Size Strategy:**
+- **$500 → $2,500:** BTC/USDT only (altcoins killed by fees)
+- **Risk per trade:** 1-2% ($5-10 max loss)
+- **Position size:** 10% of account max
+- **Drawdown limit:** 15% emergency stop
+- **Timeline:** 5-10 years to meaningful income
+
+**What Kills Small Accounts:**
+- Trading small-cap altcoins (3-15% round-trip costs)
+- Overleveraging (>5% risk per trade)
+- No stop losses (letting losers run)
+- Overtrading (fees compound quickly)
+- Emotional decisions (why we automate)
+
+**The Math That Matters:**
+- Need 60%+ win rate at 1:1 R:R to overcome 0.25% fees
+- OR 50% win rate at 2:1 R:R
+- Anything less = slow account decay
+- Hence focus on Bitcoin (tightest spreads, best data)
+
+---
+
+## 📞 Emergency Contacts & Resources
+
+### If Something Breaks
+
+**Build Failures:**
+1. Check `.build-status` and `build-log.txt`  
+2. Review recent commits for syntax errors
+3. Check [docs/ci.md](docs/ci.md) for troubleshooting
+
+**API Issues:**
+1. Verify Coinbase API status: https://status.coinbase.com
+2. Check rate limits (10,000/hour REST)
+3. Validate JWT tokens haven't expired
+
+**Strategy Issues:**
+1. Review [docs/strategy/bitcoin-first-strategy.md](docs/strategy/bitcoin-first-strategy.md)
+2. Check backtesting results vs. live performance
+3. Consider market regime changes
+
+### Key Resources
+
+- **Coinbase API Docs:** https://docs.cdp.coinbase.com/advanced-trade/docs/welcome
+- **ta4j Documentation:** https://ta4j.github.io/ta4j-wiki/
+- **Material 3 Guidelines:** https://m3.material.io/
+- **Repository:** https://github.com/partene-darius-andrei/TradeFlow
+
+---
+
+## 🎓 Learning & Improvement
+
+### Code Quality Standards
+
+- **Architecture:** Clean Architecture with clear layer separation
+- **Testing:** Unit tests for domain logic, integration tests for API
+- **Documentation:** Every public interface documented
+- **Logging:** Timber for debug info, never log credentials
+- **Security:** All sensitive data encrypted or injected at build time
+
+### Performance Targets
+
+- **UI:** 60 FPS on mid-range devices (Compose best practices)
+- **API:** <2 second response times for critical calls
+- **Battery:** Minimal impact when not actively trading
+- **Memory:** <100MB steady state (Room query optimization)
+
+### Trading Performance Targets
+
+- **Win Rate:** 52-58% (realistic for retail algo trading)
+- **Sharpe Ratio:** 1.0+ (risk-adjusted returns)
+- **Max Drawdown:** <15% (hard stop)
+- **Capital Efficiency:** 5-10% portfolio risk per trade max
+
+Remember: The goal isn't to get rich quick. It's to build a system that compounds small edges consistently over years.
