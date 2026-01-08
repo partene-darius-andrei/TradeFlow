@@ -1,5 +1,7 @@
-Version 1.2.0
+Version 1.3.0
 
-- Added new adaptive app icon that automatically adjusts to your device's theme
-- App icon now supports day/night mode with white background for light theme and black background for dark theme
-- Enhanced visual branding with updated trading chart design in the app icon
+- Added live portfolio data integration with Coinbase API
+- Dashboard now displays real BTC and USD account balances
+- Implemented loading states and error handling for portfolio data
+- Added automatic portfolio refresh on app launch
+- Portfolio card now shows "Live Data" indicator for real-time information

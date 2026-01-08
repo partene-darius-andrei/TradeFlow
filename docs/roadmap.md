@@ -1,7 +1,7 @@
 # TradeFlow - Master Implementation Plan
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 1 Ready to Start - Business Logic
+**Project Status:** Phase 1 In Progress - Coinbase Integration
 **Current Build:** #30 (SUCCESS)
 **Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
@@ -57,18 +57,21 @@ Year 10: $10,000-20,000    (Passive income: $500-1,000/month)
 app/src/main/java/com/dpart/tradeflow/
 ├── MainActivity.kt              ✅ Simplified (no auth check)
 ├── TradeFlowApp.kt              ✅ Initializes Timber logging + Hilt
+├── presentation/dashboard/
+│   ├── DashboardScreen.kt       🆕 ✅ Main screen with real data integration
+│   ├── DashboardViewModel.kt    🆕 ✅ State management + API integration
+│   └── components/              ✅ PortfolioCard, ModeCard, ServiceCard, OrdersList
 ├── di/
 │   ├── AppModule.kt             ✅ Empty Hilt module
-│   ├── DatabaseModule.kt        ✅ Provides Room database (empty)
+│   ├── DatabaseModule.kt        ✅ Provides Room database
 │   ├── NetworkModule.kt         ✅ Provides Ktor HttpClient (OkHttp engine)
-│   └── CredentialsModule.kt     🆕 ✅ Provides build-injected credentials
+│   └── CredentialsModule.kt     ✅ Provides build-injected credentials
 ├── data/local/
 │   ├── AppDatabase.kt           ✅ Empty Room DB
 │   └── PlaceholderEntity.kt     ✅ Dummy entity
-├── navigation/
-│   ├── AppNavHost.kt            🆕 ✅ Simplified navigation (no login)
-│   └── Screen.kt                🆕 ✅ Dashboard + Settings routes only
-└── build.gradle.kts             🆕 ✅ Credential injection system
+└── navigation/
+    ├── AppNavHost.kt            ✅ Simplified navigation (no login)
+    └── Screen.kt                ✅ Dashboard + Settings routes only
 
 🆕 COMPLETE: Domain Layer Foundation
 └── core/domain/                 ✅ Complete domain layer
@@ -77,7 +80,7 @@ app/src/main/java/com/dpart/tradeflow/
     │   └── CredentialStore.kt   ✅ Secure storage interface
     ├── error/
     │   └── ExchangeError.kt     ✅ Exchange error types (6 variants)
-    ├── model/                   🆕 ✅ Domain models (Ticket 01)
+    ├── model/                   ✅ Domain models (Ticket 01)
     │   ├── Candle.kt            ✅ OHLCV data with granularity enums
     │   ├── Order.kt             ✅ Order types, sides, status
     │   ├── Decision.kt          ✅ Wait, Defense, Trend, Range decisions
@@ -92,8 +95,8 @@ app/src/main/java/com/dpart/tradeflow/
 🆕 COMPLETE: Data Layer Implementation
 └── core/data/
     ├── security/
-    │   └── StaticCredentialStore.kt 🆕 ✅ Build-time credential injection
-    ├── local/                       🆕 ✅ Room database (Ticket 03)
+    │   └── StaticCredentialStore.kt ✅ Build-time credential injection
+    ├── local/                       ✅ Room database (Ticket 03)
     │   ├── database/
     │   │   └── EngineDatabase.kt    ✅ Room DB with 4 tables
     │   ├── entity/
@@ -110,12 +113,21 @@ app/src/main/java/com/dpart/tradeflow/
         ├── SecurityModule.kt        ✅ Hilt DI for credential store
         └── DatabaseModule.kt        ✅ Hilt DI for Room database
 
-🆕 COMPLETE: Coinbase Authentication
+🆕 COMPLETE: Coinbase API Integration (Partial)
 └── exchange/coinbase/
     ├── auth/
     │   └── CoinbaseJwtGenerator.kt  ✅ ES256 JWT token generation
+    ├── api/
+    │   └── CoinbaseApiClient.kt     🆕 ✅ Ktor-based API client (accounts endpoint)
+    ├── dto/
+    │   └── AccountDto.kt            🆕 ✅ Account DTOs for API responses  
+    ├── mapper/
+    │   └── AccountMapper.kt         🆕 ✅ DTO to domain mapping
+    ├── repository/
+    │   └── CoinbaseRepository.kt    🆕 ✅ Partial implementation (getBalances)
     └── di/
-        └── AuthModule.kt            ✅ Hilt DI for JWT provider
+        ├── AuthModule.kt            ✅ Hilt DI for JWT provider
+        └── ExchangeModule.kt        🆕 ✅ Repository DI binding
 
 🆕 COMPLETE: UI Foundation
 └── core/ui/
@@ -166,6 +178,17 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ docs/auto-docs.md (auto-doc workflow)
 - ✅ docs/tickets/ (all Notion tickets organized by status)
 
+### 🆕 MAJOR MILESTONE: Real Data Integration
+
+**Dashboard now displays real Coinbase account balances!**
+
+✅ **DashboardViewModel** - Complete state management with API integration
+✅ **CoinbaseApiClient** - Working Ktor client with JWT authentication
+✅ **Error handling** - Loading, error states with retry functionality
+✅ **Repository pattern** - Clean interface separation (can swap exchanges)
+
+This represents the first successful connection to live Coinbase data - a critical foundation milestone.
+
 ### 🎯 Phase 0A Progress: Authentication Infrastructure (COMPLETE ✅)
 
 **✅ COMPLETE:**
@@ -198,516 +221,212 @@ app/src/main/java/com/dpart/tradeflow/
 
 **Benefits:**
 - **Simplified UX:** No credential entry needed - app just works
-- **Better Security:** Credentials never typed on device keyboard
-- **CI/CD Ready:** GitHub secrets automatically injected
-- **Developer Friendly:** local.properties for development
-- **Reduced Code:** ~500 lines of login UI code removed
+- **Better security:** Credentials never stored in device storage  
+- **Easier testing:** Credentials injected via CI/CD pipeline
+- **Faster development:** No login flow to maintain
 
-### ❌ What DOESN'T Exist (Business Logic & Integration)
+### 🎯 Phase 0B Progress: UI Foundation (COMPLETE ✅)
 
-**Phase 0B is 50% complete. Remaining work:**
+**✅ COMPLETE:**
+- [x] **Ticket 05:** UI Design Overview - Complete design system specification
+- [x] **Ticket 06:** Core UI Theme - Material 3 theme with trading colors
+- [x] **Ticket 07-UI:** Base Components - All reusable components implemented
+- [x] **Ticket 09:** App Navigation - Bottom nav between Dashboard + Settings
+- [x] **Ticket 10:** Dashboard Screen - Complete UI with mock data
+- [x] **App Branding:** Adaptive icon with trading chart design
 
+**Key UI Components Implemented:**
 ```
-✅ domain/model/             # COMPLETE: All domain models implemented
-✅ data/local/database/      # COMPLETE: Room database with entities + DAOs
-❌ domain/strategy/          # No decision engine yet (Ticket 05 - NEXT)
-❌ domain/risk/              # No risk manager yet (Ticket 06)
-❌ data/exchange/coinbase/   # No REST API methods (JWT only, need Ticket 08)
-❌ data/repository/          # No repository implementations
-❌ presentation/             # No screens yet (skeleton only)
-❌ service/trading/          # No trading service
-❌ No unit tests
-❌ No integration tests
-❌ No backtesting
-```
-
----
-
-## Architecture Principles
-
-### Clean Architecture (Single Module)
-
-We're using **single-module architecture** with clear package separation:
-
-```
-app/src/main/java/com/dpart/tradeflow/
-├── domain/                  # Pure Kotlin, zero Android dependencies
-│   ├── model/              # Candle, Order, Portfolio, Decision
-│   ├── repository/         # ✅ COMPLETE: ExchangeRepository interface
-│   ├── strategy/           # DecisionEngine
-│   └── risk/               # RiskManager
-│
-├── data/
-│   ├── local/              # Room database
-│   ├── security/           # ✅ COMPLETE: Static credential injection
-│   └── exchange/
-│       └── coinbase/       # Coinbase-specific implementation (ISOLATED)
-│           ├── auth/       # ✅ COMPLETE: JWT generator
-│           ├── api/        # REST client (pending)
-│           ├── websocket/  # WebSocket client (pending)
-│           ├── dto/        # Coinbase DTOs
-│           └── mapper/     # DTO → domain model mappers
-│
-├── presentation/
-│   ├── dashboard/          # Dashboard screen + ViewModel (pending)
-│   ├── settings/           # Settings screen + ViewModel (pending)
-│   └── components/         # ✅ COMPLETE: Shared UI components
-│
-├── service/
-│   └── trading/            # TradingService (foreground service)
-│
-├── navigation/             # ✅ COMPLETE: Simplified routing
-│   ├── AppNavHost.kt       # Direct Dashboard → Settings
-│   └── Screen.kt           # Two routes only
-│
-└── di/                     # Hilt modules
-    ├── AppModule.kt
-    ├── DatabaseModule.kt
-    ├── NetworkModule.kt
-    ├── CredentialsModule.kt # ✅ COMPLETE: Build-time injection
-    ├── SecurityModule.kt   # ✅ COMPLETE: Credential store binding
-    └── ExchangeModule.kt   # ONLY place that knows about Coinbase
+✅ StatusCard - Reusable card container
+✅ LoadingButton - Button with loading spinner
+✅ PriceDisplay - Price with +/- color coding
+✅ ModeIndicator - Trading mode badges (DEFENSE/TREND/RANGE)
+✅ ErrorDisplay - Error state with retry button
+✅ PortfolioCard - Portfolio display with real data
+✅ ModeCard - Trading mode display
+✅ ServiceCard - Service controls
+✅ OrdersList - Recent orders list
 ```
 
-### Critical Rules
+### 🎯 Phase 1 Progress: Coinbase Integration (25% COMPLETE)
 
-1. **Domain layer**: NO Android imports, NO Coinbase imports
-2. **Presentation layer**: Imports ONLY `domain/repository/ExchangeRepository` interface
-3. **Service layer**: Imports ONLY domain interfaces
-4. **All Coinbase code** lives in `data/exchange/coinbase/`
-5. **DI binds implementation to interface** in `ExchangeModule.kt`
-6. **Credentials injected at build time** - no runtime credential management
+**✅ COMPLETE:**
+- [x] **Ticket 12:** Dashboard ViewModel - State management + API integration
+- [x] **Partial Ticket 13:** REST API Client - getBalances endpoint working
 
----
+**🟡 IN PROGRESS:**
+- [🟡] **Ticket 13:** REST API Client - Need full implementation (market data, orders)
 
-## Phase-by-Phase Implementation Plan
+**❌ PENDING:**
+- [ ] **Ticket 14:** WebSocket Client - Real-time data streams
+- [ ] **Ticket 11:** Settings Screen - Configuration UI
 
-### ✅ Phase 0A: Domain Foundation (COMPLETE)
-
-**Status:** 100% Complete
-**Duration:** 2 weeks (Dec 2025 - Jan 2026)
-
-| Ticket | Status | Description |
-|--------|--------|-------------|
-| **00** | ✅ Done | Project Modularization (8-module Clean Architecture) |
-| **01** | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio, Balance, Ticker) |
-| **02** | ✅ Done | Repository Interfaces (ExchangeRepository, AuthTokenProvider, CredentialStore, BracketOrderRepository, ExchangeWebSocket) |
-| **03** | ✅ Done | Room Database (4 entities: Candle, Order, Decision, PortfolioSnapshot + 4 DAOs) |
-| **04** | ✅ Done | Static Credential Store (build-time injection via BuildConfig) |
-| **07-JWT** | ✅ Done | JWT Generator (ES256 signing for Coinbase with proper nonce generation) |
-
-**Deliverables:**
-- ✅ 8-module Clean Architecture (app, core:domain, core:data, core:ui, exchange:coinbase, feature:*)
-- ✅ Complete domain model layer (pure Kotlin, zero Android dependencies)
-- ✅ Repository interfaces defining exchange contracts
-- ✅ Room database with entity + DAO layer
-- ✅ Build-time credential injection (env vars → BuildConfig → DI)
-- ✅ JWT token generation for Coinbase REST API
-
-**Key Achievement:** **Solid domain foundation** - Clean separation of concerns with domain-first architecture, making exchange swapping trivial.
-
----
-
-### ✅ Phase 0B: UI Foundation (COMPLETE)
-
-**Status:** 100% Complete
-**Duration:** 1 week (Jan 2026)
-
-| Ticket | Status | Description |
-|--------|--------|-------------|
-| **05** | ✅ Done | UI Design Overview (complete visual redesign) |
-| **06** | ✅ Done | Core UI Theme (Material 3 theme + color system) |
-| **07-UI** | ✅ Done | Core UI Components (ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard, BigDecimalExt) |
-| **08** | ✅ Done | Login Screen (obsolete - removed when credentials moved to build-time) |
-| **09** | 🔄 Review | App Navigation (simplified: Dashboard + Settings only) |
-
-**Deliverables:**
-- ✅ Complete Material 3 theme with day/night mode support
-- ✅ Reusable UI components for trading app (mode indicators, price displays, status cards)
-- ✅ Adaptive app icon with trading chart design
-- ✅ Simplified navigation (no login flow)
-- 🔄 App navigation pending review
-
-**Key Achievement:** **Professional UI foundation** - Modern Compose components ready for Dashboard and Settings implementation.
-
----
-
-### 🎯 Phase 1: Business Logic (CURRENT - Ready to Start)
-
-**Goal:** Implement trading strategy and risk management
-
-**Duration:** 1-2 weeks
-**Priority:** CRITICAL (blocks all trading functionality)
-
-| Ticket | Priority | Status | Description | Blocks |
-|--------|----------|--------|-------------|--------|
-| **15** | CRITICAL | ⏭️ **NEXT** | Decision Engine (SMA, ADX, ATR + regime switching) | Trading strategy |
-| **16** | CRITICAL | Pending | Risk Manager (position sizing, drawdown limits) | Safety |
-
-**Dependencies:**
-- ✅ Ticket 01 (domain models exist)
-- ✅ Ticket 03 (database for persistence)
-- ✅ ta4j-core library (already in dependencies)
-
-**Deliverables:**
-- ⏭️ DecisionEngine interface + TradingDecisionEngine implementation
-- ⏭️ SMA(200), ADX(14), ATR(14) indicator calculations using ta4j
-- ⏭️ Regime switching logic (DEFENSE/TREND/RANGE modes with hysteresis)
-- ⏭️ RiskManager with position sizing, exposure limits, drawdown monitoring
-- ⏭️ Unit tests for decision engine with mock candles
-
-**Progress:** 0/2 tickets complete (0%)
-
-**Critical Path:** **Decision Engine (15)** ⏭️ → Risk Manager (16) → Backtest Validation → REST API
-
----
-
-### 📊 Phase 1B: Strategy Validation (After Business Logic)
-
-**Goal:** Validate strategy works before building full API integration
-
-**Duration:** 1 week
-**Priority:** CRITICAL (prevents wasted work on broken strategy)
-
-| Task | Priority | Description |
-|------|----------|-------------|
-| **Backtest** | CRITICAL | 7-year BTC/USDT backtest (2018-2025) with realistic fees |
-| **Validation** | CRITICAL | Verify 52%+ win rate, 1.0+ Sharpe ratio |
-| **Paper Trade** | HIGH | Small $10 live trades for 30 days validation |
-
-**Dependencies:** Tickets 15 (Decision Engine), 16 (Risk Manager)
-
-**Deliverables:**
-- ⏭️ Historical data download (7+ years H4 candles)
-- ⏭️ Backtest harness (replay candles → strategy decisions)
-- ⏭️ Performance report (win rate, Sharpe, drawdown)
-- ⏭️ Go/No-Go decision (if fails, fix strategy before Phase 2)
-
-**Strategy Parameters (from analysis):**
-```kotlin
-// Hysteresis (lag reduction)
-trendConfirmation = 3 candles   // 12 hours (patience)
-rangeConfirmation = 3 candles   // 12 hours (patience)
-defenseConfirmation = 0 candles // Instant (safety)
-
-// ADX thresholds
-adxTrendThreshold = 25.0   // Strong trend
-adxRangeThreshold = 25.0   // Range-bound
-
-// Position sizing (CLARIFIED)
-positionSize = 10% of portfolio  // Amount in trade
-riskPerTrade = 1-2% of portfolio // Max loss via stop-loss
-// Example: $500 account → $50 position (10%) → $10 stop (2%)
+**Current Coinbase Implementation:**
 ```
-
-**Critical:** Do NOT proceed to Phase 2 if backtest fails validation criteria.
-
----
-
-### 🔌 Phase 2: Coinbase Integration
-
-**Goal:** Connect to live Coinbase API for trading and market data
-
-**Duration:** 1-2 weeks
-**Priority:** HIGH (enables live trading)
-
-| Ticket | Priority | Description | Blocks |
-|--------|----------|-------------|--------|
-| **13** | HIGH | REST API Client (order placement, market data, candles) | Live trading |
-| **14** | HIGH | WebSocket Client (real-time price, order updates) | Live data |
-
-**Dependencies:**
-- ✅ Ticket 02 (repository interfaces)
-- ✅ Ticket 04 (credentials)
-- ✅ Ticket 07-JWT (JWT generator)
-- ⏭️ **Phase 1B validation passed** (backtest proves strategy works)
-
-**Deliverables:**
-- ⏭️ CoinbaseRepository implementing ExchangeRepository + BracketOrderRepository
-- ⏭️ REST API methods: getCandles, placeOrder, cancelOrder, getAccounts, listOrders
-- ⏭️ CoinbaseWebSocket implementing ExchangeWebSocket
-- ⏭️ Real-time price feeds and order updates
-- ⏭️ Rate limiting with exponential backoff (30 req/sec private, 10 req/sec public)
-- ⏭️ Integration test with real API (small $1 trades)
-
----
-
-### 🎨 Phase 3: User Interface
-
-**Goal:** Build complete user interface for monitoring and control
-
-**Duration:** 1 week
-**Priority:** MEDIUM (monitoring, not critical path)
-
-| Ticket | Priority | Description | Status |
-|--------|----------|-------------|--------|
-| **10** | MEDIUM | Dashboard Screen (portfolio, mode, recent orders) | Refined |
-| **11** | MEDIUM | Settings Screen (preferences, about) | Refined |
-
-**Dependencies:**
-- ✅ Tickets 05-07 (UI foundation complete)
-- ✅ Ticket 09 (navigation)
-- ⏭️ Ticket 13 (REST API for data)
-
-**Deliverables:**
-- ⏭️ Dashboard screen showing: portfolio value, current mode, open orders, recent decisions
-- ⏭️ Settings screen: trading preferences, app info, credentials status
-- ⏭️ Real-time UI updates from WebSocket
-- ⏭️ ViewModels with proper state management
-
----
-
-### ⚙️ Phase 4: Trading Service
-
-**Goal:** 24/7 autonomous background trading execution
-
-**Duration:** 1 week
-**Priority:** CRITICAL (enables autonomous trading)
-
-| Ticket | Priority | Description | Blocks |
-|--------|----------|-------------|--------|
-| **17** | CRITICAL | Trading Service (foreground service orchestration) | Autonomous trading |
-| **18** | HIGH | Battery Optimization (Doze exemption, wake locks) | 24/7 operation |
-
-**Dependencies:** All previous phases (complete system needed)
-
-**Deliverables:**
-- ⏭️ Foreground service with persistent notification
-- ⏭️ Strategy evaluation loop (fetch candles → decide → execute)
-- ⏭️ Order execution based on DecisionEngine output
-- ⏭️ RiskManager validation before all trades
-- ⏭️ Emergency stop on drawdown breach
-- ⏭️ Battery optimization (Doze whitelist, wake locks)
-
----
-
-### 🧪 Phase 5: Testing & Polish
-
-**Goal:** Validate system works reliably end-to-end
-
-**Duration:** 1 week
-**Priority:** HIGH (production readiness)
-
-| Ticket | Priority | Description |
-|--------|----------|-------------|
-| **19** | HIGH | Integration Tests (real API with $1-5 trades) |
-| **20** | CRITICAL | MVP Milestone (complete system validation + 7-day live test) |
-
-**Deliverables:**
-- ⏭️ Integration tests with real Coinbase API
-- ⏭️ 7-day unattended operation test
-- ⏭️ Emergency stop verification
-- ⏭️ Production readiness checklist
+✅ CoinbaseJwtGenerator - ES256 JWT signing with proper nonce
+✅ CoinbaseApiClient - Ktor HTTP client with authentication
+✅ AccountDto + AccountMapper - Proper DTO to domain mapping
+✅ CoinbaseRepository - Implements ExchangeRepository (getBalances)
+✅ ExchangeModule - Hilt DI binding
+✅ Dashboard shows real account balances from API
+```
 
 ---
 
 ## 📊 Progress Tracking
 
-### Overall Progress: 10/20 tickets complete (50%)
+### Overall Progress: 12/20 tickets complete (60%)
 
 ```
-Phase 0A: ████████████████████ 100% (6/6)   ✅ COMPLETE
-Phase 0B: ████████████████████ 100% (4/4)   ✅ COMPLETE
-Phase 1:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)   ← YOU ARE HERE
-Phase 1B: ░░░░░░░░░░░░░░░░░░░░   0% (0/1)   (Backtest validation)
-Phase 2:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
+Phase 0A: ████████████████████ 100% (6/6) ✅ COMPLETE
+Phase 0B: ████████████████████ 100% (5/5) ✅ COMPLETE  
+Phase 1:  ████████░░░░░░░░░░░░  25% (1/4) 🟡 IN PROGRESS
+Phase 2:  ░░░░░░░░░░░░░░░░░░░░   0% (0/3) ← NEXT
 Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
-Phase 4:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
-Phase 5:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
 ```
 
-### Current Sprint: Phase 1 - Business Logic
+### Current Sprint: Phase 1 - Coinbase Integration
 
-**Completed Phases:**
-- ✅ Phase 0A: Domain Foundation (Tickets 00-04, 07-JWT) - 6 tickets
-- ✅ Phase 0B: UI Foundation (Tickets 05-09) - 4 tickets *(Ticket 09 in review but UI complete)*
+**Recently Completed:**
+- ✅ **Ticket 12:** Dashboard ViewModel - Real API integration working!
+- ✅ **Partial Ticket 13:** getBalances API call working
 
-**Next Up:** Ticket 15 (Decision Engine) - Implement regime switching with SMA(200), ADX(14), ATR(14)
+**Currently Working On:**
+- 🟡 **Complete Ticket 13:** Full REST API client implementation
 
-**Ready to Start:** Ticket 15 has zero blockers
-- ✅ Domain models exist (Ticket 01)
-- ✅ Database ready (Ticket 03)
-- ✅ ta4j-core library in dependencies
-
----
-
-## 🚀 Getting Started with Phase 1
-
-**Implement core business logic (strategy + risk management):**
-
-### Ticket 15: Decision Engine (2-3 days)
-**Location:** `:core:domain/strategy/`
-
-**Files to create:**
-- `DecisionEngine.kt` (interface)
-- `TradingDecisionEngine.kt` (implementation)
-- `StrategyConfig.kt` (configuration data class)
-- `indicator/SMACalculator.kt` (SMA using ta4j)
-- `indicator/ADXCalculator.kt` (ADX using ta4j)
-- `indicator/ATRCalculator.kt` (ATR using ta4j)
-
-**Key Implementation:**
-- SMA(200) for trend direction (price above/below)
-- ADX(14) for trend strength (>25 = trend, <25 = range)
-- ATR(14) for volatility-based stop-loss/take-profit
-- 3-candle hysteresis for TREND and RANGE modes
-- Instant (0-candle) switch to DEFENSE mode
-
-**Acceptance Criteria:**
-- ✅ Correctly identifies all 4 modes (Wait, Defense, Trend, Range)
-- ✅ Hysteresis prevents whipsawing between modes
-- ✅ Grid spacing never below 1.5% (fee break-even)
-- ✅ 100% unit test coverage with mock candles
-- ✅ Zero Android dependencies (pure Kotlin/JVM)
-
-### Ticket 16: Risk Manager (1 day)
-**Location:** `:core:domain/risk/`
-
-**Files to create:**
-- `RiskManager.kt` (risk validation + position sizing)
-- `RiskConfig.kt` (risk limits configuration)
-
-**Key Implementation:**
-- Position sizing: 10% of portfolio per trade
-- Risk per trade: 1-2% via stop-loss
-- Total exposure limit: 10%
-- Drawdown limit: 15% emergency stop
-- Grid spacing validation (>1.5%)
-
-**Acceptance Criteria:**
-- ✅ Validates orders against risk limits
-- ✅ Calculates position sizes for trend and grid modes
-- ✅ Monitors drawdown vs high-water mark
-- ✅ Zero exchange-specific code
-- ✅ Unit tests for all scenarios
-
-**Total Phase 1 Effort:** ~3-4 days
-
-**After Phase 1:** Proceed to **Phase 1B (Strategy Validation)** - backtest with historical data before building API client
+**Next Up:**
+- **Ticket 14:** WebSocket client for real-time data
+- **Ticket 11:** Settings screen implementation
 
 ---
 
-## 🔮 Future Enhancements (Post-MVP)
+## 🚀 Next Immediate Steps
 
-**Implementation Priority:** AFTER Phase 3 complete and Coinbase integration proven profitable
+### 1. Complete REST API Client (Ticket 13)
+**Goal:** Full Coinbase API integration beyond just account balances
 
-### Polymarket Prediction Market Integration
+**Remaining work:**
+```kotlin
+// Need to implement in CoinbaseRepository:
+suspend fun getCandles(productId: String, granularity: Granularity, limit: Int): Result<List<Candle>>
+suspend fun getCurrentPrice(productId: String): Result<Ticker>
+suspend fun placeMarketOrder(...): Result<Order>
+suspend fun placeLimitOrder(...): Result<Order>
+suspend fun placeBracketOrder(...): Result<Order>  // For trend mode
+suspend fun cancelOrder(orderId: String): Result<Unit>
+suspend fun getOpenOrders(productId: String): Result<List<Order>>
+```
 
-**Goal:** Add cross-market arbitrage strategy by comparing Coinbase spot prices with Polymarket prediction odds.
+**API endpoints to implement:**
+```
+GET  /api/v3/brokerage/products/BTC-USD/candles
+GET  /api/v3/brokerage/products/BTC-USD/ticker
+POST /api/v3/brokerage/orders              # Order placement
+POST /api/v3/brokerage/orders/batch_cancel # Cancel orders
+GET  /api/v3/brokerage/orders/historical/batch # List orders
+```
 
-**Opportunity:** Similar to the 0x8dxd bot that turned $313 → $438k in 30 days exploiting price lag between spot markets and prediction markets.
-
-**Status:** Fully documented integration plan available
-**Documentation:** [docs/future-enhancements/polymarket-integration.md](future-enhancements/polymarket-integration.md)
-
-**Key Benefits:**
-- Lower risk than directional trading (arbitrage vs. prediction)
-- Higher potential win rate (70-90% vs. 52-58%)
-- Diversification (second exchange, different strategy type)
-
-**Key Risks:**
-- Legal restrictions (Polymarket banned in US)
-- Arbitrage edge may already be closed
-- Lower liquidity than Coinbase
-
-**Prerequisites:**
-- ✅ Phase 0A complete (domain models, auth)
-- ✅ Phase 0B complete (decision engine, risk manager)
-- ✅ Phase 1-3 complete (Coinbase proven profitable 30+ days)
-- ⚠️ Phase 1 validation (research arbitrage opportunities for 7 days)
-
-**Timeline:** ~3 months AFTER Coinbase integration proven
-
-**Go/No-Go Decision:** Based on validation phase finding 10+ arbitrage opportunities per week with 10%+ edge
-
----
-
-## 🎯 Why This Order Makes Sense
-
-### 1. Authentication First (Phase 0A - COMPLETE ✅)
-- **Foundation:** Can't trade without API access
-- **Simplification:** Static credentials remove UI complexity
-- **Security:** Build-time injection more secure than device storage
-- **CI/CD Ready:** GitHub secrets integration
-- **Result:** Solid authentication foundation
-
-### 2. Domain & Data Next (Phase 0B - CURRENT)
-- **Business Models:** Define what data looks like
-- **Persistence:** Store trading state and history
-- **Strategy Logic:** Implement regime-switching decision engine
-- **Risk Management:** Safety limits and emergency stops
-- **Result:** Complete business logic foundation
-
-### 3. API Integration Third (Phase 1)
-- **Live Data:** Connect to real Coinbase API
-- **Real Trading:** Place and manage actual orders
-- **WebSocket:** Real-time price and order updates
-- **Result:** Working connection to exchange
-
-### 4. UI Fourth (Phase 2)
-- **Monitoring:** Visual dashboard for portfolio and trading state
-- **Control:** Settings and manual overrides
-- **Real-time Updates:** Live data flowing to UI
-- **Result:** Complete user interface
-
-### 5. Service Last (Phase 3)
-- **Autonomous Operation:** 24/7 background trading
-- **Battery Optimization:** Survive Android power management
-- **Production Ready:** Reliable long-term operation
-- **Result:** Fully autonomous trading bot
-
-### 6. Testing & Polish (Phase 4)
-- **Validation:** End-to-end system testing
-- **Reliability:** Confirm 24/7 operation
-- **Production:** Ready for live trading
-- **Result:** Proven, reliable system
-
----
-
-## 💡 Architectural Decisions
-
-### Static Credentials (New Approach)
-
-**Decision:** Replace login screen with build-time credential injection
-
-**Rationale:**
-- **Simpler UX:** No credential entry needed - app just works
-- **More Secure:** Credentials never typed on device, not stored persistently
-- **CI/CD Friendly:** GitHub secrets automatically available
-- **Developer Friendly:** local.properties for development
-- **Less Code:** Eliminated ~500 lines of login UI/ViewModel code
+### 2. WebSocket Integration (Ticket 14)
+**Goal:** Real-time data for Dashboard
 
 **Implementation:**
-```kotlin
-// app/build.gradle.kts - Injection
-val coinbaseApiKey = System.getenv("COINBASE_API_KEY")
-    ?: props.getProperty("coinbase.api.key", "")
-buildConfigField("String", "COINBASE_API_KEY", "\"$coinbaseApiKey\"")
+```
+wss://advanced-trade-ws.coinbase.com        # Market data
+wss://advanced-trade-ws-user.coinbase.com   # User orders (auth)
 
-// CredentialsModule.kt - DI
-@Provides @Named("coinbase_api_key")
-fun provideCoinbaseApiKey(): String = BuildConfig.COINBASE_API_KEY
-
-// StaticCredentialStore.kt - Access
-override suspend fun getApiKey(): String? = apiKey.takeIf { it.isNotBlank() }
+Channels needed:
+- heartbeats (keep-alive)
+- ticker (real-time BTC price)
+- user (order status updates)
 ```
 
-### Single Module Architecture
+### 3. Settings Screen (Ticket 11)
+**Goal:** Configuration UI and app information
 
-**Decision:** Keep everything in `:app` module initially, modularize later if needed
+**Sections:**
+- Trading parameters display (readonly initially)
+- Notification preferences
+- About section (version, logs, help)
+- Future: Credential management when needed
 
-**Rationale:**
-- **Simplicity:** Easier to refactor within single module
-- **Speed:** No inter-module boundaries during rapid development
-- **Clear Packages:** Package structure enforces separation
-- **Future Ready:** Can extract modules when architecture stabilizes
+---
 
-### Domain-First Design
+## 🎯 Phase Definitions
 
-**Decision:** Define interfaces in domain layer, implement in data layer
+### ✅ Phase 0A: Authentication Infrastructure (COMPLETE)
+**Goal:** Secure credential management and API authentication
+- [x] Repository interfaces
+- [x] Static credential injection
+- [x] JWT token generation  
+- [x] Room database setup
+- [x] Domain models
 
-**Rationale:**
-- **Testability:** Mock interfaces for unit testing
-- **Flexibility:** Swap Coinbase for other exchanges
-- **Clean Dependencies:** Domain never depends on infrastructure
-- **Future Ready:** Easy to add Kraken, Binance, etc.
+### ✅ Phase 0B: UI Foundation (COMPLETE) 
+**Goal:** Professional UI with all screens and components
+- [x] Design system and theme
+- [x] Core UI components
+- [x] Dashboard screen with real data
+- [x] App navigation
+- [x] App branding
+
+### 🟡 Phase 1: Coinbase Integration (25% COMPLETE)
+**Goal:** Complete API integration for live trading
+- [x] Dashboard ViewModel ✅
+- [🟡] REST API Client (partial)
+- [ ] WebSocket Client
+- [ ] Settings Screen
+
+### Phase 2: Trading Logic (NEXT)
+**Goal:** Decision engine and risk management
+- [ ] Decision Engine (SMA, ADX, ATR + regime switching)
+- [ ] Risk Manager (position sizing, stop-loss, drawdown)
+- [ ] Backtesting framework
+
+### Phase 3: Trading Service
+**Goal:** 24/7 autonomous operation
+- [ ] Foreground Service (strategy loop)
+- [ ] Battery optimization
+
+### Phase 4: Testing & Production
+**Goal:** Validate system works reliably
+- [ ] Integration tests
+- [ ] Paper trading validation
+- [ ] Live trading (small amounts)
+
+---
+
+## 🎯 Getting Started with Current Work
+
+**Phase 1 is 25% complete** - Dashboard shows real Coinbase data! 
+
+**Next Priority:** Complete REST API Client (Ticket 13)
+
+**Implementation approach:**
+1. Add remaining endpoints to CoinbaseApiClient
+2. Create DTOs for candle, ticker, order responses  
+3. Implement mappers from DTOs to domain models
+4. Complete CoinbaseRepository implementation
+5. Test with small real API calls
+
+**Then:** WebSocket for real-time data and Settings screen
+
+The foundation is solid - time to complete the API integration and build the trading intelligence!
+
+---
+
+## 🔄 Development Workflow
+
+### For New Features
+1. **Read ticket** in docs/tickets/ for detailed requirements
+2. **Check reference.md** for implementation examples  
+3. **Implement** following Clean Architecture patterns
+4. **Test** with real API calls (small amounts)
+5. **Update** CLAUDE.md and roadmap.md when complete
+
+### For Current Phase 1 Work
+- **Focus:** Complete Coinbase API integration
+- **Test:** Use real API with small amounts ($10-20 max)
+- **Validate:** Ensure error handling works properly
+- **Document:** Update progress in roadmap.md
+
+**The app now successfully connects to Coinbase and shows real data - major milestone achieved!**
