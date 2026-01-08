@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 0B In Progress - Core Domain & Data (50% complete)
+**Project Status:** Phase 1 Ready to Start - Business Logic
 **Current Build:** #30 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -49,7 +49,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phase 0B: 50% Complete)
+### What EXISTS (Phases 0A & 0B: COMPLETE)
 
 ```
 ✅ Modern Android app structure
@@ -150,17 +150,19 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ### What DOESN'T Exist Yet (Next Up)
 
 ```
-✅ Domain models (Candle, Decision, Order, Portfolio) - Ticket 01 ✅ DONE
-✅ Room database entities/DAOs - Ticket 03 ✅ DONE
-❌ Decision engine (regime switching logic) - Ticket 05 ← NEXT
-❌ Risk manager - Ticket 06
-❌ Coinbase REST API client methods - Ticket 08 (JWT complete ✅, REST methods next)
-❌ Trading service (foreground service)
-❌ Dashboard and Settings screens
-❌ App navigation setup
+✅ Domain models - Ticket 01 ✅ DONE
+✅ Room database - Ticket 03 ✅ DONE
+✅ UI Foundation - Tickets 05-09 ✅ DONE
+❌ Decision engine (regime switching logic) - Ticket 15 ← NEXT
+❌ Risk manager - Ticket 16
+❌ Backtest validation - Phase 1B
+❌ Coinbase REST API client - Ticket 13 (JWT complete ✅, REST methods pending)
+❌ Coinbase WebSocket - Ticket 14
+❌ Dashboard and Settings screens - Tickets 10-11 (refined, ready to implement)
+❌ Trading service (foreground service) - Tickets 17-18
 ```
 
-**Progress:** **Phase 0B: 50% complete** (2/4 tickets done). Domain models (Ticket 01) and Room database (Ticket 03) implemented. Next up: Decision engine (Ticket 05) implementing SMA(200), ADX(14), ATR(14) indicators with regime-switching logic.
+**Progress:** **Phases 0A & 0B: 100% complete** (10/20 tickets done). Domain foundation, UI foundation, and authentication infrastructure complete. **Next up:** Ticket 15 (Decision Engine) implementing SMA(200), ADX(14), ATR(14) indicators with regime-switching logic.
 
 ---
 
@@ -168,46 +170,50 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 **See:** [docs/roadmap.md](docs/roadmap.md) for complete roadmap
 
-### Phase 0A: Authentication Infrastructure (COMPLETE ✅)
-- [x] **Repository interfaces** (Ticket 02) ✅ COMPLETE
-- [x] **Secure credential storage** (Ticket 04) ✅ COMPLETE - Now static injection
-- [x] **JWT generator** (Ticket 07) ✅ COMPLETE - ES256 signing with proper nonce generation
-- [x] **UI components** ✅ COMPLETE - ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard
-- [x] **Credential system** ✅ COMPLETE - Build-time injection replacing UI input
-- [x] **App branding** ✅ COMPLETE - Adaptive icon with trading chart design
-
-### Phase 0B: Core Foundation - 50% Complete (2/4 tickets)
+### Phase 0A: Domain Foundation (COMPLETE ✅)
+- [x] **Modularization** (Ticket 00) ✅ COMPLETE - 8-module Clean Architecture
 - [x] **Domain models** (Ticket 01) ✅ COMPLETE - Candle, Order, Decision, Portfolio, Balance, Ticker
-- [x] **Room database schema** (Ticket 03) ✅ COMPLETE - 4 entities + 4 DAOs
-- [ ] **Decision engine** (Ticket 05) ❌ NEXT - SMA(200), ADX(14), ATR(14) with regime switching
-- [ ] **Risk manager** (Ticket 06) ❌ PENDING - Position sizing, stop-loss, drawdown limits
+- [x] **Repository interfaces** (Ticket 02) ✅ COMPLETE - Exchange contracts
+- [x] **Room database** (Ticket 03) ✅ COMPLETE - 4 entities + 4 DAOs
+- [x] **Credential storage** (Ticket 04) ✅ COMPLETE - Build-time static injection
+- [x] **JWT generator** (Ticket 07-JWT) ✅ COMPLETE - ES256 signing with proper nonce
 
-**Current Focus:** Ticket 05 - Decision Engine implementation
+### Phase 0B: UI Foundation (COMPLETE ✅)
+- [x] **UI Design Overview** (Ticket 05) ✅ COMPLETE - Complete visual redesign
+- [x] **Core UI Theme** (Ticket 06) ✅ COMPLETE - Material 3 theme + colors
+- [x] **Core UI Components** (Ticket 07-UI) ✅ COMPLETE - ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard
+- [x] **Login Screen** (Ticket 08) ✅ COMPLETE (obsolete - removed after credential change)
+- [x] **App Navigation** (Ticket 09) 🔄 IN REVIEW - Simplified routing (Dashboard + Settings)
 
-### Phase 0C: Strategy Validation (NEW - After Phase 0B)
-- Backtesting framework with historical data
-- Strategy validation (52%+ win rate, 1.0+ Sharpe ratio)
-- Paper trading validation before live deployment
+### Phase 1: Business Logic (CURRENT - Ready to Start)
+- [ ] **Decision Engine** (Ticket 15) ❌ **NEXT** - SMA(200), ADX(14), ATR(14) + regime switching
+- [ ] **Risk Manager** (Ticket 16) ❌ PENDING - Position sizing, exposure limits, drawdown monitoring
 
-### Phase 1: Coinbase Integration
-- Complete REST API client (methods for order placement, market data)
-- WebSocket client
+**Current Focus:** Ticket 15 - Decision Engine implementation
 
-### Phase 2: Presentation Layer
-- Dashboard screen + ViewModel
-- Settings screen + ViewModel
-- App navigation (simplified - no login)
+### Phase 1B: Strategy Validation (After Phase 1)
+- Backtesting framework with 7-year historical BTC/USDT data
+- Strategy validation (52%+ win rate, 1.0+ Sharpe ratio minimum)
+- Go/No-Go decision before building REST API
 
-### Phase 3: Trading Service
-- Foreground service
-- Battery optimization
+### Phase 2: Coinbase Integration
+- **REST API Client** (Ticket 13) - Order placement, market data, candles
+- **WebSocket Client** (Ticket 14) - Real-time price feeds, order updates
 
-### Phase 4: Testing & Validation
-- Integration tests
-- MVP milestone
+### Phase 3: Presentation Layer
+- **Dashboard Screen** (Ticket 10) - Portfolio, mode, recent orders
+- **Settings Screen** (Ticket 11) - Preferences, app info
 
-**Current Phase:** Phase 0B In Progress (50% complete - 2/4 tickets done)
-**Progress:** Domain models and Room database complete. Next: Decision engine (Ticket 05) implementing SMA/ADX/ATR indicators with regime-switching logic.
+### Phase 4: Trading Service
+- **Trading Service** (Ticket 17) - Foreground service orchestration
+- **Battery Optimization** (Ticket 18) - Doze exemption, wake locks
+
+### Phase 5: Testing & Validation
+- **Integration Tests** (Ticket 19) - Real API with small trades
+- **MVP Milestone** (Ticket 20) - Complete system validation
+
+**Current Phase:** Phase 1 Ready to Start (10/20 tickets done, 50% complete)
+**Progress:** Domain and UI foundations complete. Next: Ticket 15 (Decision Engine) implementing SMA/ADX/ATR indicators with regime-switching logic.
 
 ---
 
@@ -253,7 +259,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 └─────────────────────────────────────────┘
 ```
 
-**Key insight:** Phase 0B is 50% complete. Domain models and database schema done. Next critical blocker: Decision engine (Ticket 05) for regime-switching logic.
+**Key insight:** Phases 0A & 0B complete (10/20 tickets, 50%). Domain foundation and UI foundation done. Next critical blocker: Decision engine (Ticket 15) for regime-switching logic.
 
 ---
 
@@ -441,4 +447,4 @@ fun PortfolioSection() {
 
 ---
 
-**Next Steps:** Implement Decision Engine (Ticket 05) in `:core:domain` module with SMA(200), ADX(14), ATR(14) indicators and regime-switching logic (DEFENSE/TREND/RANGE modes).
+**Next Steps:** Implement Decision Engine (Ticket 15) in `:core:domain` module with SMA(200), ADX(14), ATR(14) indicators and regime-switching logic (DEFENSE/TREND/RANGE modes).

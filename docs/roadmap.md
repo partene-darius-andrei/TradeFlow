@@ -1,7 +1,7 @@
 # TradeFlow - Master Implementation Plan
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 0B In Progress - Core Domain & Data (50% complete)
+**Project Status:** Phase 1 Ready to Start - Business Logic
 **Current Build:** #30 (SUCCESS)
 **Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
@@ -282,61 +282,87 @@ app/src/main/java/com/dpart/tradeflow/
 
 ## Phase-by-Phase Implementation Plan
 
-### ✅ Phase 0A: Authentication Infrastructure (COMPLETE)
+### ✅ Phase 0A: Domain Foundation (COMPLETE)
 
 **Status:** 100% Complete
 **Duration:** 2 weeks (Dec 2025 - Jan 2026)
 
 | Ticket | Status | Description |
 |--------|--------|-------------|
-| **01** | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio) |
-| **02** | ✅ Done | Repository Interfaces (ExchangeRepository, AuthTokenProvider, etc.) |
-| **03** | ✅ Done | Room Database (entities, DAOs, database setup) |
-| **04** | ✅ Done | Static Credential Store (build-time injection) |
-| **07** | ✅ Done | JWT Generator (ES256 signing for Coinbase) |
-| **UI** | ✅ Done | Core UI components (StatusCard, LoadingButton, etc.) |
-| **NAV** | ✅ Done | Simplified navigation (Dashboard + Settings only) |
+| **00** | ✅ Done | Project Modularization (8-module Clean Architecture) |
+| **01** | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio, Balance, Ticker) |
+| **02** | ✅ Done | Repository Interfaces (ExchangeRepository, AuthTokenProvider, CredentialStore, BracketOrderRepository, ExchangeWebSocket) |
+| **03** | ✅ Done | Room Database (4 entities: Candle, Order, Decision, PortfolioSnapshot + 4 DAOs) |
+| **04** | ✅ Done | Static Credential Store (build-time injection via BuildConfig) |
+| **07-JWT** | ✅ Done | JWT Generator (ES256 signing for Coinbase with proper nonce generation) |
 
 **Deliverables:**
-- ✅ Complete domain interface layer
-- ✅ Build-time credential injection system
-- ✅ JWT token generation for Coinbase API
-- ✅ Foundational UI components
-- ✅ Simplified app navigation (no login screen)
+- ✅ 8-module Clean Architecture (app, core:domain, core:data, core:ui, exchange:coinbase, feature:*)
+- ✅ Complete domain model layer (pure Kotlin, zero Android dependencies)
+- ✅ Repository interfaces defining exchange contracts
+- ✅ Room database with entity + DAO layer
+- ✅ Build-time credential injection (env vars → BuildConfig → DI)
+- ✅ JWT token generation for Coinbase REST API
 
-**Key Achievement:** **Authentication without UI complexity** - credentials injected at build time, eliminating need for credential entry screens and runtime authentication flows.
+**Key Achievement:** **Solid domain foundation** - Clean separation of concerns with domain-first architecture, making exchange swapping trivial.
 
 ---
 
-### 🎯 Phase 0B: Core Domain & Data (CURRENT - 50% Complete)
+### ✅ Phase 0B: UI Foundation (COMPLETE)
 
-**Goal:** Implement core business models and persistence layer
+**Status:** 100% Complete
+**Duration:** 1 week (Jan 2026)
+
+| Ticket | Status | Description |
+|--------|--------|-------------|
+| **05** | ✅ Done | UI Design Overview (complete visual redesign) |
+| **06** | ✅ Done | Core UI Theme (Material 3 theme + color system) |
+| **07-UI** | ✅ Done | Core UI Components (ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard, BigDecimalExt) |
+| **08** | ✅ Done | Login Screen (obsolete - removed when credentials moved to build-time) |
+| **09** | 🔄 Review | App Navigation (simplified: Dashboard + Settings only) |
+
+**Deliverables:**
+- ✅ Complete Material 3 theme with day/night mode support
+- ✅ Reusable UI components for trading app (mode indicators, price displays, status cards)
+- ✅ Adaptive app icon with trading chart design
+- ✅ Simplified navigation (no login flow)
+- 🔄 App navigation pending review
+
+**Key Achievement:** **Professional UI foundation** - Modern Compose components ready for Dashboard and Settings implementation.
+
+---
+
+### 🎯 Phase 1: Business Logic (CURRENT - Ready to Start)
+
+**Goal:** Implement trading strategy and risk management
 
 **Duration:** 1-2 weeks
-**Priority:** Critical (blocks everything else)
+**Priority:** CRITICAL (blocks all trading functionality)
 
 | Ticket | Priority | Status | Description | Blocks |
 |--------|----------|--------|-------------|--------|
-| **01** | CRITICAL | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio) | All business logic |
-| **03** | CRITICAL | ✅ Done | Room Database (entities, DAOs) | Data persistence |
-| **05** | HIGH | ⏭️ Next | Decision Engine (SMA, ADX, ATR logic) | Trading strategy |
-| **06** | HIGH | Pending | Risk Manager (position sizing, drawdown limits) | Safety |
+| **15** | CRITICAL | ⏭️ **NEXT** | Decision Engine (SMA, ADX, ATR + regime switching) | Trading strategy |
+| **16** | CRITICAL | Pending | Risk Manager (position sizing, drawdown limits) | Safety |
 
-**Dependencies:** None for Ticket 05 (can start immediately)
+**Dependencies:**
+- ✅ Ticket 01 (domain models exist)
+- ✅ Ticket 03 (database for persistence)
+- ✅ ta4j-core library (already in dependencies)
 
 **Deliverables:**
-- ✅ Candle, Order, Decision, Portfolio data classes
-- ✅ Room database with proper entities and DAOs
-- ⏭️ Decision engine with regime switching (DEFENSE/TREND/RANGE)
-- ⏭️ Risk manager with position limits and emergency stop
+- ⏭️ DecisionEngine interface + TradingDecisionEngine implementation
+- ⏭️ SMA(200), ADX(14), ATR(14) indicator calculations using ta4j
+- ⏭️ Regime switching logic (DEFENSE/TREND/RANGE modes with hysteresis)
+- ⏭️ RiskManager with position sizing, exposure limits, drawdown monitoring
+- ⏭️ Unit tests for decision engine with mock candles
 
-**Progress:** 2/4 tickets complete (50%)
+**Progress:** 0/2 tickets complete (0%)
 
-**Critical Path:** ~~Domain models~~ ✅ → ~~Database~~ ✅ → **Decision engine** ⏭️ → Risk manager
+**Critical Path:** **Decision Engine (15)** ⏭️ → Risk Manager (16) → Backtest Validation → REST API
 
 ---
 
-### 📊 Phase 0C: Strategy Validation (NEW - Week 3)
+### 📊 Phase 1B: Strategy Validation (After Business Logic)
 
 **Goal:** Validate strategy works before building full API integration
 
@@ -349,23 +375,24 @@ app/src/main/java/com/dpart/tradeflow/
 | **Validation** | CRITICAL | Verify 52%+ win rate, 1.0+ Sharpe ratio |
 | **Paper Trade** | HIGH | Small $10 live trades for 30 days validation |
 
-**Dependencies:** Tickets 05 (Decision Engine), 06 (Risk Manager)
+**Dependencies:** Tickets 15 (Decision Engine), 16 (Risk Manager)
 
 **Deliverables:**
-- ✅ Historical data download (7+ years H4 candles)
-- ✅ Backtest harness (replay candles → strategy decisions)
-- ✅ Performance report (win rate, Sharpe, drawdown)
-- ✅ Go/No-Go decision (if fails, fix strategy before Phase 1)
+- ⏭️ Historical data download (7+ years H4 candles)
+- ⏭️ Backtest harness (replay candles → strategy decisions)
+- ⏭️ Performance report (win rate, Sharpe, drawdown)
+- ⏭️ Go/No-Go decision (if fails, fix strategy before Phase 2)
 
 **Strategy Parameters (from analysis):**
 ```kotlin
 // Hysteresis (lag reduction)
-trendConfirmation = 1 candle    // 4 hours (catch momentum)
+trendConfirmation = 3 candles   // 12 hours (patience)
 rangeConfirmation = 3 candles   // 12 hours (patience)
 defenseConfirmation = 0 candles // Instant (safety)
 
-// Volume confirmation (prevent fake pumps)
-val isRealTrend = adx > 25 && volume > avgVolume * 1.2
+// ADX thresholds
+adxTrendThreshold = 25.0   // Strong trend
+adxRangeThreshold = 25.0   // Range-bound
 
 // Position sizing (CLARIFIED)
 positionSize = 10% of portfolio  // Amount in trade
@@ -373,138 +400,190 @@ riskPerTrade = 1-2% of portfolio // Max loss via stop-loss
 // Example: $500 account → $50 position (10%) → $10 stop (2%)
 ```
 
-**Critical:** Do NOT proceed to Phase 1 if backtest fails validation criteria.
+**Critical:** Do NOT proceed to Phase 2 if backtest fails validation criteria.
 
 ---
 
-### 🔌 Phase 1: Coinbase Integration (Week 4)
+### 🔌 Phase 2: Coinbase Integration
 
 **Goal:** Connect to live Coinbase API for trading and market data
 
+**Duration:** 1-2 weeks
+**Priority:** HIGH (enables live trading)
+
 | Ticket | Priority | Description | Blocks |
 |--------|----------|-------------|--------|
-| **08** | HIGH | REST API Client (order placement, market data) | Live trading |
-| **09** | HIGH | WebSocket Client (real-time price, order updates) | Live data |
+| **13** | HIGH | REST API Client (order placement, market data, candles) | Live trading |
+| **14** | HIGH | WebSocket Client (real-time price, order updates) | Live data |
 
-**Dependencies:** Tickets 01 (domain models), 04 (credentials), 07 (JWT), **Phase 0C validation passed**
+**Dependencies:**
+- ✅ Ticket 02 (repository interfaces)
+- ✅ Ticket 04 (credentials)
+- ✅ Ticket 07-JWT (JWT generator)
+- ⏭️ **Phase 1B validation passed** (backtest proves strategy works)
 
 **Deliverables:**
-- ✅ Complete CoinbaseRepository implementation
-- ✅ Real-time WebSocket price and order feeds
-- ✅ Order placement (market, limit, bracket orders)
-- ✅ Account balance and market data fetching
+- ⏭️ CoinbaseRepository implementing ExchangeRepository + BracketOrderRepository
+- ⏭️ REST API methods: getCandles, placeOrder, cancelOrder, getAccounts, listOrders
+- ⏭️ CoinbaseWebSocket implementing ExchangeWebSocket
+- ⏭️ Real-time price feeds and order updates
+- ⏭️ Rate limiting with exponential backoff (30 req/sec private, 10 req/sec public)
+- ⏭️ Integration test with real API (small $1 trades)
 
 ---
 
-### 🎨 Phase 2: User Interface (Week 4)
+### 🎨 Phase 3: User Interface
 
 **Goal:** Build complete user interface for monitoring and control
 
-| Ticket | Priority | Description | Blocks |
-|--------|----------|-------------|--------|
-| **10** | HIGH | Dashboard Screen (portfolio, mode, orders) | User monitoring |
-| **11** | HIGH | Settings Screen (preferences, about) | User control |
-| **12** | MEDIUM | Dashboard ViewModel (business logic) | Data binding |
-| **13** | MEDIUM | Settings ViewModel (settings logic) | Settings persistence |
+**Duration:** 1 week
+**Priority:** MEDIUM (monitoring, not critical path)
 
-**Dependencies:** Tickets 01, 03 (data layer), UI components (done)
+| Ticket | Priority | Description | Status |
+|--------|----------|-------------|--------|
+| **10** | MEDIUM | Dashboard Screen (portfolio, mode, recent orders) | Refined |
+| **11** | MEDIUM | Settings Screen (preferences, about) | Refined |
+
+**Dependencies:**
+- ✅ Tickets 05-07 (UI foundation complete)
+- ✅ Ticket 09 (navigation)
+- ⏭️ Ticket 13 (REST API for data)
 
 **Deliverables:**
-- ✅ Professional dashboard showing portfolio, trading mode, orders
-- ✅ Settings screen for preferences and app information
-- ✅ Complete navigation between screens
-- ✅ Real-time UI updates from WebSocket
+- ⏭️ Dashboard screen showing: portfolio value, current mode, open orders, recent decisions
+- ⏭️ Settings screen: trading preferences, app info, credentials status
+- ⏭️ Real-time UI updates from WebSocket
+- ⏭️ ViewModels with proper state management
 
 ---
 
-### ⚙️ Phase 3: Trading Service (Week 5)
+### ⚙️ Phase 4: Trading Service
 
 **Goal:** 24/7 autonomous background trading execution
 
+**Duration:** 1 week
+**Priority:** CRITICAL (enables autonomous trading)
+
 | Ticket | Priority | Description | Blocks |
 |--------|----------|-------------|--------|
-| **16** | HIGH | Trading Service (foreground service orchestration) | Autonomous trading |
-| **17** | HIGH | Battery Optimization (Doze exemption, wake locks) | 24/7 operation |
+| **17** | CRITICAL | Trading Service (foreground service orchestration) | Autonomous trading |
+| **18** | HIGH | Battery Optimization (Doze exemption, wake locks) | 24/7 operation |
 
 **Dependencies:** All previous phases (complete system needed)
 
 **Deliverables:**
-- ✅ Foreground service running strategy evaluation loop
-- ✅ Order execution based on decision engine output
-- ✅ Risk monitoring and emergency liquidation
-- ✅ Battery optimization and Doze mode survival
+- ⏭️ Foreground service with persistent notification
+- ⏭️ Strategy evaluation loop (fetch candles → decide → execute)
+- ⏭️ Order execution based on DecisionEngine output
+- ⏭️ RiskManager validation before all trades
+- ⏭️ Emergency stop on drawdown breach
+- ⏭️ Battery optimization (Doze whitelist, wake locks)
 
 ---
 
-### 🧪 Phase 4: Testing & Polish (Week 6)
+### 🧪 Phase 5: Testing & Polish
 
 **Goal:** Validate system works reliably end-to-end
 
+**Duration:** 1 week
+**Priority:** HIGH (production readiness)
+
 | Ticket | Priority | Description |
 |--------|----------|-------------|
-| **18** | MEDIUM | Integration Tests (real API with small orders) |
-| **19** | HIGH | MVP Milestone (complete system validation) |
+| **19** | HIGH | Integration Tests (real API with $1-5 trades) |
+| **20** | CRITICAL | MVP Milestone (complete system validation + 7-day live test) |
 
 **Deliverables:**
-- ✅ Integration tests with real Coinbase API
-- ✅ End-to-end system validation
-- ✅ Production readiness assessment
+- ⏭️ Integration tests with real Coinbase API
+- ⏭️ 7-day unattended operation test
+- ⏭️ Emergency stop verification
+- ⏭️ Production readiness checklist
 
 ---
 
 ## 📊 Progress Tracking
 
-### Overall Progress: 8/20 tickets complete (40%)
+### Overall Progress: 10/20 tickets complete (50%)
 
 ```
-Phase 0A: ████████████████████ 100% (6/6)  ✅ COMPLETE
-Phase 0B: ██████████░░░░░░░░░░  50% (2/4)  ← YOU ARE HERE
-Phase 0C: ░░░░░░░░░░░░░░░░░░░░   0% (0/1)  ← NEXT (Validation)
-Phase 1:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
-Phase 2:  ░░░░░░░░░░░░░░░░░░░░   0% (0/4)
+Phase 0A: ████████████████████ 100% (6/6)   ✅ COMPLETE
+Phase 0B: ████████████████████ 100% (4/4)   ✅ COMPLETE
+Phase 1:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)   ← YOU ARE HERE
+Phase 1B: ░░░░░░░░░░░░░░░░░░░░   0% (0/1)   (Backtest validation)
+Phase 2:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
 Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
 Phase 4:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
+Phase 5:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
 ```
 
-### Current Sprint: Phase 0B - Core Domain & Data
+### Current Sprint: Phase 1 - Business Logic
 
-**Completed:**
-- ✅ Ticket 01: Domain Models (Candle, Order, Decision, Portfolio, Balance, Ticker)
-- ✅ Ticket 03: Room Database (4 entities, 4 DAOs, EngineDatabase)
+**Completed Phases:**
+- ✅ Phase 0A: Domain Foundation (Tickets 00-04, 07-JWT) - 6 tickets
+- ✅ Phase 0B: UI Foundation (Tickets 05-09) - 4 tickets *(Ticket 09 in review but UI complete)*
 
-**Next Up:** Ticket 05 (Decision Engine) - Implement regime switching with SMA, ADX, ATR
+**Next Up:** Ticket 15 (Decision Engine) - Implement regime switching with SMA(200), ADX(14), ATR(14)
 
-**Ready to Start:** Ticket 05 has no blockers (domain models + database complete)
+**Ready to Start:** Ticket 15 has zero blockers
+- ✅ Domain models exist (Ticket 01)
+- ✅ Database ready (Ticket 03)
+- ✅ ta4j-core library in dependencies
 
 ---
 
-## 🚀 Getting Started with Phase 0B
+## 🚀 Getting Started with Phase 1
 
-**Build foundation for all business logic:**
+**Implement core business logic (strategy + risk management):**
 
-1. **Ticket 01** - Domain Models (1 day)
-   - Create Candle, Order, Decision, Portfolio data classes
-   - Define all enums (OrderSide, OrderStatus, etc.)
-   - Pure Kotlin, no Android dependencies
+### Ticket 15: Decision Engine (2-3 days)
+**Location:** `:core:domain/strategy/`
 
-2. **Ticket 03** - Room Database (1-2 days)
-   - Create entities for domain models
-   - Implement DAOs with Flow support
-   - Database setup and migrations
+**Files to create:**
+- `DecisionEngine.kt` (interface)
+- `TradingDecisionEngine.kt` (implementation)
+- `StrategyConfig.kt` (configuration data class)
+- `indicator/SMACalculator.kt` (SMA using ta4j)
+- `indicator/ADXCalculator.kt` (ADX using ta4j)
+- `indicator/ATRCalculator.kt` (ATR using ta4j)
 
-3. **Ticket 05** - Decision Engine (2-3 days)
-   - SMA(200), ADX(14), ATR(14) calculations using ta4j
-   - Regime switching logic (DEFENSE/TREND/RANGE)
-   - Hysteresis to prevent mode whipsawing
+**Key Implementation:**
+- SMA(200) for trend direction (price above/below)
+- ADX(14) for trend strength (>25 = trend, <25 = range)
+- ATR(14) for volatility-based stop-loss/take-profit
+- 3-candle hysteresis for TREND and RANGE modes
+- Instant (0-candle) switch to DEFENSE mode
 
-4. **Ticket 06** - Risk Manager (1 day)
-   - Position sizing (**10% position size** with **1-2% risk** via stop-loss)
-   - Drawdown monitoring (15% emergency stop)
-   - Validation before order placement
+**Acceptance Criteria:**
+- ✅ Correctly identifies all 4 modes (Wait, Defense, Trend, Range)
+- ✅ Hysteresis prevents whipsawing between modes
+- ✅ Grid spacing never below 1.5% (fee break-even)
+- ✅ 100% unit test coverage with mock candles
+- ✅ Zero Android dependencies (pure Kotlin/JVM)
 
-**Total Phase 0B Effort:** ~5-7 days
+### Ticket 16: Risk Manager (1 day)
+**Location:** `:core:domain/risk/`
 
-**After Phase 0B:** Proceed to **Phase 0C (Strategy Validation)** - backtest before building API client
+**Files to create:**
+- `RiskManager.kt` (risk validation + position sizing)
+- `RiskConfig.kt` (risk limits configuration)
+
+**Key Implementation:**
+- Position sizing: 10% of portfolio per trade
+- Risk per trade: 1-2% via stop-loss
+- Total exposure limit: 10%
+- Drawdown limit: 15% emergency stop
+- Grid spacing validation (>1.5%)
+
+**Acceptance Criteria:**
+- ✅ Validates orders against risk limits
+- ✅ Calculates position sizes for trend and grid modes
+- ✅ Monitors drawdown vs high-water mark
+- ✅ Zero exchange-specific code
+- ✅ Unit tests for all scenarios
+
+**Total Phase 1 Effort:** ~3-4 days
+
+**After Phase 1:** Proceed to **Phase 1B (Strategy Validation)** - backtest with historical data before building API client
 
 ---
 
