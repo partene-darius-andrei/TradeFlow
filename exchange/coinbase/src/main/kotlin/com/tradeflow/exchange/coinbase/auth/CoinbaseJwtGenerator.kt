@@ -97,8 +97,18 @@ class CoinbaseJwtGenerator @Inject constructor(
 
     private fun parseEd25519Key(base64Secret: String): OctetKeyPair {
         try {
+            // Handle escaped newlines and strip PEM headers if present
+            val cleanedSecret = base64Secret
+                .replace("\\n", "\n")
+                .trim()
+                .lines()
+                .filter { !it.startsWith("-----") } // Remove PEM headers/footers
+                .joinToString("")
+                .replace("\n", "")
+                .replace(" ", "")
+
             // Decode the Ed25519 private key from base64
-            val decoded = Base64.getDecoder().decode(base64Secret)
+            val decoded = Base64.getDecoder().decode(cleanedSecret)
 
             // Ed25519 keys are 64 bytes (32 bytes seed + 32 bytes public key)
             if (decoded.size != 64) {
@@ -120,6 +130,6 @@ class CoinbaseJwtGenerator @Inject constructor(
     }
 
     private fun generateNonce(): String {
-        return java.util.UUID.randomUUID().toString().replace("-", "")
+        return UUID.randomUUID().toString().replace("-", "")
     }
 }
