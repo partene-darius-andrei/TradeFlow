@@ -91,60 +91,37 @@ class CoinbaseJwtGenerator @Inject constructor(
             val signer = ECDSASigner(privateKey)
             signedJWT.sign(signer)
 
-            val token = signedJWT.serialize()
-
-            // Debug logging (REMOVE IN PRODUCTION)
-            timber.log.Timber.w("=== JWT DEBUG ===")
-            timber.log.Timber.w("API Key (kid): $apiKey")
-            timber.log.Timber.w("URI claim: $uri")
-            timber.log.Timber.w("NBF: $now")
-            timber.log.Timber.w("EXP: ${now + 120}")
-            timber.log.Timber.w("Nonce: ${header.customParams["nonce"]}")
-            timber.log.Timber.w("JWT (first 100 chars): ${token.take(100)}")
-            timber.log.Timber.w("=== END JWT DEBUG ===")
-
-            token
+            signedJWT.serialize()
         } catch (e: Exception) {
             throw ExchangeError.AuthenticationFailed("Failed to generate JWT: ${e.message}")
         }
     }
 
     private fun parsePemPrivateKey(keyString: String): ECPrivateKey {
-        try {
-            timber.log.Timber.d("=== KEY PARSING DEBUG ===")
-            timber.log.Timber.d("Raw key length: ${keyString.length}")
-            timber.log.Timber.d("Raw key (first 50 chars): ${keyString.take(50)}")
-
+        return try {
             val trimmedKey = keyString.trim()
 
             // Check if this is a base64-encoded raw key (Coinbase CDP format) or PEM format
             val isRawBase64 = !trimmedKey.startsWith("-----BEGIN")
 
             if (isRawBase64) {
-                timber.log.Timber.d("Detected raw base64 format (Coinbase CDP)")
-                return parseRawBase64Key(trimmedKey)
+                parseRawBase64Key(trimmedKey)
             } else {
-                timber.log.Timber.d("Detected PEM format")
-                return parsePemFormattedKey(trimmedKey)
+                parsePemFormattedKey(trimmedKey)
             }
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to parse private key")
             throw IllegalArgumentException("Failed to parse private key: ${e.message}", e)
         }
     }
 
     private fun parseRawBase64Key(base64Key: String): ECPrivateKey {
-        timber.log.Timber.d("Parsing raw base64 key")
-
         // Decode base64 to get raw private key bytes
         val keyBytes = java.util.Base64.getDecoder().decode(base64Key)
-        timber.log.Timber.d("Decoded key bytes length: ${keyBytes.size}")
 
         // Coinbase CDP provides raw EC private key bytes
         // For ES256 (P-256 curve), the private key is 32 bytes
         // If we have 64 bytes, take the first 32 (the private scalar)
         val privateKeyBytes = if (keyBytes.size == 64) {
-            timber.log.Timber.d("Key is 64 bytes, using first 32 as private scalar")
             keyBytes.copyOfRange(0, 32)
         } else {
             keyBytes
@@ -163,16 +140,11 @@ class CoinbaseJwtGenerator @Inject constructor(
         val privateKeySpec = java.security.spec.ECPrivateKeySpec(s, ecParameterSpec)
         val privateKey = keyFactory.generatePrivate(privateKeySpec)
 
-        val ecPrivateKey = privateKey as? ECPrivateKey
+        return privateKey as? ECPrivateKey
             ?: throw IllegalArgumentException("Generated key is not an EC private key")
-
-        timber.log.Timber.d("Successfully parsed raw base64 EC private key")
-        return ecPrivateKey
     }
 
     private fun parsePemFormattedKey(pemString: String): ECPrivateKey {
-        timber.log.Timber.d("Parsing PEM formatted key")
-
         // Handle escaped newlines and normalize formatting
         val normalizedPem = pemString
             .replace("\\n", "\n")
@@ -181,8 +153,6 @@ class CoinbaseJwtGenerator @Inject constructor(
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .joinToString("\n")
-
-        timber.log.Timber.d("Normalized PEM lines: ${normalizedPem.lines().size}")
 
         StringReader(normalizedPem).use { reader ->
             PEMParser(reader).use { pemParser ->
@@ -196,11 +166,8 @@ class CoinbaseJwtGenerator @Inject constructor(
                     else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}")
                 }
 
-                val ecPrivateKey = privateKey as? ECPrivateKey
+                return privateKey as? ECPrivateKey
                     ?: throw IllegalArgumentException("Private key is not an EC key")
-
-                timber.log.Timber.d("Successfully parsed PEM EC private key")
-                return ecPrivateKey
             }
         }
     }
