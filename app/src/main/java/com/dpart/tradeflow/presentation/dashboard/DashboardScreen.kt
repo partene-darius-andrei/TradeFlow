@@ -32,7 +32,6 @@ import com.tradeflow.core.ui.component.ErrorDisplay
 import com.tradeflow.core.ui.theme.TradeFlowSpacing
 import com.tradeflow.core.ui.theme.TradeFlowTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
@@ -40,56 +39,44 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("TradeFlow") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = TradeFlowSpacing.md)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(TradeFlowSpacing.md)
+    ) {
+        Spacer(modifier = Modifier.height(TradeFlowSpacing.sm))
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(TradeFlowSpacing.xl),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (uiState.error != null) {
+            ErrorDisplay(
+                message = uiState.error!!,
+                onRetry = { viewModel.loadPortfolio() }
+            )
+        } else {
+            PortfolioCard(
+                btcBalance = uiState.btcBalance,
+                usdBalance = uiState.usdBalance,
+                totalValue = uiState.totalValue
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = TradeFlowSpacing.md)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(TradeFlowSpacing.md)
-        ) {
-            Spacer(modifier = Modifier.height(TradeFlowSpacing.sm))
 
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(TradeFlowSpacing.xl),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (uiState.error != null) {
-                ErrorDisplay(
-                    message = uiState.error!!,
-                    onRetry = { viewModel.loadPortfolio() }
-                )
-            } else {
-                PortfolioCard(
-                    btcBalance = uiState.btcBalance,
-                    usdBalance = uiState.usdBalance,
-                    totalValue = uiState.totalValue
-                )
-            }
+        ModeCard()
 
-            ModeCard()
+        ServiceCard()
 
-            ServiceCard()
+        OrdersList()
 
-            OrdersList()
-
-            Spacer(modifier = Modifier.height(TradeFlowSpacing.md))
-        }
+        Spacer(modifier = Modifier.height(TradeFlowSpacing.md))
     }
 }
 
