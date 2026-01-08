@@ -34,8 +34,14 @@ android {
         val coinbaseApiSecret = System.getenv("COINBASE_API_SECRET")
             ?: props.getProperty("coinbase.api.secret", "")
 
+        // Escape the secret for Java string literal (preserve \n as \\n)
+        val escapedSecret = coinbaseApiSecret
+            .replace("\\", "\\\\")  // Escape backslashes first
+            .replace("\"", "\\\"")  // Escape quotes
+            .replace("\n", "\\n")   // Convert newlines to \n escape sequence
+
         buildConfigField("String", "COINBASE_API_KEY", "\"$coinbaseApiKey\"")
-        buildConfigField("String", "COINBASE_API_SECRET", "\"$coinbaseApiSecret\"")
+        buildConfigField("String", "COINBASE_API_SECRET", "\"$escapedSecret\"")
     }
 
     buildTypes {
