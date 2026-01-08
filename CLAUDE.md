@@ -37,6 +37,14 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - Simple strategies often beat complex ML
 - Every trade is a taxable event
 
+**Trading Strategy (Bitcoin-First):**
+- **BTC/USDT ONLY** until account reaches $2,500+ (fees kill small-cap altcoins)
+- **Risk: 1-2% per trade** ($5-10 max on $500 account)
+- **Expected returns: 5% monthly** (exceptional skill, realistic ceiling)
+- **Timeline: 5-10 years** to meaningful passive income ($500-1k/month)
+- **97% of day traders fail** - Treat first $500 as education, not income
+- **See:** [docs/strategy/bitcoin-first-strategy.md](docs/strategy/bitcoin-first-strategy.md) for complete analysis
+
 ---
 
 ## 🚦 Current Status

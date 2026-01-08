@@ -23,6 +23,29 @@
 - Simple strategies often beat complex ML approaches
 - Every trade is a taxable event (complete records required)
 
+### Realistic Performance Expectations
+
+**Starting Capital:** $500 (treat as education, not investment)
+
+**Phase 1 Strategy:**
+- **Trade BTC/USDT exclusively** (altcoins have 3-15% round-trip costs at this capital level)
+- **Risk 1-2% per trade** ($5-10 max risk per position)
+- **Target 3-5% monthly returns** (requires exceptional skill and discipline)
+- **Win rate: 52-58%** realistic ceiling (not 70-98% like arbitrage bots)
+
+**Timeline to Meaningful Income:**
+```
+Year 1:  $500 → $580-600   (Break even = success, learning phase)
+Year 2:  $600 → $900       (Consistent 3-5% monthly)
+Year 3:  $900 → $1,600     (Edge confirmed, scaling)
+Year 5:  $3,000+           (Compound growth)
+Year 10: $10,000-20,000    (Passive income: $500-1,000/month)
+```
+
+**Hard Truth:** Only 1-3% of day traders achieve consistent profitability. Expect 6-12 months of learning before positive results.
+
+**See:** [docs/strategy/bitcoin-first-strategy.md](strategy/bitcoin-first-strategy.md) for complete analysis and math.
+
 ---
 
 ## Current State Analysis
