@@ -21,7 +21,11 @@ import com.tradeflow.core.ui.theme.TradeFlowTheme
 import java.math.BigDecimal
 
 @Composable
-fun PortfolioCard() {
+fun PortfolioCard(
+    btcBalance: BigDecimal = BigDecimal.ZERO,
+    usdBalance: BigDecimal = BigDecimal.ZERO,
+    totalValue: BigDecimal = BigDecimal.ZERO
+) {
     StatusCard(title = "Portfolio") {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -29,20 +33,15 @@ fun PortfolioCard() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             PriceDisplay(
-                price = BigDecimal("10245.30"),
-                previousPrice = BigDecimal("10000.00"),
+                price = totalValue,
+                previousPrice = totalValue,
                 style = MaterialTheme.typography.displayMedium
             )
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "+$245.30",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "+2.45%",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Live Data",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -52,13 +51,13 @@ fun PortfolioCard() {
 
         AssetRow(
             asset = "BTC",
-            amount = "0.15420000",
-            value = "$9,500.00"
+            amount = btcBalance.stripTrailingZeros().toPlainString(),
+            value = "—"
         )
         AssetRow(
             asset = "USD",
             amount = "—",
-            value = "$745.30"
+            value = "$$usdBalance"
         )
     }
 }
