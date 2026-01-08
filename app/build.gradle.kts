@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,6 +20,22 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.1"
+
+        // Inject Coinbase credentials at build time
+        // Priority: Environment variables (CI) > local.properties (local dev)
+        val localProperties = File(rootProject.projectDir, "local.properties")
+        val props = Properties()
+        if (localProperties.exists()) {
+            props.load(localProperties.inputStream())
+        }
+
+        val coinbaseApiKey = System.getenv("COINBASE_API_KEY")
+            ?: props.getProperty("coinbase.api.key", "")
+        val coinbaseApiSecret = System.getenv("COINBASE_API_SECRET")
+            ?: props.getProperty("coinbase.api.secret", "")
+
+        buildConfigField("String", "COINBASE_API_KEY", "\"$coinbaseApiKey\"")
+        buildConfigField("String", "COINBASE_API_SECRET", "\"$coinbaseApiSecret\"")
     }
 
     buildTypes {

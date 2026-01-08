@@ -30,6 +30,9 @@ jobs:
 
     - name: Build debug APK
       id: build
+      env:
+        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
       run: ./gradlew assembleDebug
       continue-on-error: true
 
