@@ -99,12 +99,29 @@ class CoinbaseJwtGenerator @Inject constructor(
 
     private fun parsePemPrivateKey(pemString: String): ECPrivateKey {
         try {
-            // Handle escaped newlines (from environment variables or properties files)
-            val normalizedPem = pemString.replace("\\n", "\n")
+            timber.log.Timber.d("=== PEM PARSING DEBUG ===")
+            timber.log.Timber.d("Raw PEM length: ${pemString.length}")
+            timber.log.Timber.d("Raw PEM (first 100 chars): ${pemString.take(100)}")
 
-            timber.log.Timber.d("PEM string length: ${normalizedPem.length}")
-            timber.log.Timber.d("PEM starts with: ${normalizedPem.take(50)}")
-            timber.log.Timber.d("PEM ends with: ${normalizedPem.takeLast(50)}")
+            // Handle escaped newlines (from environment variables or properties files)
+            // Also ensure clean formatting by removing empty lines and extra whitespace
+            val normalizedPem = pemString
+                .replace("\\n", "\n")  // Convert escaped \n to actual newlines
+                .trim()                 // Remove leading/trailing whitespace
+                .lines()                // Split into lines
+                .map { it.trim() }      // Trim each line
+                .filter { it.isNotBlank() }  // Remove empty lines
+                .joinToString("\n")     // Rejoin with proper newlines
+
+            timber.log.Timber.d("After normalization length: ${normalizedPem.length}")
+            timber.log.Timber.d("Contains actual newlines: ${normalizedPem.contains("\n")}")
+            timber.log.Timber.d("Number of lines: ${normalizedPem.lines().size}")
+            timber.log.Timber.d("First line: ${normalizedPem.lines().firstOrNull()}")
+            timber.log.Timber.d("Last line: ${normalizedPem.lines().lastOrNull()}")
+
+            // Log the full PEM for debugging (WARNING: This exposes the private key in logs!)
+            timber.log.Timber.w("FULL PEM STRING (REMOVE IN PRODUCTION):\n$normalizedPem")
+            timber.log.Timber.w("=== END FULL PEM ===")
 
             StringReader(normalizedPem).use { reader ->
                 PEMParser(reader).use { pemParser ->
