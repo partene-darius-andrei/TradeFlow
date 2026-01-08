@@ -11,7 +11,12 @@ import com.tradeflow.core.domain.auth.CredentialStore
 import com.tradeflow.core.domain.error.ExchangeError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.bouncycastle.openssl.PEMKeyPair
+import org.bouncycastle.openssl.PEMParser
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+import java.io.StringReader
 import java.security.SecureRandom
+import java.security.interfaces.ECPrivateKey
 import java.time.Instant
 import java.util.Date
 import javax.inject.Inject
@@ -78,16 +83,34 @@ class CoinbaseJwtGenerator @Inject constructor(
             val claims = claimsBuilder.build()
 
             // Parse EC private key from PEM format
-            val ecKey = ECKey.parse(secret)
+            val privateKey = parsePemPrivateKey(secret)
 
             // Sign JWT with ES256
             val signedJWT = SignedJWT(header, claims)
-            val signer = ECDSASigner(ecKey.toECPrivateKey())
+            val signer = ECDSASigner(privateKey)
             signedJWT.sign(signer)
 
             signedJWT.serialize()
         } catch (e: Exception) {
             throw ExchangeError.AuthenticationFailed("Failed to generate JWT: ${e.message}")
+        }
+    }
+
+    private fun parsePemPrivateKey(pemString: String): ECPrivateKey {
+        StringReader(pemString).use { reader ->
+            PEMParser(reader).use { pemParser ->
+                val pemObject = pemParser.readObject()
+                    ?: throw IllegalArgumentException("No PEM object found")
+
+                val converter = JcaPEMKeyConverter()
+                val keyPair = when (pemObject) {
+                    is PEMKeyPair -> converter.getKeyPair(pemObject)
+                    else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java}")
+                }
+
+                return keyPair.private as? ECPrivateKey
+                    ?: throw IllegalArgumentException("Private key is not an EC key")
+            }
         }
     }
 
