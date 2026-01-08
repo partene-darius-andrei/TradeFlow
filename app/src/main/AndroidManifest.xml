@@ -6,7 +6,9 @@
     <application
         android:name=".TradeFlowApp"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="TradeFlow"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"
