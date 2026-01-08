@@ -117,6 +117,15 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── extension/
         └── BigDecimalExt.kt           ✅ Currency/percentage formatting
 
+🆕 DASHBOARD SCREEN COMPLETE:
+✅ app/src/main/java/com/dpart/tradeflow/presentation/dashboard/
+    ├── DashboardScreen.kt              ✅ Main screen with TopAppBar + scrollable layout
+    └── components/
+        ├── PortfolioCard.kt            ✅ Portfolio value + asset breakdown
+        ├── ModeCard.kt                 ✅ Trading mode + current price
+        ├── ServiceCard.kt              ✅ Service status + start/stop button
+        └── OrdersList.kt               ✅ Recent orders + empty state
+
 🆕 APP BRANDING COMPLETE:
 ✅ Adaptive app icon with trading chart design
 ✅ Day/night background variants (white/black)
@@ -153,16 +162,17 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Domain models - Ticket 01 ✅ DONE
 ✅ Room database - Ticket 03 ✅ DONE
 ✅ UI Foundation - Tickets 05-09 ✅ DONE
-❌ Decision engine (regime switching logic) - Ticket 15 ← NEXT
+✅ Dashboard screen - Ticket 10 ✅ DONE (UI skeleton with mock data)
+❌ Coinbase REST API client - Ticket 13 ← NEXT for testing auth
+❌ Decision engine (regime switching logic) - Ticket 15
 ❌ Risk manager - Ticket 16
 ❌ Backtest validation - Phase 1B
-❌ Coinbase REST API client - Ticket 13 (JWT complete ✅, REST methods pending)
 ❌ Coinbase WebSocket - Ticket 14
-❌ Dashboard and Settings screens - Tickets 10-11 (refined, ready to implement)
+❌ Settings screen - Ticket 11 (refined, ready to implement)
 ❌ Trading service (foreground service) - Tickets 17-18
 ```
 
-**Progress:** **Phases 0A & 0B: 100% complete** (10/20 tickets done). Domain foundation, UI foundation, and authentication infrastructure complete. **Next up:** Ticket 15 (Decision Engine) implementing SMA(200), ADX(14), ATR(14) indicators with regime-switching logic.
+**Progress:** **11/20 tickets done (55% complete)**. Domain foundation, UI foundation, authentication, and dashboard UI complete. **Next up:** Ticket 13 (REST API Client) to enable testing Coinbase authentication and fetching real data.
 
 ---
 
@@ -184,25 +194,26 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - [x] **Core UI Components** (Ticket 07-UI) ✅ COMPLETE - ErrorDisplay, LoadingButton, ModeIndicator, PriceDisplay, StatusCard
 - [x] **Login Screen** (Ticket 08) ✅ COMPLETE (obsolete - removed after credential change)
 - [x] **App Navigation** (Ticket 09) 🔄 IN REVIEW - Simplified routing (Dashboard + Settings)
+- [x] **Dashboard Screen** (Ticket 10) ✅ COMPLETE - UI skeleton with mock data
 
-### Phase 1: Business Logic (CURRENT - Ready to Start)
-- [ ] **Decision Engine** (Ticket 15) ❌ **NEXT** - SMA(200), ADX(14), ATR(14) + regime switching
+### Phase 1: Coinbase Integration (CURRENT - Ready to Test Auth)
+- [ ] **REST API Client** (Ticket 13) ❌ **NEXT** - Order placement, market data, candles
+- [ ] **WebSocket Client** (Ticket 14) ❌ PENDING - Real-time price feeds, order updates
+
+**Current Focus:** Ticket 13 - REST API Client to test Coinbase authentication and fetch real data
+
+### Phase 2: Business Logic
+- [ ] **Decision Engine** (Ticket 15) ❌ PENDING - SMA(200), ADX(14), ATR(14) + regime switching
 - [ ] **Risk Manager** (Ticket 16) ❌ PENDING - Position sizing, exposure limits, drawdown monitoring
 
-**Current Focus:** Ticket 15 - Decision Engine implementation
-
-### Phase 1B: Strategy Validation (After Phase 1)
+### Phase 2B: Strategy Validation (After Phase 2)
 - Backtesting framework with 7-year historical BTC/USDT data
 - Strategy validation (52%+ win rate, 1.0+ Sharpe ratio minimum)
-- Go/No-Go decision before building REST API
+- Go/No-Go decision before live trading
 
-### Phase 2: Coinbase Integration
-- **REST API Client** (Ticket 13) - Order placement, market data, candles
-- **WebSocket Client** (Ticket 14) - Real-time price feeds, order updates
-
-### Phase 3: Presentation Layer
-- **Dashboard Screen** (Ticket 10) - Portfolio, mode, recent orders
-- **Settings Screen** (Ticket 11) - Preferences, app info
+### Phase 3: Presentation Layer (In Progress)
+- [x] **Dashboard Screen** (Ticket 10) ✅ COMPLETE - UI skeleton with mock data
+- [ ] **Settings Screen** (Ticket 11) ❌ PENDING - Preferences, app info
 
 ### Phase 4: Trading Service
 - **Trading Service** (Ticket 17) - Foreground service orchestration
@@ -212,8 +223,8 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - **Integration Tests** (Ticket 19) - Real API with small trades
 - **MVP Milestone** (Ticket 20) - Complete system validation
 
-**Current Phase:** Phase 1 Ready to Start (10/20 tickets done, 50% complete)
-**Progress:** Domain and UI foundations complete. Next: Ticket 15 (Decision Engine) implementing SMA/ADX/ATR indicators with regime-switching logic.
+**Current Phase:** Phase 1 - Coinbase Integration (11/20 tickets done, 55% complete)
+**Progress:** Domain, UI foundations, and Dashboard UI complete. Next: Ticket 13 (REST API Client) to test Coinbase authentication and fetch real data.
 
 ---
 
@@ -404,10 +415,11 @@ fun PortfolioSection() {
 
 1. ✅ ~~No domain models yet~~ - Ticket 01 COMPLETE ✅
 2. ✅ ~~Room database empty~~ - Ticket 03 COMPLETE ✅
-3. **Decision engine missing** - Ticket 05 NEXT: Implement SMA/ADX/ATR indicators with regime switching
-4. **Risk manager missing** - Ticket 06: Position sizing, stop-loss, drawdown limits
-5. **JWT tokens untested** - Need REST client to verify authentication works
-6. **No trading logic** - Service implementation pending
+3. ✅ ~~Dashboard UI missing~~ - Ticket 10 COMPLETE ✅
+4. **JWT tokens untested** - Ticket 13 NEXT: Implement REST client to verify authentication works
+5. **Decision engine missing** - Ticket 15: Implement SMA/ADX/ATR indicators with regime switching
+6. **Risk manager missing** - Ticket 16: Position sizing, stop-loss, drawdown limits
+7. **No trading logic** - Service implementation pending (Tickets 17-18)
 
 ### Dependencies Ready But Unused
 
@@ -447,4 +459,4 @@ fun PortfolioSection() {
 
 ---
 
-**Next Steps:** Implement Decision Engine (Ticket 15) in `:core:domain` module with SMA(200), ADX(14), ATR(14) indicators and regime-switching logic (DEFENSE/TREND/RANGE modes).
+**Next Steps:** Implement REST API Client (Ticket 13) in `:exchange:coinbase` module to test Coinbase authentication and enable fetching real market data. See `coinbase-api-test-plan.md` for implementation options.
