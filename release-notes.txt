@@ -1,7 +1,7 @@
-Version 1.5.2
+Version 1.5.3
 
-- Fixed raw base64 private key format support for Coinbase CDP integration
-- Enhanced PEM key parsing with better error handling and debug logging
-- Improved authentication reliability with more robust key format detection
-- Resolved app navigation issues by centralizing TopAppBar configuration
-- Strengthened connection stability with enhanced JWT token generation
+- Enhanced security key parsing with improved support for Coinbase CDP private key formats
+- Fixed JWT authentication issues that could cause connection failures
+- Improved error handling and debugging capabilities for API connections
+- Resolved duplicate navigation bar display issue for cleaner interface
+- Strengthened PEM key processing with better escape sequence handling
