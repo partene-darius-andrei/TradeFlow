@@ -97,83 +97,81 @@ class CoinbaseJwtGenerator @Inject constructor(
         }
     }
 
-    private fun parsePemPrivateKey(pemString: String): ECPrivateKey {
+    private fun parsePemPrivateKey(keyString: String): ECPrivateKey {
         try {
-            timber.log.Timber.d("=== PEM PARSING DEBUG ===")
-            timber.log.Timber.d("Raw PEM length: ${pemString.length}")
-            timber.log.Timber.d("Raw PEM (first 100 chars): ${pemString.take(100)}")
+            timber.log.Timber.d("=== KEY PARSING DEBUG ===")
+            timber.log.Timber.d("Raw key length: ${keyString.length}")
+            timber.log.Timber.d("Raw key (first 50 chars): ${keyString.take(50)}")
 
-            // Handle escaped newlines (from environment variables or properties files)
-            // Also ensure clean formatting by removing empty lines and extra whitespace
-            val normalizedPem = pemString
-                .replace("\\n", "\n")  // Convert escaped \n to actual newlines
-                .trim()                 // Remove leading/trailing whitespace
-                .lines()                // Split into lines
-                .map { it.trim() }      // Trim each line
-                .filter { it.isNotBlank() }  // Remove empty lines
-                .joinToString("\n")     // Rejoin with proper newlines
+            val trimmedKey = keyString.trim()
 
-            timber.log.Timber.d("After normalization length: ${normalizedPem.length}")
-            timber.log.Timber.d("Contains actual newlines: ${normalizedPem.contains("\n")}")
-            timber.log.Timber.d("Number of lines: ${normalizedPem.lines().size}")
-            timber.log.Timber.d("First line: ${normalizedPem.lines().firstOrNull()}")
-            timber.log.Timber.d("Last line: ${normalizedPem.lines().lastOrNull()}")
+            // Check if this is a base64-encoded raw key (Coinbase CDP format) or PEM format
+            val isRawBase64 = !trimmedKey.startsWith("-----BEGIN")
 
-            // Log the full PEM for debugging (WARNING: This exposes the private key in logs!)
-            timber.log.Timber.w("FULL PEM STRING (REMOVE IN PRODUCTION):\n$normalizedPem")
-            timber.log.Timber.w("=== END FULL PEM ===")
-
-            StringReader(normalizedPem).use { reader ->
-                PEMParser(reader).use { pemParser ->
-                    val pemObject = pemParser.readObject()
-                        ?: throw IllegalArgumentException("No PEM object found in string. Check that the private key is in valid PEM format.")
-
-                    timber.log.Timber.d("PEM object type: ${pemObject::class.java.simpleName}")
-
-                    val converter = JcaPEMKeyConverter()
-                    val privateKey = when (pemObject) {
-                        is PEMKeyPair -> {
-                            // Traditional EC PRIVATE KEY format
-                            val keyPair = converter.getKeyPair(pemObject)
-                            keyPair.private
-                        }
-                        is PrivateKeyInfo -> {
-                            // PKCS8 format (BEGIN PRIVATE KEY)
-                            converter.getPrivateKey(pemObject)
-                        }
-                        is org.bouncycastle.openssl.PEMEncryptedKeyPair -> {
-                            throw IllegalArgumentException("Encrypted PEM keys are not supported. Use an unencrypted EC private key.")
-                        }
-                        else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}. Expected PEMKeyPair or PrivateKeyInfo.")
-                    }
-
-                    val ecPrivateKey = privateKey as? ECPrivateKey
-                        ?: throw IllegalArgumentException("Private key is not an EC key. Got: ${privateKey::class.java.simpleName}")
-
-                    timber.log.Timber.d("Successfully parsed EC private key")
-                    return ecPrivateKey
-                }
+            if (isRawBase64) {
+                timber.log.Timber.d("Detected raw base64 format (Coinbase CDP)")
+                return parseRawBase64Key(trimmedKey)
+            } else {
+                timber.log.Timber.d("Detected PEM format")
+                return parsePemFormattedKey(trimmedKey)
             }
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to parse PEM private key")
-            throw IllegalArgumentException(
-                """
-                Failed to parse PEM private key: ${e.message}
+            timber.log.Timber.e(e, "Failed to parse private key")
+            throw IllegalArgumentException("Failed to parse private key: ${e.message}", e)
+        }
+    }
 
-                Expected one of these formats:
-                1. EC format:
-                -----BEGIN EC PRIVATE KEY-----
-                ...
-                -----END EC PRIVATE KEY-----
+    private fun parseRawBase64Key(base64Key: String): ECPrivateKey {
+        timber.log.Timber.d("Parsing raw base64 key")
 
-                2. PKCS8 format:
-                -----BEGIN PRIVATE KEY-----
-                ...
-                -----END PRIVATE KEY-----
+        // Decode base64 to get DER-encoded private key bytes
+        val keyBytes = java.util.Base64.getDecoder().decode(base64Key)
+        timber.log.Timber.d("Decoded key bytes length: ${keyBytes.size}")
 
-                Make sure your local.properties has the key with actual newlines, not \n literals.
-                """.trimIndent(), e
-            )
+        // Parse DER-encoded private key using BouncyCastle
+        val privateKeyInfo = PrivateKeyInfo.getInstance(keyBytes)
+        val converter = JcaPEMKeyConverter()
+        val privateKey = converter.getPrivateKey(privateKeyInfo)
+
+        val ecPrivateKey = privateKey as? ECPrivateKey
+            ?: throw IllegalArgumentException("Private key is not an EC key. Got: ${privateKey::class.java.simpleName}")
+
+        timber.log.Timber.d("Successfully parsed raw base64 EC private key")
+        return ecPrivateKey
+    }
+
+    private fun parsePemFormattedKey(pemString: String): ECPrivateKey {
+        timber.log.Timber.d("Parsing PEM formatted key")
+
+        // Handle escaped newlines and normalize formatting
+        val normalizedPem = pemString
+            .replace("\\n", "\n")
+            .trim()
+            .lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+
+        timber.log.Timber.d("Normalized PEM lines: ${normalizedPem.lines().size}")
+
+        StringReader(normalizedPem).use { reader ->
+            PEMParser(reader).use { pemParser ->
+                val pemObject = pemParser.readObject()
+                    ?: throw IllegalArgumentException("No PEM object found in string")
+
+                val converter = JcaPEMKeyConverter()
+                val privateKey = when (pemObject) {
+                    is PEMKeyPair -> converter.getKeyPair(pemObject).private
+                    is PrivateKeyInfo -> converter.getPrivateKey(pemObject)
+                    else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}")
+                }
+
+                val ecPrivateKey = privateKey as? ECPrivateKey
+                    ?: throw IllegalArgumentException("Private key is not an EC key")
+
+                timber.log.Timber.d("Successfully parsed PEM EC private key")
+                return ecPrivateKey
+            }
         }
     }
 
