@@ -1,7 +1,7 @@
-Version 1.5.1
+Version 1.5.2
 
-- Enhanced security key parsing for more robust authentication
-- Improved error handling and stability when connecting to Coinbase API
-- Fixed navigation display issues for cleaner user interface
-- Strengthened JWT token generation reliability
-- Better debugging capabilities for troubleshooting connection issues
+- Fixed raw base64 private key format support for Coinbase CDP integration
+- Enhanced PEM key parsing with better error handling and debug logging
+- Improved authentication reliability with more robust key format detection
+- Resolved app navigation issues by centralizing TopAppBar configuration
+- Strengthened connection stability with enhanced JWT token generation
