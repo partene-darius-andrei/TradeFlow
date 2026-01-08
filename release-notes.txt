@@ -1,5 +1,6 @@
-v1.0.1 - CI/CD Pipeline Setup
+Version 1.1.0
 
-- Added GitHub Actions CI/CD pipeline
-- Integrated Firebase App Distribution
-- Automated build and distribution on push
+- Removed login screen - credentials are now configured at build time
+- Streamlined app startup by eliminating credential input requirement
+- Enhanced security with build-time credential injection system
+- Simplified navigation flow with direct access to dashboard

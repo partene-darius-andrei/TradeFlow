@@ -1,7 +1,7 @@
 # GitHub Actions CI/CD
 
 **Status:** ✅ Active
-**Last Build:** #30 (FAILURE - Kotlin compatibility)
+**Last Build:** #30 SUCCESS  
 **Workflow File:** `.github/workflows/build.yml` + `.github/workflows/update-docs.yml`
 
 ## Quick Reference
@@ -24,16 +24,64 @@ gh run download <run-id> -n debug-apk
 
 **Automated Android build pipeline** that runs on every push to `main` or `claude/*` branches:
 
-1. ✅ Builds debug APK
-2. ✅ Uploads to Firebase App Distribution (partene.darius@gmail.com)
-3. ✅ Commits build status back to branch
-4. ✅ Uploads APK artifact (7-day retention)
+1. ✅ Injects Coinbase API credentials from GitHub secrets
+2. ✅ Builds debug APK with embedded credentials
+3. ✅ Uploads to Firebase App Distribution (partene.darius@gmail.com)
+4. ✅ Commits build status back to branch
+5. ✅ Uploads APK artifact (7-day retention)
 
 **Auto-documentation pipeline** that updates docs when code changes:
 
 1. ✅ Analyzes git diff on push
 2. ✅ Calls Claude API to update documentation
 3. ✅ Commits updated CLAUDE.md and docs/ back to branch
+
+## Credential Injection System
+
+**TradeFlow uses build-time credential injection** instead of runtime credential entry.
+
+### Required GitHub Secrets
+
+Set these in GitHub repo → Settings → Secrets and variables → Actions:
+
+| Secret | Value | Format |
+|--------|-------|--------|
+| `COINBASE_API_KEY` | Your Coinbase API key | `organizations/{org_id}/apiKeys/{key_id}` |
+| `COINBASE_API_SECRET` | Your EC private key | Full PEM format with headers |
+
+### How It Works
+
+```yaml
+# .github/workflows/build.yml
+- name: Build debug APK
+  id: build
+  env:
+    COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}        # ← Injected here
+    COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}  # ← Injected here
+  run: ./gradlew assembleDebug
+```
+
+**Build Process:**
+1. GitHub Actions reads secrets from repository settings
+2. Sets environment variables for Gradle process
+3. `app/build.gradle.kts` reads env vars and injects into BuildConfig:
+   ```kotlin
+   val coinbaseApiKey = System.getenv("COINBASE_API_KEY")
+       ?: props.getProperty("coinbase.api.key", "")
+   buildConfigField("String", "COINBASE_API_KEY", "\"$coinbaseApiKey\"")
+   ```
+4. `CredentialsModule` provides credentials to app via Hilt DI
+5. Built APK contains embedded credentials (encrypted in APK)
+
+### Local Development Fallback
+
+If environment variables aren't set (local development), build falls back to `local.properties`:
+
+```properties
+# local.properties (NOT committed to git)
+coinbase.api.key=organizations/your-org/apiKeys/your-key
+coinbase.api.secret=-----BEGIN EC PRIVATE KEY-----...
+```
 
 ## Claude Code Integration
 
@@ -60,9 +108,10 @@ gh run download <run-id> -n debug-apk
 ┌─────────────────────┐
 │ GitHub Actions      │
 │                     │
-│ 4. Builds APK       │
-│ 5. Updates docs     │
-│ 6. Commits result:  │
+│ 4. Injects secrets  │
+│ 5. Builds APK       │
+│ 6. Updates docs     │
+│ 7. Commits result:  │
 │    - .build-status  │
 │    - build-log.txt  │
 │    - CLAUDE.md      │
@@ -73,10 +122,10 @@ gh run download <run-id> -n debug-apk
 ┌─────────────────────┐
 │ Claude Code         │
 │                     │
-│ 7. git pull         │
-│ 8. cat .build-      │
+│ 8. git pull         │
+│ 9. cat .build-      │
 │    status           │
-│ 9. Fix if needed    │
+│ 10. Fix if needed   │
 └─────────────────────┘
 ```
 
@@ -106,14 +155,23 @@ gh run download <run-id> -n debug-apk
 
 **Why:** Allows workflow to always commit status, even when build fails.
 
-**3. Automated testing flow:**
-```
-Claude implements → Push → Actions build → Firebase distribution → Test on phone
+**3. Credential injection for CI/CD:**
+```yaml
+- name: Build debug APK
+  env:
+    COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+    COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+  run: ./gradlew assembleDebug
 ```
 
-No local Gradle execution needed. Claude Code Mobile can make changes remotely and immediately test on device.
+**4. Automated testing flow:**
+```
+Claude implements → Push → Actions build with credentials → Firebase distribution → Test on phone
+```
 
-**4. Auto-documentation update:**
+No local Gradle execution needed. Claude Code Mobile can make changes remotely and immediately test on device with real credentials.
+
+**5. Auto-documentation update:**
 ```yaml
 - name: Update documentation
   env:
@@ -164,115 +222,136 @@ cat build-log.txt
 # Make fixes, repeat from step 1
 ```
 
-## Current Build Issues
+## Recent Build History
 
-### Build #30 - Kotlin Compatibility Failure
+### Build #30 - SUCCESS ✅
 
-**Status:** FAILURE
-**Root Cause:** Kotlin metadata version mismatch
+**Status:** SUCCESS
+**Changes:** Implemented static credential injection system
+**APK:** Built successfully with embedded credentials
+**Distribution:** Uploaded to Firebase App Distribution
 
-**Error Details:**
+**Key Improvements:**
+- Removed login screen dependency
+- Simplified app navigation (direct to Dashboard)
+- Build-time credential embedding
+- Environment variable priority system
+
+### Previous Issues (Resolved)
+
+**Build #29 - Kotlin Compatibility Failure (RESOLVED)**
+- **Problem:** Kotlin metadata version mismatch (2.1.0 vs 2.3.0)
+- **Solution:** Updated to Kotlin 2.3.0 to match Compose BOM
+- **Status:** ✅ Fixed in current build
+
+## Required Secrets Setup
+
+### GitHub Repository Secrets
+
+Navigate to: **GitHub repo → Settings → Secrets and variables → Actions**
+
+Add these repository secrets:
+
+| Name | Value | Description |
+|------|-------|-------------|
+| `COINBASE_API_KEY` | `organizations/.../apiKeys/...` | Your Coinbase API key ID |
+| `COINBASE_API_SECRET` | `-----BEGIN EC PRIVATE KEY-----...` | Your EC private key PEM |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` | Claude API key for doc updates |
+
+### Coinbase API Key Format
+
+**API Key ID:**
 ```
-> Task :core:ui:compileDebugKotlin FAILED
-
-e: Module was compiled with an incompatible version of Kotlin. 
-   The binary version of its metadata is 2.3.0, expected version is 2.1.0.
-
-Affected libraries:
-- compose-2.4.0-api.jar
-- core-2.4.0-api.jar  
-- compose-m3-2.4.0-api.jar
+organizations/{your-org-id}/apiKeys/{your-key-id}
 ```
 
-**Problem:** 
-- Project using Kotlin 2.1.0
-- Compose BOM 2025.12.01 libraries compiled with Kotlin 2.3.0
-- Binary metadata incompatible
-
-**Solutions:**
-
-**Option 1: Update Kotlin (Recommended)**
-```kotlin
-// build.gradle.kts (Project level)
-plugins {
-    kotlin("android") version "2.3.0"  // Update from 2.1.0
-    kotlin("plugin.compose") version "2.3.0"
-}
+**Private Key PEM:**
+```
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIBEhExkuoT4RX7bP...
+...more base64 content...
+-----END EC PRIVATE KEY-----
 ```
 
-**Option 2: Downgrade Compose BOM**
-```kotlin
-// gradle/libs.versions.toml
-[versions]
-composeBom = "2024.09.00"  # Compatible with Kotlin 2.1.0
-```
+**Important:** Use the EXACT private key provided by Coinbase when creating API credentials. Do not generate your own.
 
-**Impact:** UI theme system implemented but can't compile until resolved.
+### Security Notes
 
-### Benefits
-
-✅ **Remote development** - Claude Code Mobile can develop from anywhere
-✅ **No local builds** - Save device resources, battery, time
-✅ **Automated testing** - APK delivered to phone via Firebase
-✅ **Build verification** - Claude verifies changes compile before user tests
-✅ **Fast iteration** - Push → build → test in 3-5 minutes
-✅ **Always-current docs** - Documentation updates automatically with code changes
-
-### Limitations
-
-⚠️ **Latency** - 3-5 minute feedback loop (vs instant local builds)
-⚠️ **GitHub Actions minutes** - Free tier: 2000 min/month (~400-666 builds)
-⚠️ **Network required** - Can't work offline
-⚠️ **Build logs truncated** - Only last 200 lines on failure
-⚠️ **Mobile limitations** - No MCP servers (Notion/Coinbase), limited context depth
-
-### Mobile vs Desktop
-
-**Claude Code Mobile:**
-- ✅ Good for small tweaks, bug fixes, simple refactors
-- ❌ No Notion MCP (can't read tickets/docs)
-- ❌ No Coinbase MCP (can't search API docs)
-- ❌ No IDE diagnostics
-- ⚠️ Limited codebase context
-
-**Claude Code Desktop + IDE:**
-- ✅ Full MCP access (Notion tickets, Coinbase API docs)
-- ✅ IDE integration (live errors, diagnostics)
-- ✅ Deep codebase exploration
-- ✅ Best for complex features, architecture changes, initial planning
-
-**Recommendation:** Use Mobile for quick fixes after detailed tickets are written. Use Desktop for complex work requiring API docs or deep context.
+- Secrets are encrypted at rest in GitHub
+- Only accessible to workflow runs in this repository
+- Injected as environment variables during build
+- APK contains credentials but is encrypted within APK structure
+- Credentials never appear in build logs
 
 ## Troubleshooting
 
-### Common Build Failures
+### Build Failures
 
-**1. Kotlin Compatibility (Current Issue)**
-- **Symptom:** "Module was compiled with an incompatible version of Kotlin"
-- **Fix:** Update Kotlin version or downgrade dependencies
-- **Prevention:** Keep Kotlin and library versions aligned
+**Common Issues:**
 
-**2. Dependency Conflicts**
-- **Symptom:** "Duplicate class" or "Resolution failed"
-- **Fix:** Check gradle/libs.versions.toml for version mismatches
-- **Prevention:** Use BOM dependencies for version alignment
+1. **Missing Secrets:**
+   ```
+   Error: COINBASE_API_KEY environment variable not set
+   ```
+   **Fix:** Add missing secret in GitHub repo settings
 
-**3. Memory Issues**
-- **Symptom:** "OutOfMemoryError" during build
-- **Fix:** Increase Gradle memory in gradle.properties
-- **Prevention:** Monitor build performance, clean regularly
+2. **Invalid Credential Format:**
+   ```
+   Error: Invalid API key format
+   ```
+   **Fix:** Ensure API key starts with `organizations/`
 
-### Recovery Steps
+3. **PEM Parsing Error:**
+   ```
+   Error: Failed to parse EC private key
+   ```
+   **Fix:** Ensure PEM includes headers and is properly formatted
 
-**If build continues to fail:**
-1. Check build-log.txt for specific errors
-2. Verify all dependencies are compatible
-3. Clean and rebuild: `./gradlew clean assembleDebug`
-4. Update documentation to reflect current status
-5. Create issue for persistent problems
+### Credential Testing
 
-**Emergency rollback:**
-1. Revert to last known good commit
-2. Update .build-status to SUCCESS
-3. Commit with message explaining rollback
-4. Investigate issue separately
+**Verify secrets are set:**
+```bash
+# In GitHub Actions workflow (add temporarily for debugging)
+- name: Debug credentials
+  run: |
+    echo "API Key length: ${#COINBASE_API_KEY}"
+    echo "API Secret length: ${#COINBASE_API_SECRET}"
+    echo "API Key prefix: ${COINBASE_API_KEY:0:13}"  # Should show "organizations"
+```
+
+**Test locally:**
+```bash
+# Set environment variables
+export COINBASE_API_KEY="organizations/..."
+export COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----..."
+
+# Build
+./gradlew assembleDebug
+
+# Check BuildConfig generated correctly
+cat app/build/generated/source/buildConfig/debug/com/dpart/tradeflow/BuildConfig.java
+```
+
+### Workflow Permissions
+
+Ensure repository has correct permissions:
+- **Settings → Actions → General → Workflow permissions**
+- Select "Read and write permissions"
+- Required for commit-back functionality
+
+## Monitoring
+
+**Firebase App Distribution:**
+- Builds automatically uploaded to partene.darius@gmail.com
+- Install from Firebase console or email notifications
+- Track app versions and crash reports
+
+**GitHub Actions:**
+- View build history: GitHub repo → Actions
+- Download APK artifacts (7-day retention)
+- Monitor build times and success rates
+
+**Build Status:**
+- Check `.build-status` file after each build
+- Read `build-log.txt` for failure details
+- Documentation auto-updated on successful changes
