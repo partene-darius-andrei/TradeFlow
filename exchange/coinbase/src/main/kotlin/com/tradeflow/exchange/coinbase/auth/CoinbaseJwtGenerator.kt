@@ -91,7 +91,19 @@ class CoinbaseJwtGenerator @Inject constructor(
             val signer = ECDSASigner(privateKey)
             signedJWT.sign(signer)
 
-            signedJWT.serialize()
+            val token = signedJWT.serialize()
+
+            // Debug logging (REMOVE IN PRODUCTION)
+            timber.log.Timber.w("=== JWT DEBUG ===")
+            timber.log.Timber.w("API Key (kid): $apiKey")
+            timber.log.Timber.w("URI claim: $uri")
+            timber.log.Timber.w("NBF: $now")
+            timber.log.Timber.w("EXP: ${now + 120}")
+            timber.log.Timber.w("Nonce: ${header.customParams["nonce"]}")
+            timber.log.Timber.w("JWT (first 100 chars): ${token.take(100)}")
+            timber.log.Timber.w("=== END JWT DEBUG ===")
+
+            token
         } catch (e: Exception) {
             throw ExchangeError.AuthenticationFailed("Failed to generate JWT: ${e.message}")
         }
