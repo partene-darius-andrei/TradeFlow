@@ -1,9 +1,9 @@
 # TradeFlow - Master Implementation Plan
 
-**Last Updated:** 2026-01-07
-**Project Status:** Phase 0A Complete - Authentication Infrastructure with Static Credentials ✅
+**Last Updated:** 2026-01-08
+**Project Status:** Phase 0B In Progress - Core Domain & Data (50% complete)
 **Current Build:** #30 (SUCCESS)
-**Architecture:** Multi-module app (7 modules: app, core:domain, core:data, core:ui, feature:dashboard, feature:trading, feature:settings)
+**Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
 ---
 
@@ -71,23 +71,44 @@ app/src/main/java/com/dpart/tradeflow/
 └── build.gradle.kts             🆕 ✅ Credential injection system
 
 🆕 COMPLETE: Domain Layer Foundation
-└── core/domain/                 ✅ Complete domain interfaces
+└── core/domain/                 ✅ Complete domain layer
     ├── auth/
     │   ├── AuthTokenProvider.kt ✅ Token generation interface
     │   └── CredentialStore.kt   ✅ Secure storage interface
     ├── error/
     │   └── ExchangeError.kt     ✅ Exchange error types (6 variants)
+    ├── model/                   🆕 ✅ Domain models (Ticket 01)
+    │   ├── Candle.kt            ✅ OHLCV data with granularity enums
+    │   ├── Order.kt             ✅ Order types, sides, status
+    │   ├── Decision.kt          ✅ Wait, Defense, Trend, Range decisions
+    │   ├── Portfolio.kt         ✅ Account balances
+    │   ├── Balance.kt           ✅ Currency holdings
+    │   └── Ticker.kt            ✅ Real-time price data
     └── repository/
         ├── BracketOrderRepository.kt ✅ Bracket order support
         ├── ExchangeRepository.kt     ✅ Core operations (12 methods)
         └── ExchangeWebSocket.kt      ✅ Real-time streams
 
-🆕 COMPLETE: Data Layer Implementation  
+🆕 COMPLETE: Data Layer Implementation
 └── core/data/
     ├── security/
     │   └── StaticCredentialStore.kt 🆕 ✅ Build-time credential injection
+    ├── local/                       🆕 ✅ Room database (Ticket 03)
+    │   ├── database/
+    │   │   └── EngineDatabase.kt    ✅ Room DB with 4 tables
+    │   ├── entity/
+    │   │   ├── CandleEntity.kt      ✅ Candle storage
+    │   │   ├── OrderEntity.kt       ✅ Order history
+    │   │   ├── DecisionEntity.kt    ✅ Decision tracking
+    │   │   └── PortfolioSnapshotEntity.kt ✅ Portfolio snapshots
+    │   └── dao/
+    │       ├── CandleDao.kt         ✅ Candle queries
+    │       ├── OrderDao.kt          ✅ Order queries
+    │       ├── DecisionDao.kt       ✅ Decision queries
+    │       └── PortfolioDao.kt      ✅ Portfolio queries
     └── di/
-        └── SecurityModule.kt        ✅ Hilt DI for credential store
+        ├── SecurityModule.kt        ✅ Hilt DI for credential store
+        └── DatabaseModule.kt        ✅ Hilt DI for Room database
 
 🆕 COMPLETE: Coinbase Authentication
 └── exchange/coinbase/
@@ -182,21 +203,22 @@ app/src/main/java/com/dpart/tradeflow/
 - **Developer Friendly:** local.properties for development
 - **Reduced Code:** ~500 lines of login UI code removed
 
-### ❌ What DOESN'T Exist (Everything Else)
+### ❌ What DOESN'T Exist (Business Logic & Integration)
 
-**No business logic has been implemented yet beyond interfaces, credential injection, UI components, and JWT generation.**
+**Phase 0B is 50% complete. Remaining work:**
 
 ```
-❌ domain/model/             # No domain models yet (Candle, Order, Decision)
-❌ domain/usecase/           # No use cases
-❌ domain/strategy/          # No decision engine
-❌ domain/risk/              # No risk manager
-❌ data/exchange/coinbase/   # No REST API methods (JWT only)
+✅ domain/model/             # COMPLETE: All domain models implemented
+✅ data/local/database/      # COMPLETE: Room database with entities + DAOs
+❌ domain/strategy/          # No decision engine yet (Ticket 05 - NEXT)
+❌ domain/risk/              # No risk manager yet (Ticket 06)
+❌ data/exchange/coinbase/   # No REST API methods (JWT only, need Ticket 08)
 ❌ data/repository/          # No repository implementations
-❌ presentation/             # No screens yet (login removed, dashboard/settings next)
+❌ presentation/             # No screens yet (skeleton only)
 ❌ service/trading/          # No trading service
 ❌ No unit tests
 ❌ No integration tests
+❌ No backtesting
 ```
 
 ---
@@ -267,9 +289,9 @@ app/src/main/java/com/dpart/tradeflow/
 
 | Ticket | Status | Description |
 |--------|--------|-------------|
-| **01** | ❌ Next | Domain Models (Candle, Order, Decision, Portfolio) |
+| **01** | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio) |
 | **02** | ✅ Done | Repository Interfaces (ExchangeRepository, AuthTokenProvider, etc.) |
-| **03** | ❌ Next | Room Database (entities, DAOs, database setup) |
+| **03** | ✅ Done | Room Database (entities, DAOs, database setup) |
 | **04** | ✅ Done | Static Credential Store (build-time injection) |
 | **07** | ✅ Done | JWT Generator (ES256 signing for Coinbase) |
 | **UI** | ✅ Done | Core UI components (StatusCard, LoadingButton, etc.) |
@@ -286,33 +308,76 @@ app/src/main/java/com/dpart/tradeflow/
 
 ---
 
-### 🎯 Phase 0B: Core Domain & Data (CURRENT - Ready to Start)
+### 🎯 Phase 0B: Core Domain & Data (CURRENT - 50% Complete)
 
 **Goal:** Implement core business models and persistence layer
 
-**Duration:** 1 week
+**Duration:** 1-2 weeks
 **Priority:** Critical (blocks everything else)
 
-| Ticket | Priority | Description | Blocks |
-|--------|----------|-------------|--------|
-| **01** | CRITICAL | Domain Models (Candle, Order, Decision, Portfolio) | All business logic |
-| **03** | CRITICAL | Room Database (entities, DAOs) | Data persistence |
-| **05** | HIGH | Decision Engine (SMA, ADX, ATR logic) | Trading strategy |
-| **06** | HIGH | Risk Manager (position sizing, drawdown limits) | Safety |
+| Ticket | Priority | Status | Description | Blocks |
+|--------|----------|--------|-------------|--------|
+| **01** | CRITICAL | ✅ Done | Domain Models (Candle, Order, Decision, Portfolio) | All business logic |
+| **03** | CRITICAL | ✅ Done | Room Database (entities, DAOs) | Data persistence |
+| **05** | HIGH | ⏭️ Next | Decision Engine (SMA, ADX, ATR logic) | Trading strategy |
+| **06** | HIGH | Pending | Risk Manager (position sizing, drawdown limits) | Safety |
 
-**Dependencies:** None - ready to start immediately
+**Dependencies:** None for Ticket 05 (can start immediately)
 
 **Deliverables:**
 - ✅ Candle, Order, Decision, Portfolio data classes
 - ✅ Room database with proper entities and DAOs
-- ✅ Decision engine with regime switching (DEFENSE/TREND/RANGE)
-- ✅ Risk manager with position limits and emergency stop
+- ⏭️ Decision engine with regime switching (DEFENSE/TREND/RANGE)
+- ⏭️ Risk manager with position limits and emergency stop
 
-**Critical Path:** Domain models → Database → Decision engine → Risk manager
+**Progress:** 2/4 tickets complete (50%)
+
+**Critical Path:** ~~Domain models~~ ✅ → ~~Database~~ ✅ → **Decision engine** ⏭️ → Risk manager
 
 ---
 
-### 🔌 Phase 1: Coinbase Integration (Week 3)
+### 📊 Phase 0C: Strategy Validation (NEW - Week 3)
+
+**Goal:** Validate strategy works before building full API integration
+
+**Duration:** 1 week
+**Priority:** CRITICAL (prevents wasted work on broken strategy)
+
+| Task | Priority | Description |
+|------|----------|-------------|
+| **Backtest** | CRITICAL | 7-year BTC/USDT backtest (2018-2025) with realistic fees |
+| **Validation** | CRITICAL | Verify 52%+ win rate, 1.0+ Sharpe ratio |
+| **Paper Trade** | HIGH | Small $10 live trades for 30 days validation |
+
+**Dependencies:** Tickets 05 (Decision Engine), 06 (Risk Manager)
+
+**Deliverables:**
+- ✅ Historical data download (7+ years H4 candles)
+- ✅ Backtest harness (replay candles → strategy decisions)
+- ✅ Performance report (win rate, Sharpe, drawdown)
+- ✅ Go/No-Go decision (if fails, fix strategy before Phase 1)
+
+**Strategy Parameters (from analysis):**
+```kotlin
+// Hysteresis (lag reduction)
+trendConfirmation = 1 candle    // 4 hours (catch momentum)
+rangeConfirmation = 3 candles   // 12 hours (patience)
+defenseConfirmation = 0 candles // Instant (safety)
+
+// Volume confirmation (prevent fake pumps)
+val isRealTrend = adx > 25 && volume > avgVolume * 1.2
+
+// Position sizing (CLARIFIED)
+positionSize = 10% of portfolio  // Amount in trade
+riskPerTrade = 1-2% of portfolio // Max loss via stop-loss
+// Example: $500 account → $50 position (10%) → $10 stop (2%)
+```
+
+**Critical:** Do NOT proceed to Phase 1 if backtest fails validation criteria.
+
+---
+
+### 🔌 Phase 1: Coinbase Integration (Week 4)
 
 **Goal:** Connect to live Coinbase API for trading and market data
 
@@ -321,7 +386,7 @@ app/src/main/java/com/dpart/tradeflow/
 | **08** | HIGH | REST API Client (order placement, market data) | Live trading |
 | **09** | HIGH | WebSocket Client (real-time price, order updates) | Live data |
 
-**Dependencies:** Tickets 01 (domain models), 04 (credentials), 07 (JWT)
+**Dependencies:** Tickets 01 (domain models), 04 (credentials), 07 (JWT), **Phase 0C validation passed**
 
 **Deliverables:**
 - ✅ Complete CoinbaseRepository implementation
@@ -389,11 +454,12 @@ app/src/main/java/com/dpart/tradeflow/
 
 ## 📊 Progress Tracking
 
-### Overall Progress: 6/19 tickets complete (32%)
+### Overall Progress: 8/20 tickets complete (40%)
 
 ```
-Phase 0A: ████████████████████ 100% (6/6) ✅ COMPLETE
-Phase 0B: ░░░░░░░░░░░░░░░░░░░░   0% (0/4) ← YOU ARE HERE  
+Phase 0A: ████████████████████ 100% (6/6)  ✅ COMPLETE
+Phase 0B: ██████████░░░░░░░░░░  50% (2/4)  ← YOU ARE HERE
+Phase 0C: ░░░░░░░░░░░░░░░░░░░░   0% (0/1)  ← NEXT (Validation)
 Phase 1:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
 Phase 2:  ░░░░░░░░░░░░░░░░░░░░   0% (0/4)
 Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
@@ -402,9 +468,13 @@ Phase 4:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2
 
 ### Current Sprint: Phase 0B - Core Domain & Data
 
-**Next Up:** Ticket 01 (Domain Models) - Define Candle, Order, Decision, Portfolio
+**Completed:**
+- ✅ Ticket 01: Domain Models (Candle, Order, Decision, Portfolio, Balance, Ticker)
+- ✅ Ticket 03: Room Database (4 entities, 4 DAOs, EngineDatabase)
 
-**Ready to Start:** All Phase 0B tickets have no blockers
+**Next Up:** Ticket 05 (Decision Engine) - Implement regime switching with SMA, ADX, ATR
+
+**Ready to Start:** Ticket 05 has no blockers (domain models + database complete)
 
 ---
 
@@ -428,11 +498,13 @@ Phase 4:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2
    - Hysteresis to prevent mode whipsawing
 
 4. **Ticket 06** - Risk Manager (1 day)
-   - Position sizing (5% per trade max)
+   - Position sizing (**10% position size** with **1-2% risk** via stop-loss)
    - Drawdown monitoring (15% emergency stop)
    - Validation before order placement
 
 **Total Phase 0B Effort:** ~5-7 days
+
+**After Phase 0B:** Proceed to **Phase 0C (Strategy Validation)** - backtest before building API client
 
 ---
 

@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-08
-**Project Status:** Phase 0A - Authentication Infrastructure Complete (Static Credentials)
+**Project Status:** Phase 0B In Progress - Core Domain & Data (50% complete)
 **Current Build:** #30 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -49,12 +49,12 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phase 0A Complete: Static Credentials)
+### What EXISTS (Phase 0B: 50% Complete)
 
 ```
 ✅ Modern Android app structure
 ✅ Hilt dependency injection configured
-✅ Room database with empty schema
+✅ Room database with complete schema (4 entities + 4 DAOs) ← NEW
 ✅ Ktor HTTP client configured (OkHttp engine)
 ✅ Timber logging initialized
 ✅ Firebase Analytics + Crashlytics
@@ -69,6 +69,13 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     │   └── CredentialStore.kt          ✅ Secure credential storage interface
     ├── error/
     │   └── ExchangeError.kt           ✅ Exchange error types (6 variants)
+    ├── model/ ← NEW: Ticket 01 COMPLETE
+    │   ├── Candle.kt                  ✅ OHLCV + Granularity enum (9 timeframes)
+    │   ├── Order.kt                   ✅ Order model + Side/Type/Status enums
+    │   ├── Decision.kt                ✅ Sealed class (Wait/Defense/Trend/Range)
+    │   ├── Portfolio.kt               ✅ Portfolio snapshot model
+    │   ├── Balance.kt                 ✅ Account balance model
+    │   └── Ticker.kt                  ✅ Real-time price ticker
     └── repository/
         ├── BracketOrderRepository.kt   ✅ Bracket order support interface
         ├── ExchangeRepository.kt       ✅ Core exchange operations (12 methods)
@@ -76,6 +83,17 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 🆕 DATA LAYER COMPLETE:
 ✅ core/data/src/main/kotlin/com/tradeflow/core/data/
+    ├── local/ ← NEW: Ticket 03 COMPLETE
+    │   ├── entity/
+    │   │   ├── CandleEntity.kt        ✅ Room entity for candles
+    │   │   ├── OrderEntity.kt         ✅ Room entity for orders
+    │   │   ├── DecisionEntity.kt      ✅ Room entity for decisions
+    │   │   └── PortfolioSnapshotEntity.kt ✅ Room entity for portfolio
+    │   └── dao/
+    │       ├── CandleDao.kt           ✅ CRUD + delete old candles
+    │       ├── OrderDao.kt            ✅ CRUD + query by status/product
+    │       ├── DecisionDao.kt         ✅ CRUD + latest decision query
+    │       └── PortfolioDao.kt        ✅ CRUD + snapshot history
     ├── security/
     │   └── StaticCredentialStore.kt    ✅ Static credential injection (replaces UI input)
     └── di/
@@ -132,17 +150,17 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ### What DOESN'T Exist Yet (Next Up)
 
 ```
-❌ Domain models (Candle, Decision, Order, Portfolio) - Ticket 01
-❌ Room database entities/DAOs - Ticket 03
+✅ Domain models (Candle, Decision, Order, Portfolio) - Ticket 01 ✅ DONE
+✅ Room database entities/DAOs - Ticket 03 ✅ DONE
+❌ Decision engine (regime switching logic) - Ticket 05 ← NEXT
+❌ Risk manager - Ticket 06
 ❌ Coinbase REST API client methods - Ticket 08 (JWT complete ✅, REST methods next)
-❌ Decision engine (regime switching logic)
 ❌ Trading service (foreground service)
-❌ Risk management
 ❌ Dashboard and Settings screens
 ❌ App navigation setup
 ```
 
-**Progress:** **Authentication infrastructure and app branding complete** ✅ JWT token generation, static credential injection, repository contracts, UI components, and adaptive app icon all implemented. Login screen removed in favor of build-time configuration. Ready for domain models, database schema, and REST API client methods.
+**Progress:** **Phase 0B: 50% complete** (2/4 tickets done). Domain models (Ticket 01) and Room database (Ticket 03) implemented. Next up: Decision engine (Ticket 05) implementing SMA(200), ADX(14), ATR(14) indicators with regime-switching logic.
 
 ---
 
@@ -158,18 +176,18 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - [x] **Credential system** ✅ COMPLETE - Build-time injection replacing UI input
 - [x] **App branding** ✅ COMPLETE - Adaptive icon with trading chart design
 
-**Latest Changes:** App Icon and Branding ✅
-- **Adaptive Icon:** Professional trading chart design with candlesticks and trend flows
-- **Day/Night Variants:** White background (day), black background (night)
-- **Android Manifest:** Proper launcher icon configuration
-- **Professional Polish:** App now has distinct visual identity
+### Phase 0B: Core Foundation - 50% Complete (2/4 tickets)
+- [x] **Domain models** (Ticket 01) ✅ COMPLETE - Candle, Order, Decision, Portfolio, Balance, Ticker
+- [x] **Room database schema** (Ticket 03) ✅ COMPLETE - 4 entities + 4 DAOs
+- [ ] **Decision engine** (Ticket 05) ❌ NEXT - SMA(200), ADX(14), ATR(14) with regime switching
+- [ ] **Risk manager** (Ticket 06) ❌ PENDING - Position sizing, stop-loss, drawdown limits
 
-**Next Up:** Domain models (Ticket 01) - Define Candle, Order, Portfolio, Decision types
+**Current Focus:** Ticket 05 - Decision Engine implementation
 
-### Phase 0B: Core Foundation (Week 2)
-- Domain models and Room database schema
-- Decision engine (SMA, ADX, ATR)
-- Risk manager
+### Phase 0C: Strategy Validation (NEW - After Phase 0B)
+- Backtesting framework with historical data
+- Strategy validation (52%+ win rate, 1.0+ Sharpe ratio)
+- Paper trading validation before live deployment
 
 ### Phase 1: Coinbase Integration
 - Complete REST API client (methods for order placement, market data)
@@ -188,8 +206,8 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 - Integration tests
 - MVP milestone
 
-**Current Phase:** Phase 0A Complete → Phase 0B (Core Foundation)
-**Progress:** Authentication infrastructure and app branding complete with static credentials. Domain models and database schema next.
+**Current Phase:** Phase 0B In Progress (50% complete - 2/4 tickets done)
+**Progress:** Domain models and Room database complete. Next: Decision engine (Ticket 05) implementing SMA/ADX/ATR indicators with regime-switching logic.
 
 ---
 
@@ -213,12 +231,16 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
                         ▼
 ┌─────────────────────────────────────────┐
 │           :core:domain ✅               │  ← Domain contracts (pure Kotlin)
-│  - ExchangeRepository interface        │
-│  - BracketOrderRepository interface    │
-│  - ExchangeWebSocket interface         │
-│  - AuthTokenProvider interface         │
-│  - CredentialStore interface           │
-│  - ExchangeError sealed class          │
+│  ✅ Interfaces (Ticket 02):            │
+│    - ExchangeRepository                │
+│    - BracketOrderRepository            │
+│    - ExchangeWebSocket                 │
+│    - AuthTokenProvider                 │
+│    - CredentialStore                   │
+│    - ExchangeError sealed class        │
+│  ✅ Models (Ticket 01):                │
+│    - Candle, Order, Decision           │
+│    - Portfolio, Balance, Ticker        │
 └─────────────────────────────────────────┘
                         │
                         ▼
@@ -231,7 +253,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 └─────────────────────────────────────────┘
 ```
 
-**Key insight:** Authentication infrastructure is complete. REST API methods and domain models are next critical blockers.
+**Key insight:** Phase 0B is 50% complete. Domain models and database schema done. Next critical blocker: Decision engine (Ticket 05) for regime-switching logic.
 
 ---
 
@@ -374,15 +396,17 @@ fun PortfolioSection() {
 
 ### Current Blockers
 
-1. **No domain models yet** - Need Candle, Order, Portfolio, Decision types (Ticket 01)
-2. **Room database empty** - Need entity schema and DAOs (Ticket 03)  
-3. **JWT tokens untested** - Need REST client to verify authentication works
-4. **No trading logic** - Decision engine and risk management not implemented
+1. ✅ ~~No domain models yet~~ - Ticket 01 COMPLETE ✅
+2. ✅ ~~Room database empty~~ - Ticket 03 COMPLETE ✅
+3. **Decision engine missing** - Ticket 05 NEXT: Implement SMA/ADX/ATR indicators with regime switching
+4. **Risk manager missing** - Ticket 06: Position sizing, stop-loss, drawdown limits
+5. **JWT tokens untested** - Need REST client to verify authentication works
+6. **No trading logic** - Service implementation pending
 
 ### Dependencies Ready But Unused
 
-- **ta4j-core:** Ready for technical indicators (SMA, ADX, ATR)
-- **Room:** Database configured but no entities yet
+- **ta4j-core:** Ready for technical indicators (SMA, ADX, ATR) - Needed for Ticket 05
+- ✅ ~~Room~~ - NOW ACTIVE: 4 entities + 4 DAOs implemented (Ticket 03 complete)
 - **Vico:** Chart library ready for portfolio graphs
 - **WorkManager:** Ready for background task scheduling
 - **DataStore:** Ready for settings persistence
@@ -417,4 +441,4 @@ fun PortfolioSection() {
 
 ---
 
-**Next Steps:** Implement domain models (Candle, Order, Portfolio, Decision) in `:core:domain` module to enable database schema and REST API implementation.
+**Next Steps:** Implement Decision Engine (Ticket 05) in `:core:domain` module with SMA(200), ADX(14), ATR(14) indicators and regime-switching logic (DEFENSE/TREND/RANGE modes).

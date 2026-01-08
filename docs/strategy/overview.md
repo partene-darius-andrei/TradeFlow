@@ -62,44 +62,71 @@ Every H4 candle (4 hours):
 
 ---
 
-## Confidence-Based Position Sizing
+## Position Sizing & Risk Management
 
-**Core Principle:** Position size scales with confidence score. Higher confidence = larger allocation (within risk limits).
+**CRITICAL DISTINCTION:**
+- **Position Size** = Amount of capital allocated to the trade (% of portfolio in the trade)
+- **Risk Per Trade** = Maximum loss allowed via stop-loss (% of portfolio at risk)
 
-### Formula
+### Phase 1: Fixed Position Sizing (CURRENT)
+
+**Simple, proven approach for initial deployment:**
 
 ```kotlin
-val baseSize = 0.02  // 2% base position
-val maxSize = 0.05   // 5% max position
-val minConfidence = 0.75  // Only trade if confidence >= 0.75
+val positionSize = 0.10  // 10% of portfolio in the trade
+val riskPerTrade = 0.02  // 2% max loss via stop-loss
 
-// Linear scaling from base to max
+// Example: $500 account
+// Position: $50 (10% of $500)
+// Stop-loss distance: $10 max loss (2% of $500)
+// Stop price: Entry - $10 (for $50 position)
+```
+
+**Why this works:**
+- Position size (10%) gives meaningful exposure
+- Risk per trade (2%) limits damage from bad trades
+- 50 consecutive losses needed to blow up account (mathematically impossible)
+- Aligns with bitcoin-first-strategy.md ($5-10 risk on $500 account)
+
+### Phase 2: Confidence-Based Sizing (FUTURE - After Validation)
+
+**Only enable after 50+ trades prove confidence scoring is accurate.**
+
+```kotlin
+val baseSize = 0.08   // 8% base position
+val maxSize = 0.12    // 12% max position
+val fixedRisk = 0.02  // Always 2% risk (never scales)
+val minConfidence = 0.75
+
+// Position size scales with confidence
 val positionSize = when {
     confidence < minConfidence -> 0.0  // Don't trade
     else -> baseSize + (maxSize - baseSize) * ((confidence - minConfidence) / (1.0 - minConfidence))
 }
+
+// Risk NEVER scales (always 2%)
+val riskPerTrade = 0.02
 ```
 
-### Examples
+**Examples:**
 
-| Confidence | Position Size | Rationale |
-|-----------|---------------|-----------|
-| 0.70 | 0% | Below threshold - don't trade |
-| 0.75 | 2.0% | Minimum conviction - base size |
-| 0.85 | 3.2% | Medium conviction - scaled up |
-| 0.95 | 4.6% | High conviction - near max |
-| 1.00 | 5.0% | Maximum conviction - max size |
+| Confidence | Position Size | Risk Per Trade | Stop Distance | Notes |
+|-----------|---------------|----------------|---------------|-------|
+| 0.70 | 0% | 0% | N/A | Below threshold |
+| 0.75 | 8.0% | 2.0% | 25% of position | Base size |
+| 0.85 | 9.6% | 2.0% | 20.8% of position | Medium conviction |
+| 0.95 | 11.2% | 2.0% | 17.9% of position | High conviction |
+| 1.00 | 12.0% | 2.0% | 16.7% of position | Max conviction |
 
-### Critical Assumption
+**Critical Assumption:**
 
-**This ONLY works if confidence scoring is accurate.**
+Confidence-based sizing ONLY works if confidence scores correlate with win rates.
 
-If confidence is poorly calibrated (e.g., always returns 0.95), this becomes reckless position sizing.
-
-**Validation Required:**
-- Backtest: Do 0.95 confidence trades actually win more than 0.75 trades?
-- Track: Confidence vs. actual win rate correlation
-- Adjust: If no correlation, fall back to fixed 2% sizing
+**Validation Required (Before Phase 2):**
+- Backtest: Do 0.95 confidence trades win more than 0.75 trades?
+- Live tracking: Confidence vs. actual win rate correlation
+- Statistical test: Chi-square test for independence
+- **If no correlation:** Stay with Phase 1 fixed sizing indefinitely
 
 ---
 
@@ -107,10 +134,13 @@ If confidence is poorly calibrated (e.g., always returns 0.95), this becomes rec
 
 | Limit | Value | Enforcement |
 |-------|-------|-------------|
-| Max position/trade | 5% portfolio | Reject if exceeded (confidence = 1.0) |
-| Max total exposure | 10% portfolio | No new orders |
-| Max correlated assets | 1 | Block second asset |
-| Portfolio drawdown | 15% from HWM | Emergency liquidate + stop |
+| Risk per trade | 2% portfolio | Fixed - stop-loss distance calculated to limit loss |
+| Max position/trade (Phase 1) | 10% portfolio | Fixed for initial deployment |
+| Max position/trade (Phase 2) | 12% portfolio | Only after confidence validation |
+| Max total exposure | 10% portfolio | No new orders if exceeded |
+| Max correlated assets | 1 (BTC only initially) | Block second asset until $2,500+ account |
+| Portfolio drawdown | 15% from HWM | Emergency liquidate + stop service |
+| Daily loss limit | 5% portfolio | Stop trading for 24 hours |
 | Unfilled order timeout | 48 hours | Cancel and re-evaluate |
 
 ---
