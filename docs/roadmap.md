@@ -384,6 +384,41 @@ Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2
 
 ---
 
+## 🔮 Future Enhancements (Post-MVP)
+
+**Implementation Priority:** AFTER Phase 3 complete and Coinbase integration proven profitable
+
+### Polymarket Prediction Market Integration
+
+**Goal:** Add cross-market arbitrage strategy by comparing Coinbase spot prices with Polymarket prediction odds.
+
+**Opportunity:** Similar to the 0x8dxd bot that turned $313 → $438k in 30 days exploiting price lag between spot markets and prediction markets.
+
+**Status:** Fully documented integration plan available
+**Documentation:** [docs/future-enhancements/polymarket-integration.md](future-enhancements/polymarket-integration.md)
+
+**Key Benefits:**
+- Lower risk than directional trading (arbitrage vs. prediction)
+- Higher potential win rate (70-90% vs. 52-58%)
+- Diversification (second exchange, different strategy type)
+
+**Key Risks:**
+- Legal restrictions (Polymarket banned in US)
+- Arbitrage edge may already be closed
+- Lower liquidity than Coinbase
+
+**Prerequisites:**
+- ✅ Phase 0A complete (domain models, auth)
+- ✅ Phase 0B complete (decision engine, risk manager)
+- ✅ Phase 1-3 complete (Coinbase proven profitable 30+ days)
+- ⚠️ Phase 1 validation (research arbitrage opportunities for 7 days)
+
+**Timeline:** ~3 months AFTER Coinbase integration proven
+
+**Go/No-Go Decision:** Based on validation phase finding 10+ arbitrage opportunities per week with 10%+ edge
+
+---
+
 ## 🚀 Getting Started
 
 **Current Status:** Phase 0A foundation nearly complete + Login screen ready
