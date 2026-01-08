@@ -124,17 +124,35 @@ class CoinbaseJwtGenerator @Inject constructor(
     private fun parseRawBase64Key(base64Key: String): ECPrivateKey {
         timber.log.Timber.d("Parsing raw base64 key")
 
-        // Decode base64 to get DER-encoded private key bytes
+        // Decode base64 to get raw private key bytes
         val keyBytes = java.util.Base64.getDecoder().decode(base64Key)
         timber.log.Timber.d("Decoded key bytes length: ${keyBytes.size}")
 
-        // Parse DER-encoded private key using BouncyCastle
-        val privateKeyInfo = PrivateKeyInfo.getInstance(keyBytes)
-        val converter = JcaPEMKeyConverter()
-        val privateKey = converter.getPrivateKey(privateKeyInfo)
+        // Coinbase CDP provides raw EC private key bytes
+        // For ES256 (P-256 curve), the private key is 32 bytes
+        // If we have 64 bytes, take the first 32 (the private scalar)
+        val privateKeyBytes = if (keyBytes.size == 64) {
+            timber.log.Timber.d("Key is 64 bytes, using first 32 as private scalar")
+            keyBytes.copyOfRange(0, 32)
+        } else {
+            keyBytes
+        }
+
+        // Construct ECPrivateKey from raw bytes using Java KeyFactory
+        // P-256 curve parameters (secp256r1)
+        val keyFactory = java.security.KeyFactory.getInstance("EC")
+        val ecSpec = java.security.spec.ECGenParameterSpec("secp256r1")
+        val params = java.security.AlgorithmParameters.getInstance("EC")
+        params.init(ecSpec)
+        val ecParameterSpec = params.getParameterSpec(java.security.spec.ECParameterSpec::class.java)
+
+        // Create private key from scalar value
+        val s = java.math.BigInteger(1, privateKeyBytes)
+        val privateKeySpec = java.security.spec.ECPrivateKeySpec(s, ecParameterSpec)
+        val privateKey = keyFactory.generatePrivate(privateKeySpec)
 
         val ecPrivateKey = privateKey as? ECPrivateKey
-            ?: throw IllegalArgumentException("Private key is not an EC key. Got: ${privateKey::class.java.simpleName}")
+            ?: throw IllegalArgumentException("Generated key is not an EC private key")
 
         timber.log.Timber.d("Successfully parsed raw base64 EC private key")
         return ecPrivateKey
