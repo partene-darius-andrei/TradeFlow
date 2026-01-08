@@ -97,78 +97,35 @@ class CoinbaseJwtGenerator @Inject constructor(
         }
     }
 
-    private fun parsePemPrivateKey(keyString: String): ECPrivateKey {
-        return try {
-            val trimmedKey = keyString.trim()
+    private fun parsePemPrivateKey(pemString: String): ECPrivateKey {
+        try {
+            // Handle escaped newlines and normalize formatting
+            val normalizedPem = pemString
+                .replace("\\n", "\n")
+                .trim()
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .joinToString("\n")
 
-            // Check if this is a base64-encoded raw key (Coinbase CDP format) or PEM format
-            val isRawBase64 = !trimmedKey.startsWith("-----BEGIN")
+            StringReader(normalizedPem).use { reader ->
+                PEMParser(reader).use { pemParser ->
+                    val pemObject = pemParser.readObject()
+                        ?: throw IllegalArgumentException("No PEM object found in string")
 
-            if (isRawBase64) {
-                parseRawBase64Key(trimmedKey)
-            } else {
-                parsePemFormattedKey(trimmedKey)
+                    val converter = JcaPEMKeyConverter()
+                    val privateKey = when (pemObject) {
+                        is PEMKeyPair -> converter.getKeyPair(pemObject).private
+                        is PrivateKeyInfo -> converter.getPrivateKey(pemObject)
+                        else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}")
+                    }
+
+                    return privateKey as? ECPrivateKey
+                        ?: throw IllegalArgumentException("Private key is not an EC key")
+                }
             }
         } catch (e: Exception) {
-            throw IllegalArgumentException("Failed to parse private key: ${e.message}", e)
-        }
-    }
-
-    private fun parseRawBase64Key(base64Key: String): ECPrivateKey {
-        // Decode base64 to get raw private key bytes
-        val keyBytes = java.util.Base64.getDecoder().decode(base64Key)
-
-        // Coinbase CDP provides raw EC private key bytes
-        // For ES256 (P-256 curve), the private key is 32 bytes
-        // If we have 64 bytes, take the first 32 (the private scalar)
-        val privateKeyBytes = if (keyBytes.size == 64) {
-            keyBytes.copyOfRange(0, 32)
-        } else {
-            keyBytes
-        }
-
-        // Construct ECPrivateKey from raw bytes using Java KeyFactory
-        // P-256 curve parameters (secp256r1)
-        val keyFactory = java.security.KeyFactory.getInstance("EC")
-        val ecSpec = java.security.spec.ECGenParameterSpec("secp256r1")
-        val params = java.security.AlgorithmParameters.getInstance("EC")
-        params.init(ecSpec)
-        val ecParameterSpec = params.getParameterSpec(java.security.spec.ECParameterSpec::class.java)
-
-        // Create private key from scalar value
-        val s = java.math.BigInteger(1, privateKeyBytes)
-        val privateKeySpec = java.security.spec.ECPrivateKeySpec(s, ecParameterSpec)
-        val privateKey = keyFactory.generatePrivate(privateKeySpec)
-
-        return privateKey as? ECPrivateKey
-            ?: throw IllegalArgumentException("Generated key is not an EC private key")
-    }
-
-    private fun parsePemFormattedKey(pemString: String): ECPrivateKey {
-        // Handle escaped newlines and normalize formatting
-        val normalizedPem = pemString
-            .replace("\\n", "\n")
-            .trim()
-            .lines()
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .joinToString("\n")
-
-        StringReader(normalizedPem).use { reader ->
-            PEMParser(reader).use { pemParser ->
-                val pemObject = pemParser.readObject()
-                    ?: throw IllegalArgumentException("No PEM object found in string")
-
-                val converter = JcaPEMKeyConverter()
-                val privateKey = when (pemObject) {
-                    is PEMKeyPair -> converter.getKeyPair(pemObject).private
-                    is PrivateKeyInfo -> converter.getPrivateKey(pemObject)
-                    else -> throw IllegalArgumentException("Unexpected PEM object type: ${pemObject::class.java.simpleName}")
-                }
-
-                return privateKey as? ECPrivateKey
-                    ?: throw IllegalArgumentException("Private key is not an EC key")
-            }
+            throw IllegalArgumentException("Failed to parse PEM private key: ${e.message}", e)
         }
     }
 
