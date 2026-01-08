@@ -47,8 +47,8 @@ dependencies {
     implementation(libs.nimbus.jose.jwt)
 
     // BouncyCastle (required by Nimbus for PEM parsing)
-    implementation("org.bouncycastle:bcprov-jdk18on:1.78")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.78")
+    implementation(libs.bcprov.jdk18on)
+    implementation(libs.bcpkix.jdk18on)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
