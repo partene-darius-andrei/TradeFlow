@@ -222,24 +222,49 @@ Hero Mode: 100%+ annually (unsustainable, likely luck)
 
 ### Immediate Additions
 
-#### 1. **Confidence Scoring**
+#### 1. **Confidence Scoring & Position Sizing**
 
 Add to domain models:
 ```kotlin
 // core/domain/src/main/kotlin/com/tradeflow/core/domain/model/Decision.kt
-data class Decision(
-    val action: Action,
-    val confidence: Double,  // NEW: 0.0 to 1.0
-    val reasoning: String,   // NEW: Why this decision
-    val timestamp: Instant
-) {
-    enum class Action { LONG, SHORT, HOLD }
+sealed class Decision {
+    abstract val confidence: Double  // 0.0 to 1.0 - drives position sizing
 
-    fun shouldExecute(): Boolean {
-        return confidence > 0.75 && action != Action.HOLD
+    data class Trend(
+        val stopLossPrice: Double,
+        val takeProfitPrice: Double,
+        val atr: Double,
+        override val confidence: Double  // Based on ADX strength + confirmations
+    ) : Decision()
+
+    data class Range(
+        val gridSpacing: Double,
+        val atr: Double,
+        override val confidence: Double  // Based on ADX weakness + confirmations
+    ) : Decision()
+}
+
+// Position sizing scales with confidence
+fun calculatePositionSize(
+    confidence: Double,
+    portfolioValue: Double
+): Double {
+    val baseSize = 0.02  // 2% base
+    val maxSize = 0.05   // 5% max
+    val minConfidence = 0.75
+
+    return when {
+        confidence < minConfidence -> 0.0  // Don't trade
+        else -> {
+            val scaledSize = baseSize + (maxSize - baseSize) *
+                ((confidence - minConfidence) / (1.0 - minConfidence))
+            portfolioValue * scaledSize
+        }
     }
 }
 ```
+
+**Key Insight from Polymarket:** High-conviction setups get larger allocations. If confidence scoring is accurate, returns scale dramatically.
 
 #### 2. **Trade Frequency Limits**
 
