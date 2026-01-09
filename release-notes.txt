@@ -1,7 +1,7 @@
-Version 1.6.0
+Version 1.7.0
 
-- Added intelligent trading decision engine with trend detection capabilities
-- Implemented technical indicators (SMA, ADX, ATR) for market analysis
-- Added regime-switching strategy that adapts to market conditions (trend/range/defense modes)
-- Enhanced trading logic with volatility-based position sizing and risk management
-- Improved market signal processing with anti-whipsaw protection
+- Added intelligent trading decision engine with automatic market trend detection
+- Implemented technical analysis indicators (Moving Averages, Trend Strength, Volatility)
+- Enhanced trading strategy with adaptive market mode switching (trend/range/defense)
+- Added smart position sizing based on market volatility conditions
+- Improved signal accuracy with anti-whipsaw protection to reduce false trades
