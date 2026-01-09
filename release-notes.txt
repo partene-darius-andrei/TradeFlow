@@ -1,7 +1,7 @@
-Version 1.5.5
+Version 1.7.0
 
-- Enhanced security key parsing with improved support for Coinbase CDP private key formats
-- Fixed JWT authentication issues that could cause connection failures
-- Improved error handling and debugging capabilities for API connections
-- Resolved duplicate navigation bar display issue for cleaner interface
-- Strengthened PEM key processing with better escape sequence handling
+- Added intelligent trading decision engine with automatic market trend detection
+- Implemented technical analysis indicators (Moving Averages, Trend Strength, Volatility)
+- Enhanced trading strategy with adaptive market mode switching (trend/range/defense)
+- Added smart position sizing based on market volatility conditions
+- Improved signal accuracy with anti-whipsaw protection to reduce false trades
