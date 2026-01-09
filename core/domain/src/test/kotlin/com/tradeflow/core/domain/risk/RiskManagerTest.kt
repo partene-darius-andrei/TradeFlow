@@ -27,14 +27,16 @@ class RiskManagerTest {
 
     private fun createTestPortfolio(
         usdBalance: BigDecimal = BigDecimal("500"),
-        btcBalance: BigDecimal = BigDecimal.ZERO
+        btcBalance: BigDecimal = BigDecimal.ZERO,
+        btcPrice: BigDecimal = BigDecimal("40000")
     ): Portfolio {
+        val totalEquity = usdBalance + (btcBalance * btcPrice)
         return Portfolio(
             balances = listOf(
                 Balance("USD", usdBalance, usdBalance),
                 Balance("BTC", btcBalance, btcBalance)
             ),
-            totalEquityUsd = usdBalance,
+            totalEquityUsd = totalEquity,
             timestamp = Instant.now()
         )
     }
