@@ -2,7 +2,8 @@ package com.dpart.tradeflow.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tradeflow.core.domain.repository.ExchangeRepository
+import com.tradeflow.core.domain.model.Portfolio
+import com.tradeflow.core.domain.usecase.UpdatePortfolioUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val repository: ExchangeRepository
+    private val updatePortfolioUseCase: UpdatePortfolioUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -28,25 +29,20 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            repository.getBalances()
-                .onSuccess { balances ->
-                    val btc = balances.find { it.currency == "BTC" }
-                    val usd = balances.find { it.currency == "USD" || it.currency == "USDC" }
-
-                    val totalValue = usd?.available ?: BigDecimal.ZERO
-
+            updatePortfolioUseCase.execute()
+                .onSuccess { portfolio ->
                     _uiState.update { it.copy(
                         isLoading = false,
-                        btcBalance = btc?.available ?: BigDecimal.ZERO,
-                        usdBalance = usd?.available ?: BigDecimal.ZERO,
-                        totalValue = totalValue
+                        btcBalance = portfolio.getBtcBalance(),
+                        usdBalance = portfolio.getUsdBalance(),
+                        totalValue = portfolio.totalEquityUsd
                     )}
                 }
                 .onFailure { error ->
                     _uiState.update { it.copy(
                         isLoading = false,
                         error = error.message ?: "Failed to load portfolio"
-                    )}
+                    ) }
                 }
         }
     }

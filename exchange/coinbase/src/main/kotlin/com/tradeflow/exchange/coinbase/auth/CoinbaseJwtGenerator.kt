@@ -6,9 +6,9 @@ import com.nimbusds.jose.crypto.ECDSASigner
 import com.nimbusds.jose.jwk.ECKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
-import com.tradeflow.core.domain.auth.AuthTokenProvider
-import com.tradeflow.core.domain.auth.CredentialStore
-import com.tradeflow.core.domain.error.ExchangeError
+import com.tradeflow.core.domain.model.AuthTokenProvider
+import com.tradeflow.core.domain.model.CredentialStore
+import com.tradeflow.core.domain.model.ExchangeError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.security.SecureRandom
@@ -46,11 +46,6 @@ class CoinbaseJwtGenerator @Inject constructor(
         )
     }
 
-    override fun invalidate() {
-        // No-op: JWTs are generated on-demand with short expiry (2 minutes)
-        // No caching needed
-    }
-
     private suspend fun generateJwt(
         apiKey: String,
         secret: String,
@@ -59,28 +54,22 @@ class CoinbaseJwtGenerator @Inject constructor(
         try {
             val now = Instant.now().epochSecond
 
-            // Build JWT header with nonce
             val header = JWSHeader.Builder(JWSAlgorithm.ES256)
                 .keyID(apiKey)
                 .customParam("nonce", generateNonce())
                 .build()
 
-            // Build JWT claims
             val claimsBuilder = JWTClaimsSet.Builder()
                 .issuer("cdp")
                 .subject(apiKey)
                 .claim("nbf", now)
-                .expirationTime(Date.from(Instant.ofEpochSecond(now + 120))) // 2 minutes
+                .expirationTime(Date.from(Instant.ofEpochSecond(now + 120)))
 
-            // Add URI claim only for REST API (not WebSocket)
             uri?.let { claimsBuilder.claim("uri", it) }
 
             val claims = claimsBuilder.build()
-
-            // Parse EC private key from PEM format
             val ecKey = parseECKey(secret)
 
-            // Sign JWT with ES256
             val signedJWT = SignedJWT(header, claims)
             val signer = ECDSASigner(ecKey)
             signedJWT.sign(signer)
@@ -93,14 +82,10 @@ class CoinbaseJwtGenerator @Inject constructor(
 
     private fun parseECKey(pemString: String): ECKey {
         try {
-            // Handle escaped newlines and normalize formatting
             val normalizedPem = pemString
                 .replace("\\n", "\n")
                 .trim()
-
-            // Use Nimbus library to parse PEM format EC key
-            val jwk = ECKey.parseFromPEMEncodedObjects(normalizedPem)
-            return jwk as ECKey
+            return ECKey.parseFromPEMEncodedObjects(normalizedPem) as ECKey
         } catch (e: Exception) {
             throw IllegalArgumentException("Failed to parse EC private key: ${e.message}", e)
         }

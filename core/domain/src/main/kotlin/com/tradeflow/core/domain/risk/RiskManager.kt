@@ -2,7 +2,6 @@ package com.tradeflow.core.domain.risk
 
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.model.Portfolio
-import com.tradeflow.core.domain.model.getBtcBalance
 import com.tradeflow.core.domain.risk.model.DrawdownStatus
 import com.tradeflow.core.domain.risk.model.PlaceOrderRequest
 import com.tradeflow.core.domain.risk.model.RiskCheck
@@ -19,7 +18,6 @@ class RiskManager @Inject constructor(
         portfolio: Portfolio,
         currentPrice: BigDecimal
     ): RiskCheck {
-        // Guard against division by zero - reject if portfolio has no equity
         if (portfolio.totalEquityUsd <= BigDecimal.ZERO) {
             return RiskCheck.Rejected("Cannot validate order: portfolio equity is zero or negative")
         }

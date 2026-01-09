@@ -1,4 +1,4 @@
-package com.tradeflow.core.domain.error
+package com.tradeflow.core.domain.model
 
 import java.math.BigDecimal
 

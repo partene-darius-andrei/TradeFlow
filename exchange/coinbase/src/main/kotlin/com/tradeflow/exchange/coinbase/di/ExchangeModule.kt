@@ -1,6 +1,6 @@
 package com.tradeflow.exchange.coinbase.di
 
-import com.tradeflow.core.domain.auth.AuthTokenProvider
+import com.tradeflow.core.domain.model.AuthTokenProvider
 import com.tradeflow.core.domain.repository.BracketOrderRepository
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.exchange.coinbase.api.CoinbaseApiClient

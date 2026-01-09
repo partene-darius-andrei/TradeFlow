@@ -1,4 +1,4 @@
-package com.tradeflow.core.domain.usecase.model
+package com.tradeflow.core.domain.model
 
 sealed class ExecutionResult {
     data class Success(val message: String) : ExecutionResult()

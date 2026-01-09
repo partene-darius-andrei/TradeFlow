@@ -1,6 +1,6 @@
 package com.tradeflow.exchange.coinbase.api
 
-import com.tradeflow.core.domain.auth.AuthTokenProvider
+import com.tradeflow.core.domain.model.AuthTokenProvider
 import com.tradeflow.exchange.coinbase.dto.AccountsResponseDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

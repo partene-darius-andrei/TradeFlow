@@ -1,6 +1,6 @@
 package com.tradeflow.exchange.coinbase.di
 
-import com.tradeflow.core.domain.auth.AuthTokenProvider
+import com.tradeflow.core.domain.model.AuthTokenProvider
 import com.tradeflow.exchange.coinbase.auth.CoinbaseJwtGenerator
 import dagger.Binds
 import dagger.Module

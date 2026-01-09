@@ -1,7 +1,7 @@
 package com.tradeflow.core.data.di
 
 import com.tradeflow.core.data.security.StaticCredentialStore
-import com.tradeflow.core.domain.auth.CredentialStore
+import com.tradeflow.core.domain.model.CredentialStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

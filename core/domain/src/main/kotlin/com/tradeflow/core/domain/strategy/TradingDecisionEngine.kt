@@ -1,8 +1,6 @@
 package com.tradeflow.core.domain.strategy
 
-import com.tradeflow.core.domain.indicator.ADXCalculator
-import com.tradeflow.core.domain.indicator.ATRCalculator
-import com.tradeflow.core.domain.indicator.SMACalculator
+import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
@@ -10,117 +8,37 @@ import java.math.BigDecimal
 import javax.inject.Inject
 
 class TradingDecisionEngine @Inject constructor(
-    private val smaCalculator: SMACalculator,
-    private val adxCalculator: ADXCalculator,
-    private val atrCalculator: ATRCalculator,
+    private val taService: TechnicalAnalysisService,
     private val config: StrategyConfig = StrategyConfig()
 ) : DecisionEngine {
 
-    // Thread-safe mutable state for hysteresis tracking
-    @Volatile private var currentMode: Mode = Mode.DEFENSE
-    @Volatile private var modeConfirmationCount: Int = 0
-    @Volatile private var candidateMode: Mode? = null
-
-    private enum class Mode {
-        DEFENSE, TREND, RANGE
-    }
-
-    /**
-     * Evaluates market conditions and returns a trading decision.
-     * Synchronized to ensure thread-safety when accessing mutable state.
-     */
-    @Synchronized
     override fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
-        require(candles.size >= config.smaPeriod) {
-            "Need at least ${config.smaPeriod} candles, got ${candles.size}"
+        if (candles.size < config.smaPeriod) {
+            return Decision.Wait("Not enough candles: ${candles.size}/${config.smaPeriod}")
         }
 
-        val sma200 = smaCalculator.calculate(candles, config.smaPeriod)
-        val adx = adxCalculator.calculate(candles, config.adxPeriod)
-        val atr = atrCalculator.calculate(candles, config.atrPeriod)
+        val indicators = taService.calculateAll(candles, config.smaPeriod, config.adxPeriod, config.atrPeriod)
 
-        if (currentPrice < sma200) {
-            resetHysteresis()
-            currentMode = Mode.DEFENSE
-            return Decision.Defense(
-                reason = "Price below SMA200 - capital preservation mode",
-                currentPrice = currentPrice,
-                sma200 = sma200
+        return when {
+            currentPrice < indicators.sma200 -> Decision.Defense(
+                "Price below SMA200", currentPrice, indicators.sma200
+            )
+            indicators.adx >= config.adxTrendThreshold -> Decision.Trend(
+                direction = OrderSide.BUY,
+                entryPrice = currentPrice,
+                stopLoss = currentPrice - (indicators.atr * config.stopLossAtrMultiplier),
+                takeProfit = currentPrice + (indicators.atr * config.takeProfitAtrMultiplier),
+                positionSize = currentPrice * config.trendPositionPercent,
+                adx = indicators.adx,
+                atr = indicators.atr
+            )
+            else -> Decision.Range(
+                gridSpacing = (indicators.atr * config.minGridSpacing).max(BigDecimal("0.01")),
+                levels = 5,
+                positionSizePerLevel = currentPrice * config.gridPositionPercentPerLevel,
+                adx = indicators.adx,
+                atr = indicators.atr
             )
         }
-
-        val desiredMode = when {
-            adx >= config.adxTrendThreshold -> Mode.TREND
-            adx <= config.adxRangeThreshold -> Mode.RANGE
-            else -> currentMode
-        }
-
-        if (desiredMode == currentMode) {
-            resetHysteresis()
-            return createDecisionForMode(currentMode, currentPrice, sma200, adx, atr)
-        }
-
-        if (candidateMode == null || candidateMode != desiredMode) {
-            candidateMode = desiredMode
-            modeConfirmationCount = 1
-        } else {
-            modeConfirmationCount++
-        }
-
-        if (modeConfirmationCount >= 3) {
-            currentMode = candidateMode!!
-            resetHysteresis()
-            return createDecisionForMode(currentMode, currentPrice, sma200, adx, atr)
-        }
-
-        return Decision.Wait(
-            reason = "Confirming mode switch from ${currentMode.name} to ${candidateMode?.name} ($modeConfirmationCount/3)"
-        )
-    }
-
-    private fun createDecisionForMode(
-        mode: Mode,
-        currentPrice: BigDecimal,
-        sma200: BigDecimal,
-        adx: Double,
-        atr: BigDecimal
-    ): Decision {
-        return when (mode) {
-            Mode.DEFENSE -> Decision.Defense(
-                reason = "Price above SMA200 but ADX neutral (${adx.toInt()}) - waiting for clear direction",
-                currentPrice = currentPrice,
-                sma200 = sma200
-            )
-            Mode.TREND -> {
-                val stopLoss = currentPrice - (atr * config.stopLossAtrMultiplier)
-                val takeProfit = currentPrice + (atr * config.takeProfitAtrMultiplier)
-                val positionSize = currentPrice * config.trendPositionPercent
-                Decision.Trend(
-                    direction = OrderSide.BUY,
-                    entryPrice = currentPrice,
-                    stopLoss = stopLoss,
-                    takeProfit = takeProfit,
-                    positionSize = positionSize,
-                    adx = adx,
-                    atr = atr
-                )
-            }
-            Mode.RANGE -> {
-                val gridSpacing = (atr * config.minGridSpacing).max(BigDecimal("0.01"))
-                val positionSizePerLevel = currentPrice * config.gridPositionPercentPerLevel
-                Decision.Range(
-                    gridSpacing = gridSpacing,
-                    levels = 5,
-                    positionSizePerLevel = positionSizePerLevel,
-                    adx = adx,
-                    atr = atr
-                )
-            }
-        }
-    }
-
-    private fun resetHysteresis() {
-        candidateMode = null
-        modeConfirmationCount = 0
     }
 }
