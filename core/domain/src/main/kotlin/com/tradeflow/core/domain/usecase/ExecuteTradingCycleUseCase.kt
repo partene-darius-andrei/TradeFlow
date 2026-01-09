@@ -1,7 +1,6 @@
 package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.model.Decision
-import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.core.domain.risk.RiskManager
 import com.tradeflow.core.domain.risk.model.DrawdownStatus
 import com.tradeflow.core.domain.strategy.DecisionEngine
@@ -11,7 +10,6 @@ import java.math.BigDecimal
 import javax.inject.Inject
 
 class ExecuteTradingCycleUseCase @Inject constructor(
-    private val exchangeRepository: ExchangeRepository,
     private val decisionEngine: DecisionEngine,
     private val riskManager: RiskManager,
     private val updatePortfolioUseCase: UpdatePortfolioUseCase,
