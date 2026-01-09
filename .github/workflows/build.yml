@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -28,23 +30,237 @@ jobs:
     - name: Create Firebase service account
       run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > app/tradeflow.json
 
-    - name: Build debug APK
-      id: build
+    - name: Check if this is a Claude fix attempt
+      id: check_fix
+      run: |
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        if [[ "$COMMIT_MSG" == *"[claude-fix]"* ]]; then
+          echo "is_fix_attempt=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_fix_attempt=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run unit tests and build
+      id: test_build
+      env:
+        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+      run: |
+        set +e
+        ./gradlew testDebugUnitTest assembleDebug 2>&1 | tee full-build-log.txt
+        BUILD_EXIT_CODE=${PIPESTATUS[0]}
+        echo "exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
+        exit $BUILD_EXIT_CODE
+      continue-on-error: true
+
+    - name: Analyze and fix failures with Claude
+      if: steps.test_build.outcome == 'failure' && steps.check_fix.outputs.is_fix_attempt == 'false'
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        echo "🤖 Build/tests failed. Calling Claude API to analyze and fix..."
+
+        # Extract last 500 lines of error log
+        tail -500 full-build-log.txt > error-log.txt
+
+        # Prepare prompt for Claude
+        cat > claude-prompt.txt << 'EOF'
+        You are an expert Android/Kotlin developer. The build/tests failed with the following error:
+
+        <error_log>
+        $(cat error-log.txt)
+        </error_log>
+
+        Analyze the error and provide a fix. Your response must be in this exact format:
+
+        <analysis>
+        Brief explanation of what went wrong
+        </analysis>
+
+        <files_to_modify>
+        file1.kt
+        file2.kt
+        </files_to_modify>
+
+        <fix>
+        Detailed step-by-step instructions to fix the issue, including exact code changes
+        </fix>
+
+        Be specific about file paths and exact code to change.
+        EOF
+
+        # Call Claude API
+        RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+          -H "Content-Type: application/json" \
+          -H "x-api-key: $ANTHROPIC_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -d '{
+            "model": "claude-sonnet-4-5-20250929",
+            "max_tokens": 4096,
+            "messages": [{
+              "role": "user",
+              "content": "'"$(cat claude-prompt.txt | sed 's/"/\\"/g' | tr '\n' ' ')"'"
+            }]
+          }')
+
+        echo "$RESPONSE" > claude-response.json
+
+        # Extract fix instructions
+        FIX_INSTRUCTIONS=$(echo "$RESPONSE" | jq -r '.content[0].text')
+        echo "$FIX_INSTRUCTIONS" > fix-instructions.txt
+
+        echo "📋 Claude's analysis and fix saved to fix-instructions.txt"
+        cat fix-instructions.txt
+
+    - name: Apply Claude's fix
+      if: steps.test_build.outcome == 'failure' && steps.check_fix.outputs.is_fix_attempt == 'false'
+      run: |
+        echo "🔧 Attempting to apply Claude's fix..."
+
+        # This is a simplified auto-fix attempt
+        # For now, just commit the analysis for Claude Code to handle
+        git config user.name "Claude CI"
+        git config user.email "ci@claude.ai"
+        git add fix-instructions.txt error-log.txt full-build-log.txt
+        git commit -m "[claude-fix] Build failed - Claude analysis attached
+
+        Exit code: ${{ steps.test_build.outputs.exit_code }}
+
+        See fix-instructions.txt for analysis and recommended fixes.
+        Full log: full-build-log.txt
+        Error excerpt: error-log.txt"
+
+        git push origin ${{ github.ref_name }}
+
+        echo "✅ Fix analysis committed. Pipeline will retrigger."
+        exit 1
+
+    - name: Update version and release notes with Claude
+      if: steps.test_build.outcome == 'success'
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        echo "📝 Tests passed! Updating version and release notes with Claude..."
+
+        # Get recent commits
+        git log -10 --pretty=format:"%h %s" > recent-commits.txt
+
+        # Read current version
+        CURRENT_VERSION=$(grep "versionName" app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
+        CURRENT_CODE=$(grep "versionCode" app/build.gradle.kts | sed -E 's/.*= ([0-9]+).*/\1/')
+
+        # Prepare prompt for Claude
+        cat > version-prompt.txt << EOF
+        You are managing version numbers for an Android trading app called TradeFlow.
+
+        Current version: $CURRENT_VERSION (code: $CURRENT_CODE)
+
+        Recent commits:
+        $(cat recent-commits.txt)
+
+        Based on these commits, determine:
+        1. Should version be bumped? (patch/minor/major/none)
+        2. New version number (semantic versioning: MAJOR.MINOR.PATCH)
+        3. New version code (increment by 1)
+        4. Brief release notes (2-3 bullet points)
+
+        Respond in this exact JSON format:
+        {
+          "bump": "patch|minor|major|none",
+          "new_version": "X.Y.Z",
+          "new_code": 123,
+          "release_notes": ["- Change 1", "- Change 2"]
+        }
+        EOF
+
+        # Call Claude API
+        RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+          -H "Content-Type: application/json" \
+          -H "x-api-key: $ANTHROPIC_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -d '{
+            "model": "claude-sonnet-4-5-20250929",
+            "max_tokens": 1024,
+            "messages": [{
+              "role": "user",
+              "content": "'"$(cat version-prompt.txt | sed 's/"/\\"/g' | tr '\n' ' ')"'"
+            }]
+          }')
+
+        echo "$RESPONSE" > version-response.json
+
+        # Extract version info
+        VERSION_JSON=$(echo "$RESPONSE" | jq -r '.content[0].text' | grep -oP '\{.*\}')
+        echo "$VERSION_JSON" > version-update.json
+
+        NEW_VERSION=$(echo "$VERSION_JSON" | jq -r '.new_version')
+        NEW_CODE=$(echo "$VERSION_JSON" | jq -r '.new_code')
+        BUMP_TYPE=$(echo "$VERSION_JSON" | jq -r '.bump')
+
+        if [ "$BUMP_TYPE" = "none" ]; then
+          echo "⏭️ No version bump needed"
+          echo "should_update=false" >> $GITHUB_OUTPUT
+        else
+          echo "📦 Bumping version: $CURRENT_VERSION → $NEW_VERSION (code: $CURRENT_CODE → $NEW_CODE)"
+
+          # Update app/build.gradle.kts
+          sed -i "s/versionName = \".*\"/versionName = \"$NEW_VERSION\"/" app/build.gradle.kts
+          sed -i "s/versionCode = [0-9]*/versionCode = $NEW_CODE/" app/build.gradle.kts
+
+          # Update docs/releases/current.md
+          mkdir -p docs/releases
+          echo "# Release $NEW_VERSION" > docs/releases/current.md
+          echo "" >> docs/releases/current.md
+          echo "**Build:** #${{ github.run_number }}" >> docs/releases/current.md
+          echo "**Date:** $(date +'%Y-%m-%d')" >> docs/releases/current.md
+          echo "" >> docs/releases/current.md
+          echo "## Changes" >> docs/releases/current.md
+          echo "$VERSION_JSON" | jq -r '.release_notes[]' >> docs/releases/current.md
+
+          echo "should_update=true" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Commit version update
+      if: steps.test_build.outcome == 'success'
+      run: |
+        SHOULD_UPDATE=$(grep "should_update=true" $GITHUB_OUTPUT || echo "false")
+
+        if [ "$SHOULD_UPDATE" = "should_update=true" ]; then
+          NEW_VERSION=$(grep "new_version=" $GITHUB_OUTPUT | cut -d'=' -f2)
+
+          git config user.name "Claude CI"
+          git config user.email "ci@claude.ai"
+          git add app/build.gradle.kts docs/releases/current.md
+          git commit -m "🔖 Bump version to $NEW_VERSION [skip ci]
+
+          Automated version bump by Claude based on recent commits.
+
+          See docs/releases/current.md for release notes."
+
+          git push origin ${{ github.ref_name }}
+
+          echo "✅ Version updated and committed"
+        else
+          echo "⏭️ No version update needed"
+        fi
+
+    - name: Build release APK
+      if: steps.test_build.outcome == 'success'
       env:
         COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
         COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
       run: ./gradlew assembleDebug
-      continue-on-error: true
 
     - name: Upload to Firebase App Distribution
-      if: steps.build.outcome == 'success'
+      if: steps.test_build.outcome == 'success'
       run: ./gradlew appDistributionUploadDebug
 
     - name: Cleanup credentials
       if: always()
       run: rm -f app/tradeflow.json
 
-    - name: Commit build result
+    - name: Commit build status
       if: always()
       run: |
         git config user.name "GitHub Actions"
@@ -52,27 +268,33 @@ jobs:
         git fetch origin ${{ github.ref_name }}
         git checkout ${{ github.ref_name }}
 
-        if [ "${{ steps.build.outcome }}" = "success" ]; then
+        if [ "${{ steps.test_build.outcome }}" = "success" ]; then
           echo "SUCCESS" > .build-status
-          rm -f build-log.txt
+          rm -f build-log.txt full-build-log.txt error-log.txt
+          git add .build-status
+          git commit -m "Build #${{ github.run_number }}: success [skip ci]" || true
         else
           echo "FAILURE" > .build-status
-          ./gradlew assembleDebug 2>&1 | tail -200 > build-log.txt || true
-          git add build-log.txt
+          # Error logs already committed in fix step if applicable
+          git add .build-status
+          git commit -m "Build #${{ github.run_number }}: failure [skip ci]" || true
         fi
 
-        git add .build-status
-        git commit -m "Build #${{ github.run_number }}: ${{ steps.build.outcome }}" || true
         git push origin ${{ github.ref_name }} || true
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
-      if: steps.build.outcome == 'success'
+      if: steps.test_build.outcome == 'success'
       with:
         name: debug-apk
         path: app/build/outputs/apk/debug/*.apk
         retention-days: 7
 
     - name: Fail if build failed
-      if: steps.build.outcome != 'success'
-      run: exit 1
+      if: steps.test_build.outcome != 'success'
+      run: |
+        if [ "${{ steps.check_fix.outputs.is_fix_attempt }}" = "true" ]; then
+          echo "❌ Build still failing after Claude fix attempt"
+          echo "🔍 Manual intervention required"
+        fi
+        exit 1
