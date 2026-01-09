@@ -73,23 +73,33 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     │   ├── Candle.kt                  ✅ OHLCV + Granularity enum (9 timeframes)
     │   ├── Order.kt                   ✅ Order model + Side/Type/Status enums
     │   ├── Decision.kt                ✅ Enhanced sealed class with technical indicators (Wait/Defense/Trend/Range)
-    │   ├── Portfolio.kt               ✅ Portfolio snapshot model
+    │   ├── Portfolio.kt               ✅ Portfolio snapshot model + utility extensions
     │   ├── Balance.kt                 ✅ Account balance model
     │   └── Ticker.kt                  ✅ Real-time price ticker
     ├── repository/
     │   ├── BracketOrderRepository.kt   ✅ Bracket order support interface
     │   ├── ExchangeRepository.kt       ✅ Core exchange operations (12 methods)
     │   └── ExchangeWebSocket.kt        ✅ Real-time data streams
-    └── strategy/ ← Ticket 15 COMPLETE ✅
-        ├── DecisionEngine.kt           ✅ Decision engine interface
-        ├── TradingDecisionEngine.kt    ✅ Complete regime-switching implementation with hysteresis
-        └── StrategyConfig.kt           ✅ Comprehensive strategy parameters
-
-🆕 TECHNICAL INDICATORS COMPLETE (v1.6.0):
-✅ core/domain/src/main/kotlin/com/tradeflow/core/domain/indicator/
-    ├── SMACalculator.kt                ✅ Simple Moving Average with ta4j integration
-    ├── ADXCalculator.kt                ✅ Average Directional Index with ta4j integration
-    └── ATRCalculator.kt                ✅ Average True Range with ta4j integration
+    ├── strategy/ ← Ticket 15 COMPLETE ✅
+    │   ├── DecisionEngine.kt           ✅ Decision engine interface
+    │   ├── TradingDecisionEngine.kt    ✅ Complete regime-switching implementation with hysteresis
+    │   └── StrategyConfig.kt           ✅ Comprehensive strategy parameters
+    ├── indicator/ ← NEW IN v1.6.0
+    │   ├── SMACalculator.kt            ✅ Simple Moving Average with ta4j integration
+    │   ├── ADXCalculator.kt            ✅ Average Directional Index with ta4j integration
+    │   └── ATRCalculator.kt            ✅ Average True Range with ta4j integration
+    ├── risk/
+    │   └── RiskManager.kt              ✅ Risk management interface with enhanced types
+    └── usecase/ ← NEW - Use Case Layer Implementation
+        ├── ExecuteDecisionUseCase.kt   ✅ Trading decision execution orchestrator
+        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management
+        ├── HandleEmergencyUseCase.kt   ✅ Emergency liquidation handler
+        ├── ManageGridOrdersUseCase.kt  ✅ Grid order management for range trading
+        ├── ManageOrdersUseCase.kt      ✅ Order lifecycle and reconciliation
+        ├── UpdatePortfolioUseCase.kt   ✅ Portfolio state updates
+        └── model/
+            ├── ExecutionResult.kt      ✅ Use case result types
+            └── TradingContext.kt       ✅ Trading context data model
 
 ✅ DATA LAYER COMPLETE:
 ✅ core/data/src/main/kotlin/com/tradeflow/core/data/
@@ -161,21 +171,47 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── CredentialsModule.kt            ✅ Provides credentials from BuildConfig
 ```
 
-### 🎉 Major Milestone: Core Trading Engine Complete (v1.6.0)
+### 🎉 Major Milestone: Complete Core Trading Logic (v1.6.0)
 
-**Phase 2 has been successfully completed with the implementation of the complete decision engine:**
+**Phase 2 has been successfully completed with comprehensive trading engine and use case implementation:**
 
-🆕 **Decision Engine Implementation (Ticket 15 - v1.6.0):**
-- ✅ Complete regime-switching decision engine with hysteresis logic
-- ✅ SMA(200) trend filter for bull/bear market detection
-- ✅ ADX(14) trend strength analysis (>25 = trending, <25 = ranging)
-- ✅ ATR(14) volatility-based position sizing and stop placement
-- ✅ 3-candle confirmation for mode switches (prevents whipsaws)
-- ✅ Support for all 4 trading modes: DEFENSE/TREND/RANGE/WAIT
+🆕 **Use Case Layer Implementation (NEW in v1.6.0):**
+- ✅ **ExecuteDecisionUseCase** - Complete decision execution orchestrator
+  - Handles all 4 trading modes (DEFENSE/TREND/RANGE/WAIT)
+  - Risk validation before order placement
+  - Bracket order support for trend trading
+  - Grid order management for range trading
+- ✅ **ExecuteTradingCycleUseCase** - Complete trading cycle orchestrator
+  - Portfolio updates with high water mark tracking
+  - Drawdown monitoring with emergency liquidation
+  - Strategy evaluation and execution
+  - Order reconciliation and management
+- ✅ **HandleEmergencyUseCase** - Emergency liquidation handler
+  - Cancel all open orders
+  - Market sell all BTC positions
+  - Complete portfolio liquidation
+- ✅ **ManageGridOrdersUseCase** - Grid trading implementation
+  - Dynamic grid spacing calculation
+  - Risk-validated position sizing
+  - Partial success handling
+  - Fee break-even validation (1.5% minimum spacing)
+- ✅ **ManageOrdersUseCase** - Order lifecycle management
+  - Stale order cancellation (48-hour timeout)
+  - Order reconciliation between local and exchange
+  - Status synchronization
+- ✅ **UpdatePortfolioUseCase** - Portfolio state management
+  - Real-time equity calculation
+  - Multi-currency balance handling
+  - Snapshot creation for tracking
 
-🆕 **Technical Indicators (NEW):**
+🆕 **Enhanced Domain Models:**
+- ✅ **ExecutionResult** sealed class for use case results
+- ✅ **TradingContext** data model for strategy execution
+- ✅ **Portfolio utility extensions** (getBtcBalance function)
+
+🆕 **Technical Indicators Complete:**
 - ✅ SMACalculator with ta4j BaseBarSeries integration
-- ✅ ADXCalculator for trend strength measurement
+- ✅ ADXCalculator for trend strength measurement  
 - ✅ ATRCalculator for volatility-based risk management
 - ✅ Complete error handling and validation
 
@@ -187,196 +223,129 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 🆕 **Comprehensive Unit Testing:**
 - ✅ MockK integration for fast, isolated testing
-- ✅ Edge case coverage (insufficient candles, mode switching, hysteresis)
-- ✅ Validation testing (grid spacing, stop-loss placement)
-- ✅ All decision paths tested with synthetic candle data
+- ✅ ExecuteDecisionUseCaseTest with all mode coverage
+- ✅ HandleEmergencyUseCaseTest with failure scenarios
+- ✅ ManageGridOrdersUseCaseTest with risk validation
+- ✅ Edge case coverage and error handling validation
 
-### Current App Version
+### What's MISSING (Phase 3 Implementation)
 
-**Version:** 1.6.0 (latest stable with complete decision engine)
-**Key Features:**
-- ✅ Complete decision engine with regime switching
-- ✅ Technical indicator calculations using ta4j library
-- ✅ Hysteresis logic to prevent false signals and overtrading
-- ✅ Support for all 4 trading modes with proper validation
-- ✅ Enhanced testing capabilities with MockK and Kotlin Test
-- ✅ Comprehensive strategy configuration system
+**Next critical priorities for live trading capability:**
 
-### Tech Stack Status
+❌ **Full REST API Client** (Ticket 13)
+- Complete CoinbaseRepository implementation
+- Order placement methods (bracket, limit, market)
+- Candle data fetching (handle 350-candle limit)
+- Product queries and order management
 
-| Component | Version | Status | Usage |
-|-----------|---------|--------|-------|
-| **Kotlin** | 2.3.0 | ✅ Active | Language |
-| **Compose BOM** | 2025.12.01 | ✅ Active | UI framework |
-| **Hilt** | 2.57.2 | ✅ Active | DI |
-| **Room** | 2.8.4 | ✅ Active | Database (4 entities + 4 DAOs) |
-| **Ktor** | 3.3.3 | ✅ Active | HTTP client (auth complete) |
-| **Timber** | 5.0.1 | ✅ Active | Logging |
-| **ta4j-core** | 0.16 | ✅ Active | Technical indicators (SMA/ADX/ATR) |
-| **nimbus-jose-jwt** | 9.47 | ✅ Active | ES256 JWT signing |
-| **BouncyCastle** | 1.78 | ✅ Active | Advanced PEM key parsing |
-| **mockk** | 1.14.7 | ✅ Active | Unit testing with mocks |
-| **kotlin-test** | 2.1.0 | ✅ Active | Testing framework |
-| **security-crypto** | 1.1.0 | ✅ Active | Credential encryption |
-| **work-runtime-ktx** | 2.11.0 | ✅ Ready | Background tasks |
-| **datastore-preferences** | 1.2.0 | ✅ Ready | Settings storage |
-| **Firebase BOM** | 34.7.0 | ✅ Active | Analytics + Crashlytics |
+❌ **WebSocket Client** (Ticket 14)  
+- Real-time price feeds
+- Order status updates
+- Connection management with auto-reconnect
 
-### Dependencies Status
+❌ **Risk Manager Implementation** (Ticket 16)
+- Position sizing calculations
+- Drawdown monitoring
+- Risk validation for orders
 
-| Status | Count | Description |
-|--------|-------|-------------|
-| ✅ **Active** | 12 | Currently used in implemented code |
-| ⏳ **Ready** | 2 | Configured, awaiting implementation |
+❌ **Trading Service** (Ticket 17)
+- 24/7 foreground service
+- Strategy loop orchestration
+- Background execution management
 
 ---
 
-## 🚦 What's NEXT (Phase 3)
+## 🔄 Development Workflow
 
-### Phase 3: API Integration & Service Implementation
-
-**Goal:** Connect decision engine to live trading
-
-| Priority | Ticket | Component | Description |
-|----------|--------|-----------|-------------|
-| **HIGH** | 13 | **Full REST API Client** | Order placement, candle fetching, product queries |
-| **HIGH** | 14 | **WebSocket Client** | Real-time price feeds, order status updates |
-| **HIGH** | 16 | **Risk Manager** | Position sizing, drawdown monitoring, emergency stops |
-| **MEDIUM** | 17 | **Trading Service** | 24/7 foreground service with trading loop |
-| **LOW** | 19 | **Integration Tests** | End-to-end testing with small real trades |
-
-### Critical Path to First Live Trade
-
-1. ✅ ~~Decision Engine~~ - COMPLETE (v1.6.0)
-2. **REST API Client** (Ticket 13) ← IMMEDIATE NEXT
-3. **WebSocket Client** (Ticket 14)
-4. **Risk Manager** (Ticket 16)
-5. **Trading Service** (Ticket 17)
-
-**Estimated completion:** 3-4 weeks at current pace
-
----
-
-## 🏗️ Module Status
-
-| Module | Purpose | Status | Completion |
-|--------|---------|--------|-----------|
-| `:app` | DI wiring + credential injection | ✅ Complete | 100% |
-| `:core:domain` | Pure Kotlin interfaces + models + **strategy** | ✅ Complete | 100% |
-| `:core:data` | Room database + security | ✅ Complete | 100% |
-| `:core:ui` | Shared Compose components | ✅ Complete | 100% |
-| `:exchange:coinbase` | Coinbase API integration | 🟡 Partial | 40% (auth ✅, REST ❌, WS ❌) |
-
-**Legend:**
-- ✅ Complete (90-100%)
-- 🟡 In Progress (25-89%) 
-- ❌ Not Started (0-24%)
-
----
-
-## 📈 Progress Summary
-
-### Overall Progress: 60% Complete
-
-```
-Phase 1:  ████████████████████ 100% ✅ COMPLETE
-Phase 2:  ████████████████████ 100% ✅ COMPLETE  
-Phase 3:  ████░░░░░░░░░░░░░░░░  20% ← YOU ARE HERE
-
-Total Tickets: 11/18 complete (61%)
-```
-
-### Phase Breakdown
-
-| Phase | Focus | Status | Tickets |
-|-------|-------|--------|---------|
-| **Phase 1** | Foundation & Auth | ✅ Complete | 4/4 |
-| **Phase 2** | Trading Logic | ✅ Complete | 3/3 |
-| **Phase 3** | API & Service | 🟡 In Progress | 1/5 |
-
----
-
-## 🔧 Development Workflow
-
-### Working with GitHub Actions CI
-
-**Pattern optimized for Claude Code:**
-
+### Git Workflow
 ```bash
-# 1. Implement feature
+# Create feature branch from main
+git checkout main
+git pull origin main
+git checkout -b claude/feature-name
+
+# Make changes, commit frequently
 git add .
-git commit -m "Implement feature X"
-git push
+git commit -m "feat: implement feature X"
 
-# 2. GitHub Actions automatically:
-# - Injects Coinbase credentials from secrets
-# - Builds APK with embedded credentials  
-# - Runs unit tests
-# - Updates documentation via Claude API
-# - Commits results back to branch
+# Push for CI build
+git push origin claude/feature-name
 
-# 3. Check results
-git pull
-cat .build-status  # SUCCESS or FAILURE
-```
-
-**No local Gradle execution needed** - perfect for mobile development with Claude Code.
-
-### Quick Commands
-
-```bash
 # Check build status
-cat .build-status
+cat .build-status  # SUCCESS or FAILURE
+cat build-log.txt  # Error details if failed
 
-# View build log if failure
-cat build-log.txt
-
-# Run specific tests (when testing locally)
-./gradlew :core:domain:test --tests="*TradingDecisionEngineTest*"
-
-# Clean build
-./gradlew clean
+# Create PR when ready
+gh pr create --title "Feature: X" --body "Implements feature X"
 ```
 
-### Architecture Principles
+### CI/CD Pipeline
 
-1. **Domain-first:** Core logic in pure Kotlin (no Android deps)
-2. **Interface-driven:** Repository pattern isolates Coinbase code
-3. **Testable:** Unit tests run without Android SDK
-4. **Simple:** No complex ML or over-engineering
-5. **Safe:** Multiple safety layers (risk manager, emergency stops)
+**GitHub Actions builds automatically on push to `claude/*` or `main`:**
+
+1. ✅ Injects Coinbase credentials from GitHub secrets
+2. ✅ Builds APK with embedded credentials
+3. ✅ Uploads to Firebase App Distribution
+4. ✅ Commits build status back (`.build-status` + `build-log.txt`)
+5. ✅ Updates documentation automatically
+
+**Auto-documentation workflow:**
+1. ✅ Analyzes code changes
+2. ✅ Updates CLAUDE.md and docs/ using Claude API
+3. ✅ Commits documentation updates back to branch
+
+### Dependencies
+
+**Active Libraries (v1.6.0):**
+- ✅ **ta4j-core 0.16** - Technical indicators (SMA/ADX/ATR) ✅ ACTIVE
+- ✅ **mockk 1.14.7** - Unit testing with mocks ✅ ACTIVE  
+- ✅ **kotlin-test 2.1.0** - Testing framework ✅ ACTIVE
+- ✅ **nimbus-jose-jwt 9.47** - ES256 JWT signing ✅ ACTIVE
+- ✅ **BouncyCastle 1.78** - Advanced PEM key parsing ✅ ACTIVE
+- ✅ Kotlin 2.3.0, Compose BOM 2025.12.01, Hilt 2.57.2, Room 2.8.4, Ktor 3.3.3
+
+**Module Structure:**
+```
+✅ :app - Application entry point + DI wiring (100% complete)
+✅ :core:domain - Pure Kotlin business logic (100% complete with use cases)
+✅ :core:data - Room database + security (100% complete)  
+✅ :core:ui - Shared Compose components (100% complete)
+🟡 :exchange:coinbase - Coinbase API (40% - auth complete, REST/WS pending)
+```
 
 ---
 
-## 💡 Key Implementation Notes
+## 🎯 Next Steps
 
-### Trading Strategy (Implemented in v1.6.0)
+### Phase 3: API Integration & Service (Target: 2-3 weeks)
 
-```kotlin
-// Core decision logic
-when {
-    currentPrice < sma200 -> Decision.Defense()      // Safety first
-    adx > 25.0 && confirmed -> Decision.Trend()     // Strong trend  
-    adx < 25.0 && confirmed -> Decision.Range()     // Weak trend (grid)
-    else -> Decision.Wait()                          // Need confirmation
-}
-```
+1. **Ticket 13: Full REST API Client** (HIGH)
+   - Complete CoinbaseRepository with order placement
+   - Candle fetching with TWO_HOUR aggregation
+   - Error handling and rate limiting
 
-### Risk Management (Next Phase)
+2. **Ticket 14: WebSocket Client** (HIGH)
+   - Real-time ticker and order updates
+   - Auto-reconnect and health monitoring
 
-- **Position sizing:** 2% risk per trade (max $10 loss on $500 account)
-- **Drawdown limit:** 15% from high-water mark (emergency liquidation)
-- **Grid spacing:** Minimum 1.5% (fee break-even at intro tier)
-- **Stop-losses:** 3x ATR distance (volatility-adjusted)
+3. **Ticket 16: Risk Manager** (MEDIUM)
+   - Position sizing implementation
+   - Drawdown calculation and emergency triggers
 
-### Testing Strategy
+4. **Ticket 17: Trading Service** (HIGH)
+   - 24/7 foreground service with use case orchestration
+   - Battery optimization and doze survival
 
-- **Unit tests:** Fast, isolated testing with MockK
-- **Integration tests:** Small real trades ($10-20) to verify API
-- **Paper trading:** Not possible (Coinbase sandbox returns static data)
-- **Monitoring:** Comprehensive logging + Firebase Crashlytics
+### Phase 4: Testing & Validation
 
----
+5. **Ticket 19: Integration Tests** (MEDIUM)
+   - End-to-end testing with small real trades
+   - API validation and error handling
 
-This document serves as the single source of truth for TradeFlow's current state and next steps. All major architectural decisions, implementation status, and development workflows are captured here for efficient Claude Code development.
+6. **Ticket 20: MVP Milestone** (HIGH)
+   - 24-hour live system validation
+   - Complete trading cycle verification
 
+**Target Timeline:** 4-6 weeks to first live trade capability
+
+**Success Criteria:** Autonomous trading bot that can run 24/7 with $100-500 test capital, making 1-3 trades per day with proper risk management.
