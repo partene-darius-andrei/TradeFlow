@@ -266,16 +266,15 @@ app/src/main/java/com/dpart/tradeflow/
 
 ### 🎯 Phase 2: Core Trading Logic (NEXT - 0% Complete)
 
-**Goal:** Implement the decision-making brain and risk management
+**Goal:** Implement the complete trading system - decision engine, risk management, and full API integration
 
-**Priority Order:**
-1. **Decision Engine** (HIGH) - The core algorithm that determines DEFENSE/TREND/RANGE modes
-2. **Risk Manager** (HIGH) - Position sizing, stop losses, drawdown limits
+**Architecture Note:** App runs in FOREGROUND 24/7 - high process priority, no service needed. Trading loop runs as coroutine in ViewModel/repository.
 
 **Phase 2 Tickets:**
 | Ticket | Component | Status | Effort | Description |
 |--------|-----------|--------|--------|-------------|
 | **13** | **Full REST API Client** | ❌ TODO | Large | Complete Coinbase REST API (candles, orders, market data) |
+| **14** | **WebSocket Client** | ❌ TODO | Large | Real-time price feeds, order updates, connection management |
 | **15** | **Decision Engine** | ❌ TODO | Large | SMA(200), ADX(14), ATR(14) + regime switching with 3-candle hysteresis |
 | **16** | **Risk Manager** | ❌ TODO | Medium | Position sizing (1-2% risk), drawdown monitoring (15% stop), portfolio tracking |
 
@@ -284,61 +283,27 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ Hysteresis prevents rapid mode switching (requires 3 consecutive candles for confirmation)
 - ✅ Risk manager enforces 1-2% risk per trade, 15% portfolio drawdown limit
 - ✅ Unit tests validate all regime switching logic with historical data
+- ✅ Can place market, limit, and bracket orders via REST API
+- ✅ Real-time price updates via WebSocket
+- ✅ Historical candle data fetching (350 H4 candles for SMA200)
+- ✅ Order status tracking and updates
+- ✅ Trading loop executes automatically every 15 minutes (foreground coroutine)
 
-**Estimated Time:** 2-3 weeks
+**Estimated Time:** 4-6 weeks
 
 ---
 
-### Phase 3: Full API Integration (0% Complete)
+### Phase 3: Testing & MVP (0% Complete)
 
-**Goal:** Complete Coinbase REST API and WebSocket integration
+**Goal:** Validate system works end-to-end with real trading
 
 **Phase 3 Tickets:**
 | Ticket | Component | Status | Effort | Description |
 |--------|-----------|--------|--------|-------------|
-| **08** | **Full REST API Client** | ❌ TODO | Large | Order placement, candles, market data, order management |
-| **09** | **WebSocket Client** | ❌ TODO | Large | Real-time price feeds, order updates, connection management |
-| **10** | **Market Data Integration** | ❌ TODO | Medium | Candle fetching, price monitoring, data storage |
+| **19** | **Integration Tests** | ❌ TODO | Medium | E2E testing with live Coinbase API |
+| **20** | **MVP Milestone** | ❌ TODO | Large | Complete validation and first real trades |
 
-**Dependencies:** Requires Phase 2 (Decision Engine + Risk Manager) complete
-
-**Success Criteria:**
-- ✅ Can place market, limit, and bracket orders
-- ✅ Real-time price updates via WebSocket
-- ✅ Historical candle data fetching (350 H4 candles for SMA200)
-- ✅ Order status tracking and updates
-
-**Estimated Time:** 3-4 weeks
-
----
-
-### Phase 4: Trading Service (0% Complete)
-
-**Goal:** 24/7 automated trading execution
-
-**Phase 4 Tickets:**
-| Ticket | Component | Status | Effort | Description |
-|--------|-----------|--------|--------|-------------|
-| **15** | **Trading Service** | ❌ TODO | Large | Foreground service with 15-minute trading loop |
-| **16** | **Battery Optimization** | ❌ TODO | Medium | Doze mode survival, wake locks, service persistence |
-
-**Dependencies:** Requires Phase 2 & 3 complete
-
-**Success Criteria:**
-- ✅ Service runs 24/7 without interruption
-- ✅ Trading decisions executed automatically every 15 minutes
-- ✅ Survives device sleep, battery optimization, app switching
-- ✅ Emergency stop on 15% drawdown
-
-**Estimated Time:** 2-3 weeks
-
----
-
-### Phase 5: Testing & MVP (0% Complete)
-
-**Goal:** Validate system works end-to-end
-
-**Phase 5 Components:**
+**Phase 3 Components:**
 - Integration testing with live Coinbase API
 - Paper trading validation (small amounts)
 - Real trade testing ($10-50 positions)
@@ -358,24 +323,26 @@ app/src/main/java/com/dpart/tradeflow/
 ## 📊 Current Progress Summary
 
 ```
-Phase 1 (Coinbase Integration): ████████████████████ 100% ✅ COMPLETE
-Phase 2 (Trading Logic):        ░░░░░░░░░░░░░░░░░░░░   0% ← YOU ARE HERE
-Phase 3 (Full API):             ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 4 (Trading Service):      ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 5 (Testing & MVP):        ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 1 (Foundation + UI): ████████████████████ 100% ✅ COMPLETE
+Phase 2 (Core Trading):    ░░░░░░░░░░░░░░░░░░░░   0% ← YOU ARE HERE
+Phase 3 (Testing & MVP):   ░░░░░░░░░░░░░░░░░░░░   0%
 
-Overall Progress: 1/5 phases (20%)
+Overall Progress: 1/3 phases (33%)
 ```
+
+**Architecture:** Foreground app (no service) - high process priority, trading loop as coroutine
 
 ### Critical Path to MVP
 
-**Next 4 Tickets (Must complete in order):**
+**Next 6 Tickets (Recommended order):**
 1. ❌ **Ticket 15: Decision Engine** ← IMMEDIATE NEXT STEP
 2. ❌ **Ticket 16: Risk Manager**
-3. ❌ **Ticket 13: Full REST API Client**
-4. ❌ **Ticket 17: Trading Service**
+3. ❌ **Ticket 13: Full REST API Client** (orders, candles)
+4. ❌ **Ticket 14: WebSocket Client** (real-time prices)
+5. ❌ **Ticket 19: Integration Tests**
+6. ❌ **Ticket 20: MVP Milestone** (first real trades)
 
-**Estimated Time to MVP:** 8-12 weeks
+**Estimated Time to MVP:** 6-9 weeks
 
 ---
 

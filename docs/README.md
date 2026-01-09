@@ -84,9 +84,10 @@ tickets/
 | Phase | Tickets | Description |
 |-------|---------|-------------|
 | **Phase 1** | 00-11 | Foundation + UI + Coinbase Integration ✅ COMPLETE |
-| **Phase 2** | 13, 15-16 | Core Trading Logic (REST API, Decision Engine, Risk Manager) |
-| **Phase 3** | 17-18 | Trading Service (foreground service, battery optimization) |
-| **Phase 4** | 19-20 | Testing & MVP Validation |
+| **Phase 2** | 13-16 | Core Trading Logic (REST API, WebSocket, Decision Engine, Risk Manager) |
+| **Phase 3** | 19-20 | Testing & MVP Validation |
+
+**Architecture:** Foreground app (no service needed) - high process priority, trading loop as coroutine
 
 ### Detailed Ticket Mapping
 
@@ -107,17 +108,18 @@ tickets/
 - 11: Settings Screen Skeleton → `⚙️ Settings Screen`
 
 **🎯 Phase 2: Core Trading Logic (NEXT)**
-- 13: Full REST API Client → `🟡 COINBASE Complete REST API`
+- 13: Full REST API Client → `🟡 COINBASE Complete REST API` (orders, candles)
+- 14: WebSocket Client → `🟡 COINBASE Real-time Feeds`
 - 15: Decision Engine → `🧠 DOMAIN Decision Engine` (SMA/ADX/ATR)
 - 16: Risk Manager → `🚨 DOMAIN Risk Manager` (Position sizing, stops)
 
-**Phase 3: Trading Service**
-- 17: Trading Service → `⚡ SERVICE Trading Foreground Service`
-- 18: Battery Optimization → `🔋 SERVICE Battery Optimization & Doze`
-
-**Phase 4: Testing & Validation**
+**Phase 3: Testing & Validation**
 - 19: Integration Tests → `🧪 TEST Integration Tests`
 - 20: MVP Milestone → `🚀 Milestone MVP Ready for Testing`
+
+**🗄️ Archived (Not needed):**
+- 17: Trading Service → Foreground app doesn't need service
+- 18: Battery Optimization → Different concerns for foreground app
 
 ### Ticket Organization
 

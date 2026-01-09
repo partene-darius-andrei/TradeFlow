@@ -200,11 +200,13 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Dashboard screen - Ticket 10 ✅ DONE (with enhanced real data + professional error handling)
 ✅ Coinbase API Integration - Phase 1 ✅ COMPLETE (accounts endpoint working)
 
-❌ NEXT PRIORITIES:
-13. Full REST API Client - Complete Coinbase implementation (candles, orders, market data)
+❌ NEXT PRIORITIES (Phase 2 - Core Trading):
 15. Decision Engine - SMA/ADX/ATR indicators + regime switching logic
 16. Risk Manager - Position sizing, drawdown limits, emergency stop
-17. Trading Service - 24/7 background execution with foreground service
+13. Full REST API Client - Complete Coinbase implementation (candles, orders, market data)
+14. WebSocket Client - Real-time price feeds
+
+**Architecture Note:** App runs in FOREGROUND 24/7 (high process priority, no service needed). Trading loop runs as coroutine in ViewModel/repository.
 ```
 
 ---
@@ -242,7 +244,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 | Component | Library | Version | Status |
 |-----------|---------|---------|---------|
-| **Background Work** | work-runtime-ktx | 2.10.0 | ⚠️ Ready (pending trading service) |
+| **Background Work** | work-runtime-ktx | 2.10.0 | ⚠️ Ready (optional - for periodic tasks) |
 | **Settings Storage** | datastore-preferences | 1.1.1 | ⚠️ Ready (pending settings) |
 | **Charts** | Vico | 2.4.0 | ⚠️ Ready (pending advanced UI) |
 

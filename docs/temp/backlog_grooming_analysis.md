@@ -7,7 +7,7 @@
 
 ## Decision Matrix
 
-### ✅ KEEP IN BACKLOG (8 tickets) - Valid future work
+### ✅ KEEP IN BACKLOG (6 tickets) - Valid future work
 
 | Ticket | Rationale |
 |--------|-----------|
@@ -15,10 +15,17 @@
 | **14-websocket-client.md** | Phase 2 - Real-time price feeds (not yet implemented) |
 | **15-decision-engine.md** | Phase 2 - IMMEDIATE NEXT (SMA/ADX/ATR logic) |
 | **16-risk-manager.md** | Phase 2 - Position sizing, drawdown tracking |
-| **17-trading-service.md** | Phase 3 - Foreground service for 24/7 trading |
-| **18-battery-optimization.md** | Phase 3 - Doze mode, wake locks |
-| **19-integration-tests.md** | Phase 4 - E2E testing with live API |
-| **20-mvp-milestone.md** | Phase 4 - Final validation milestone |
+| **19-integration-tests.md** | Phase 3 - E2E testing with live API |
+| **20-mvp-milestone.md** | Phase 3 - Final validation milestone |
+
+### 🗄️ ARCHIVED - Service tickets (NOT NEEDED)
+
+| Ticket | Rationale |
+|--------|-----------|
+| **17-trading-service.md** | App runs FOREGROUND 24/7 = high process priority, no service needed |
+| **18-battery-optimization.md** | Different concerns for foreground app (keep screen on, etc.) |
+
+**Architecture Decision:** Foreground app with trading loop as coroutine is simpler and sufficient. No service lifecycle complexity needed.
 
 ---
 
@@ -44,7 +51,7 @@
 
 ---
 
-### 🗄️ ARCHIVE - Duplicates/Superseded (10 tickets)
+### 🗄️ ARCHIVE - Duplicates/Superseded/Not Needed (12 tickets)
 
 | Ticket | Reason | Archive Action |
 |--------|--------|----------------|
@@ -77,13 +84,15 @@
 Current Backlog: 36 tickets
 
 Actions:
-- KEEP in backlog: 8 tickets (Phase 2-4 roadmap)
+- KEEP in backlog: 6 tickets (Phase 2-3 roadmap)
 - MOVE to done/: 15 tickets (implemented)
-- MOVE to archived/: 10 tickets (duplicates/superseded)
+- MOVE to archived/: 12 tickets (duplicates/superseded/not needed)
 - KEEP as reference: 3 tickets (future/optional)
 
-After grooming: 11 tickets in backlog (8 active + 3 reference)
+After grooming: 9 tickets in backlog (6 active + 3 reference)
 ```
+
+**Architecture Simplification:** Removed service tickets (17, 18) - foreground app doesn't need service
 
 ---
 
@@ -114,22 +123,23 @@ After grooming: 11 tickets in backlog (8 active + 3 reference)
 - [ ] Full REST API (ticket 13)
 - [ ] WebSocket Client (ticket 14)
 
-### ❌ Phase 3: Trading Service (0% Complete)
-- [ ] Trading Service (ticket 17)
-- [ ] Battery Optimization (ticket 18)
-
-### ❌ Phase 4: Testing & MVP (0% Complete)
+### ❌ Phase 3: Testing & MVP (0% Complete)
 - [ ] Integration Tests (ticket 19)
 - [ ] MVP Milestone (ticket 20)
+
+### 🗄️ Archived: Not Needed (Foreground App Architecture)
+- [x] Trading Service (ticket 17) - App runs foreground, no service needed
+- [x] Battery Optimization (ticket 18) - Different concerns for foreground
 
 ---
 
 ## Recommendations
 
 1. **Execute moves immediately** - Clear separation helps focus
-2. **Keep backlog lean** - Only 11 tickets remain (down from 36)
+2. **Keep backlog lean** - Only 9 tickets remain (down from 36)
 3. **Next priority** - Ticket 15 (Decision Engine) is unblocked and ready
 4. **UseCases layer** - Defer until proven necessary (YAGNI principle)
+5. **Architecture simplification** - Foreground app eliminates service complexity
 
 ---
 
