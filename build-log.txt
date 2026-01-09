@@ -62,13 +62,12 @@ Detected use of deprecated firebaseAppDistribution { } block. If you used this b
 > Task :app:mergeDebugResources UP-TO-DATE
 > Task :app:packageDebugResources
 
-> Task :core:domain:compileKotlin
+> Task :core:domain:compileKotlin FAILED
 e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/RiskManager.kt:11:14 Unresolved reference 'inject'.
 e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/RiskManager.kt:13:20 Unresolved reference 'Inject'.
 
-> Task :core:domain:compileKotlin FAILED
 > Task :app:parseDebugLocalResources
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1767954685306.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1767955095244.json
 
 FAILURE: Build failed with an exception.
 
@@ -83,5 +82,5 @@ Execution failed for task ':core:domain:compileKotlin'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 7s
+BUILD FAILED in 6s
 42 actionable tasks: 4 executed, 38 up-to-date
