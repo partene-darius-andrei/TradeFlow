@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
-**Last Updated:** 2026-01-08
-**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.3)
+**Last Updated:** 2026-01-09
+**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.5)
 **Current Build:** #31 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -49,7 +49,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phases 0A, 0B, & 1: COMPLETE - v1.5.3)
+### What EXISTS (Phases 0A, 0B, & 1: COMPLETE - v1.5.5)
 
 ```
 ✅ Modern Android app structure
@@ -99,7 +99,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── di/
         └── SecurityModule.kt           ✅ Static credential DI binding
 
-🆕 COINBASE INTEGRATION COMPLETE (v1.5.3):
+🆕 COINBASE INTEGRATION COMPLETE (v1.5.5):
 ✅ exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/
     ├── auth/
     │   └── CoinbaseJwtGenerator.kt     ✅ ES256 JWT with ADVANCED BouncyCastle PEM parsing + enhanced escape handling + comprehensive error recovery
@@ -126,7 +126,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── extension/
         └── BigDecimalExt.kt           ✅ Currency/percentage formatting
 
-🆕 PRESENTATION LAYER WITH ENHANCED LIVE DATA (v1.5.3):
+🆕 PRESENTATION LAYER WITH ENHANCED LIVE DATA (v1.5.5):
 ✅ app/src/main/java/com/dpart/tradeflow/
     ├── navigation/
     │   └── AppNavHost.kt               ✅ Complete navigation with CENTRALIZED TopAppBar ("TradeFlow" title)
@@ -145,12 +145,12 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Android 8.0+ adaptive icon support
 ✅ Proper launcher configuration
 
-🆕 ENHANCED CREDENTIALS SYSTEM (v1.5.3):
+🆕 ENHANCED CREDENTIALS SYSTEM (v1.5.5):
 ✅ app/build.gradle.kts                 ✅ ADVANCED build-time credential injection with ENHANCED PEM key escaping + security improvements
 ✅ app/src/main/java/com/dpart/tradeflow/di/
     └── CredentialsModule.kt            ✅ Provides credentials from BuildConfig
 
-🆕 COINBASE API DEPENDENCIES (v1.5.3):
+🆕 COINBASE API DEPENDENCIES (v1.5.5):
 ✅ BouncyCastle PEM key parsing libraries (bcprov-jdk18on, bcpkix-jdk18on) 1.78 ✅ ACTIVE
 ✅ ENHANCED security key parsing with improved support for Coinbase CDP private key formats
 ✅ JWT authentication issues RESOLVED with better connection failure handling
@@ -159,11 +159,11 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Enhanced error handling and debugging capabilities for API connections
 ```
 
-### Major Milestone: Enhanced Security & Reliability (v1.5.3)
+### Major Milestone: Enhanced Security & Reliability (v1.5.5)
 
 **Latest stability and security enhancements now live in the app:**
 
-✅ **Enhanced Security Key Parsing (v1.5.3):**
+✅ **Enhanced Security Key Parsing (v1.5.5):**
 - STRENGTHENED support for Coinbase CDP private key formats
 - JWT authentication issues RESOLVED that could cause connection failures
 - Improved error handling and debugging capabilities for API connections
@@ -183,7 +183,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ### Current App Version
 
-**Version:** 1.5.3 (latest stable)
+**Version:** 1.5.5 (latest stable)
 **Key Improvements:**
 - Enhanced security key parsing with improved support for Coinbase CDP private key formats
 - Fixed JWT authentication issues that could cause connection failures
@@ -202,9 +202,9 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ❌ NEXT PRIORITIES:
 13. Full REST API Client - Complete Coinbase implementation (candles, orders, market data)
-05. Decision Engine - SMA/ADX/ATR indicators + regime switching logic
-06. Risk Manager - Position sizing, drawdown limits, emergency stop
-15. Trading Service - 24/7 background execution with foreground service
+15. Decision Engine - SMA/ADX/ATR indicators + regime switching logic
+16. Risk Manager - Position sizing, drawdown limits, emergency stop
+17. Trading Service - 24/7 background execution with foreground service
 ```
 
 ---

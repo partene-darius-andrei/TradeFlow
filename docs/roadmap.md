@@ -1,8 +1,8 @@
 # TradeFlow - Master Implementation Plan
 
-**Last Updated:** 2026-01-08  
-**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.4)  
-**Current Build:** #31 SUCCESS (Version 1.5.4)
+**Last Updated:** 2026-01-09
+**Project Status:** Phase 1 Complete - Enhanced Coinbase Integration (v1.5.5)  
+**Current Build:** #31 SUCCESS (Version 1.5.5)
 **Architecture:** Multi-module app (8 modules: app, core:domain, core:data, core:ui, exchange:coinbase, feature:dashboard, feature:trading, feature:settings)
 
 ---
@@ -52,7 +52,7 @@ Year 10: $10,000-20,000    (Passive income: $500-1,000/month)
 
 ### ✅ What Exists (January 2026)
 
-**Phase 1 COMPLETE - Enhanced Coinbase Integration (v1.5.4):**
+**Phase 1 COMPLETE - Enhanced Coinbase Integration (v1.5.5):**
 
 ```
 app/src/main/java/com/dpart/tradeflow/
@@ -114,7 +114,7 @@ app/src/main/java/com/dpart/tradeflow/
         ├── SecurityModule.kt        ✅ Hilt DI for credential store
         └── DatabaseModule.kt        ✅ Hilt DI for Room database
 
-✅ COMPLETE: Enhanced Coinbase API Integration (v1.5.4)
+✅ COMPLETE: Enhanced Coinbase API Integration (v1.5.5)
 └── exchange/coinbase/
     ├── auth/
     │   └── CoinbaseJwtGenerator.kt  ✅ ES256 JWT with COMPREHENSIVE BouncyCastle PEM parsing + enhanced escape handling + robust error recovery + format detection
@@ -141,7 +141,7 @@ app/src/main/java/com/dpart/tradeflow/
     └── extension/
         └── BigDecimalExt.kt        ✅ Currency/percentage formatting
 
-✅ COMPLETE: Enhanced Live Portfolio Data Integration (v1.5.4)
+✅ COMPLETE: Enhanced Live Portfolio Data Integration (v1.5.5)
 ├── App now displays real Coinbase account balances with COMPREHENSIVE error handling
 ├── ViewModel with complete state management (loading, error, success states) 
 ├── ENHANCED error handling with better retry functionality for network failures
@@ -184,11 +184,11 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ docs/auto-docs.md (auto-doc workflow)
 - ✅ docs/tickets/ (all Notion tickets organized by status)
 
-### 🆕 MAJOR MILESTONE: Enhanced Security & Reliability (v1.5.4)
+### 🆕 MAJOR MILESTONE: Enhanced Security & Reliability (v1.5.5)
 
 **Latest stability and security enhancements now live in the app:**
 
-✅ **Enhanced Authentication (v1.5.4):**
+✅ **Enhanced Authentication (v1.5.5):**
 - COMPREHENSIVE PEM key parsing with BouncyCastle libraries (bcprov-jdk18on, bcpkix-jdk18on 1.78)
 - Support for both raw base64 and PEM formats with automatic format detection
 - Comprehensive error handling in JWT generation with multiple fallback mechanisms
@@ -250,7 +250,7 @@ app/src/main/java/com/dpart/tradeflow/
 
 ## 📋 Implementation Phases
 
-### ✅ Phase 1: COMPLETE - Enhanced Coinbase Integration (v1.5.4)
+### ✅ Phase 1: COMPLETE - Enhanced Coinbase Integration (v1.5.5)
 
 **Status:** 100% COMPLETE ✅
 
@@ -275,8 +275,9 @@ app/src/main/java/com/dpart/tradeflow/
 **Phase 2 Tickets:**
 | Ticket | Component | Status | Effort | Description |
 |--------|-----------|--------|--------|-------------|
-| **05** | **Decision Engine** | ❌ TODO | Large | SMA(200), ADX(14), ATR(14) + regime switching with 3-candle hysteresis |
-| **06** | **Risk Manager** | ❌ TODO | Medium | Position sizing (1-2% risk), drawdown monitoring (15% stop), portfolio tracking |
+| **13** | **Full REST API Client** | ❌ TODO | Large | Complete Coinbase REST API (candles, orders, market data) |
+| **15** | **Decision Engine** | ❌ TODO | Large | SMA(200), ADX(14), ATR(14) + regime switching with 3-candle hysteresis |
+| **16** | **Risk Manager** | ❌ TODO | Medium | Position sizing (1-2% risk), drawdown monitoring (15% stop), portfolio tracking |
 
 **Success Criteria:**
 - ✅ Engine correctly identifies DEFENSE (price < SMA200), TREND (ADX > 25), RANGE (ADX < 25) modes
@@ -369,10 +370,10 @@ Overall Progress: 1/5 phases (20%)
 ### Critical Path to MVP
 
 **Next 4 Tickets (Must complete in order):**
-1. ❌ **Ticket 05: Decision Engine** ← IMMEDIATE NEXT STEP
-2. ❌ **Ticket 06: Risk Manager**
-3. ❌ **Ticket 08: Full REST API Client**
-4. ❌ **Ticket 15: Trading Service**
+1. ❌ **Ticket 15: Decision Engine** ← IMMEDIATE NEXT STEP
+2. ❌ **Ticket 16: Risk Manager**
+3. ❌ **Ticket 13: Full REST API Client**
+4. ❌ **Ticket 17: Trading Service**
 
 **Estimated Time to MVP:** 8-12 weeks
 
@@ -380,7 +381,7 @@ Overall Progress: 1/5 phases (20%)
 
 ## 🎯 Immediate Next Steps
 
-### 1. Ticket 05: Decision Engine (CURRENT FOCUS)
+### 1. Ticket 15: Decision Engine (CURRENT FOCUS)
 
 **File:** `core/domain/src/main/kotlin/com/tradeflow/core/domain/strategy/TradingDecisionEngine.kt`
 
@@ -419,7 +420,7 @@ fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
 
 **Testing:** Unit tests with mock candle data to verify all 4 modes work correctly.
 
-### 2. Ticket 06: Risk Manager
+### 2. Ticket 16: Risk Manager
 
 **File:** `core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/TradingRiskManager.kt`
 
@@ -429,7 +430,7 @@ fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
 - Emergency stop at 15% drawdown from peak
 - Validation of all orders before placement
 
-### 3. Planning Ticket 08: Full REST API
+### 3. Planning Ticket 13: Full REST API
 
 **Goal:** Extend current `CoinbaseRepository` with full order placement capabilities
 - Market orders (emergency liquidation)
