@@ -1,7 +1,7 @@
-Version 1.9.0
+Version 1.10.0
 
-- Implemented complete trading execution logic with 6 use cases for autonomous trading
-- Added grid trading sell side - automatically places profitable sell orders when grid buys fill
-- Enhanced trading cycle orchestrator with emergency liquidation and drawdown monitoring
-- Improved order management with stale order cleanup and exchange reconciliation
-- Added comprehensive risk validation and safety checks for all trading operations
+- Added grid trading sell side functionality for automated profit-taking
+- Implemented portfolio high water mark tracking for performance monitoring
+- Enhanced trading execution engine with complete use case layer
+- Improved dependency injection architecture for better modularity
+- Fixed trading cycle execution for more reliable automated trading

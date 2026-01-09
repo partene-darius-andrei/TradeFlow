@@ -106,7 +106,7 @@ app/src/main/java/com/dpart/tradeflow/
     │   └── RiskManager.kt       ✅ Risk management interface with enhanced types + @Inject
     └── usecase/                 ✅ Complete Use Case Layer Implementation (v1.8.0)
         ├── ExecuteDecisionUseCase.kt   ✅ Trading decision execution orchestrator
-        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management
+        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management (UPDATED)
         ├── HandleEmergencyUseCase.kt   ✅ Emergency liquidation handler
         ├── HandleGridFillsUseCase.kt   ✅ Grid fill detection and profit taking (NEW)
         ├── ManageGridOrdersUseCase.kt  ✅ Grid order management for range trading
@@ -136,11 +136,12 @@ app/src/main/java/com/dpart/tradeflow/
     ├── mapper/
     │   └── OrderMapper.kt           ✅ OrderEntity ↔ Order domain mapping (NEW)
     ├── repository/
-    │   └── TradingDataRepositoryImpl.kt ✅ Local data repository implementation (NEW)
+    │   ├── TradingDataRepositoryImpl.kt ✅ Local data repository implementation (NEW)
+    │   └── PortfolioRepositoryImpl.kt   ✅ Portfolio data repository (NEW)
     └── di/
         ├── SecurityModule.kt        ✅ Hilt DI for credential store
         ├── DatabaseModule.kt        ✅ Hilt DI for Room database
-        └── RepositoryModule.kt      ✅ TradingDataRepository DI binding (NEW)
+        └── RepositoryModule.kt      ✅ Repository DI bindings (ENHANCED)
 
 ✅ COMPLETE: Enhanced Coinbase API Integration (v1.5.5)
 └── exchange/coinbase/
@@ -198,356 +199,394 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ **security-crypto 1.1.0-alpha06** (replaced by build-time injection)
 - ✅ **work-runtime-ktx 2.11.0** (for background tasks)
 - ✅ **datastore-preferences 1.2.0** (for settings)
-- ✅ **material-icons-extended** ✅ ACTIVE (for ModeIndicator icons)
-- ✅ Firebase Analytics + Crashlytics (BOM 34.7.0)
 
-**CI/CD:**
-- ✅ GitHub Actions: Enhanced build workflow with COMPREHENSIVE credential injection and PEM key escaping
-- ✅ Auto-build + Firebase App Distribution on PR
-- ✅ Commit-back pattern (`.build-status` + `build-log.txt`)
-- ✅ Auto-documentation workflow (updates CLAUDE.md + docs/)
+### 🎉 Major Milestone: Complete Core Trading Logic (v1.8.0)
 
-### What's MISSING (Critical Path to MVP)
+**Phase 2 has been successfully completed with comprehensive use case implementation:**
 
-```
-❌ Phase 3: API Integration & Service Implementation (0% - Ready to Start)
-❌ Ticket 13: Full REST API Client
-    ├── Complete CoinbaseRepository implementation (only getBalances works)
-    ├── Order placement: bracket orders (TREND), limit orders (RANGE), market orders (emergency)
-    ├── Candle fetching: TWO_HOUR granularity + H4 aggregation for 200+ candles
-    ├── Product queries: trading pairs, minimum sizes, tick sizes
-    ├── Error handling: rate limits, API failures, retry logic
-    └── Integration with existing use cases via ExchangeRepository interface
-
-❌ Ticket 14: WebSocket Client
-    ├── Real-time price feeds for ExecuteTradingCycleUseCase
-    ├── Order status updates for HandleGridFillsUseCase
-    ├── Connection health monitoring with auto-reconnect
-    ├── Heartbeat subscription (required every 60-90 seconds)
-    └── Integration with existing interfaces
-
-❌ Ticket 16: Risk Manager Implementation
-    ├── Position sizing calculations (trend vs grid)
-    ├── Drawdown monitoring with high water mark tracking
-    ├── Order validation (size limits, exposure limits)
-    ├── Grid spacing validation (1.5% minimum for fee break-even)
-    └── Emergency stop triggers
-
-❌ Ticket 17: Trading Service
-    ├── 24/7 foreground service with wake lock
-    ├── ExecuteTradingCycleUseCase orchestration (15-minute cycles)
-    ├── Real-time price monitoring via WebSocket
-    ├── Service start/stop from Dashboard UI
-    └── Emergency liquidation integration
-```
-
----
-
-## 🎉 Major Milestone: Complete Trading Engine Implementation (v1.8.0)
-
-**Phase 2 has been completed with comprehensive trading use case implementation:**
-
-### 🔥 What's Been Accomplished (v1.8.0)
-
-#### Complete Use Case Layer ✅
-- **ExecuteDecisionUseCase** - Master decision execution orchestrator
+🆕 **Complete Use Case Layer Implementation (v1.8.0):**
+- ✅ **ExecuteDecisionUseCase** - Complete decision execution orchestrator
   - Handles all 4 trading modes (DEFENSE/TREND/RANGE/WAIT)
-  - Comprehensive duplicate order prevention
-  - Risk validation before every order
-  - Bracket order support for TREND mode
-  - Grid order management for RANGE mode
+  - Risk validation before order placement
+  - Bracket order support for trend trading
+  - Grid order management for range trading
+  - Comprehensive duplicate prevention
 
-- **ExecuteTradingCycleUseCase** - Complete trading orchestrator
+- ✅ **ExecuteTradingCycleUseCase** - Master trading orchestrator (UPDATED in v1.8.0)
   - Portfolio updates with high water mark tracking
-  - **Safety-first design**: Drawdown checked BEFORE any trading
-  - Emergency liquidation at 15% drawdown (hardcoded limit)
+  - Drawdown monitoring with emergency liquidation at 15%
+  - Complete trading cycle with safety-first design
   - Grid fill handling integration
-  - Complete order reconciliation
+  - Order reconciliation and management
+  - **UPDATED:** Removed direct ExchangeRepository dependency - now uses individual use cases for better separation of concerns
 
-- **HandleEmergencyUseCase** - Emergency liquidation handler
-  - Cancel ALL orders first (safety)
-  - Market sell ALL BTC positions
-  - Graceful error handling for partial failures
-  - Complete portfolio liquidation
+- ✅ **HandleEmergencyUseCase** - Emergency liquidation handler
+  - Order cancellation before liquidation
+  - Market sell all BTC positions
+  - Comprehensive error handling and recovery
+  - Safety-first emergency protocols
 
-- **ManageGridOrdersUseCase** - Advanced grid trading
-  - Dynamic spacing: max(1.5% for fees, ATR-based)
-  - Risk-validated position sizing per level
-  - post_only=true orders for maker fees (0.60% vs 1.20%)
-  - Handles partial success scenarios
+- ✅ **ManageGridOrdersUseCase** - Advanced grid trading engine
+  - Dynamic grid spacing with ATR integration
+  - Risk-based position sizing
+  - Duplicate order prevention
+  - Market impact analysis
 
-- **HandleGridFillsUseCase** - Grid profit realization (NEW in v1.8.0)
-  - Detects filled grid BUY orders from database
-  - Places corresponding SELL orders at buy_price + grid_spacing
-  - Completes the grid trading profit cycle
-  - Risk validation for all SELL orders
+- ✅ **ManageOrdersUseCase** - Order lifecycle management
+  - Order reconciliation between local DB and exchange
+  - Status synchronization
+  - Fill detection and processing
+  - Order expiration handling
 
-- **UpdatePortfolioUseCase** - Portfolio state management
-  - Multi-currency balance updates (BTC + USD)
-  - Total equity calculation with current BTC price
-  - High water mark tracking for drawdown calculation
+- ✅ **UpdatePortfolioUseCase** - Portfolio state management
+  - Multi-currency balance updates
+  - High water mark tracking
+  - Drawdown calculation
+  - Portfolio snapshot persistence
 
-#### Enhanced Domain Infrastructure ✅
-- **TradingDataRepository** - Clean separation of local vs exchange data
-- **OrderMapper** - Type-safe entity ↔ domain model conversion
-- **Complete Dependency Injection** - Every class uses @Inject constructor
-- **Comprehensive Unit Testing** - 20+ tests covering edge cases, errors, partial failures
-- **Result<T> Pattern** - Graceful error handling throughout
-- **Safety-First Architecture** - Emergency stops and risk limits as first-class citizens
+- ✅ **HandleGridFillsUseCase** - Grid profit optimization (NEW in v1.8.0)
+  - Filled order detection
+  - Profit-taking logic
+  - Grid level management
+  - Risk-adjusted position sizing
 
-#### Key Trading Logic Implemented ✅
+🆕 **Enhanced Data Layer (v1.8.0):**
+- ✅ **PortfolioRepositoryImpl** - Portfolio data operations
+  - High water mark management
+  - Portfolio snapshot operations
+  - Drawdown calculations
 
-**DEFENSE Mode:**
-```kotlin
-// Cancel all BUY orders immediately
-val openOrders = exchangeRepository.getOpenOrders(productId)
-val buyOrders = openOrders.filter { it.side == OrderSide.BUY }
-exchangeRepository.cancelOrders(buyOrders.map { it.id })
+- ✅ **Enhanced RepositoryModule** - Complete DI configuration
+  - All repository implementations bound
+  - Proper dependency injection setup
+  - Singleton scope management
+
+🆕 **Comprehensive Unit Testing (v1.8.0):**
+- ✅ **MockK Integration** - Professional testing framework
+- ✅ **TradingDecisionEngineTest** - Complete decision engine testing
+- ✅ **Use Case Testing** - Individual and integration tests
+- ✅ **Edge Case Coverage** - Error conditions and boundary testing
+
+### ❌ What's MISSING (Phase 3 Ready to Start)
+
+**Immediate Roadblock - Exchange Integration:**
 ```
+❌ exchange/coinbase/
+    ├── CoinbaseRepository.kt           ❌ Full REST API implementation
+    │                                      - Order placement (bracket, limit, market)
+    │                                      - Candle data fetching (handle 350-limit)
+    │                                      - Product queries (min sizes, trading pairs)
+    │                                      - Order management (cancel, status)
+    ├── CoinbaseWebSocket.kt            ❌ Real-time feeds
+    │                                      - Ticker subscription (price updates)
+    │                                      - Order updates (fill notifications)
+    │                                      - Connection management with heartbeats
+    └── error/
+        └── CoinbaseErrorHandler.kt     ❌ API error mapping
 
-**TREND Mode:**
-```kotlin
-// Place bracket order: entry + take profit + stop loss
-bracketOrderRepository.placeBracketOrder(
-    productId = productId,
-    side = decision.direction,
-    size = riskManager.calculateTrendPositionSize(portfolio, entryPrice),
-    entryPrice = decision.entryPrice,
-    takeProfit = decision.takeProfit,
-    stopLoss = decision.stopLoss
-)
+❌ core/domain/risk/
+    └── RiskManagerImpl.kt              ❌ Risk validation implementation
+                                           - Position sizing calculations
+                                           - Drawdown monitoring
+                                           - Order validation against limits
+
+❌ service/trading/
+    └── TradingService.kt               ❌ 24/7 foreground service
+                                           - Use case orchestration
+                                           - Wake lock management
+                                           - Notification updates
+                                           - Periodic strategy evaluation
 ```
-
-**RANGE Mode:**
-```kotlin
-// Place grid BUY orders below current price
-val gridPrices = (1..decision.levels).map { level ->
-    currentPrice - (decision.gridSpacing * level.toBigDecimal())
-}
-
-gridPrices.forEach { gridPrice ->
-    exchangeRepository.placeLimitOrder(
-        productId = productId,
-        side = OrderSide.BUY,
-        size = gridPositionSize,
-        price = gridPrice,
-        postOnly = true  // Maker fees only
-    )
-}
-```
-
-**Grid Profit Taking:**
-```kotlin
-// When grid BUY fills, place SELL at profit
-val filledBuys = tradingDataRepository.getRecentFilledOrders(productId)
-filledBuys.forEach { filledBuy ->
-    val sellPrice = filledBuy.price + decision.gridSpacing
-    exchangeRepository.placeLimitOrder(
-        productId = productId,
-        side = OrderSide.SELL,
-        size = filledBuy.filledSize,
-        price = sellPrice,
-        postOnly = true
-    )
-}
-```
-
-### Critical Path Analysis
-
-**The trading logic is COMPLETE.** What remains is connecting it to real APIs:
-
-1. **REST API Client** (Ticket 13) - Use cases are ready, just implement ExchangeRepository methods
-2. **WebSocket Client** (Ticket 14) - Real-time price feeds for TradingContext
-3. **Trading Service** (Ticket 17) - ExecuteTradingCycleUseCase orchestration in foreground service
-4. **Integration Testing** (Ticket 19) - Validate with small real trades
-
-**Estimated Timeline to First Live Trade:** 3-4 weeks
 
 ---
 
-## ⏭️ Phase 3: API Integration & Service (Next - Critical Path)
+## 🚀 Implementation Roadmap
 
-### Ticket 13: Full REST API Client (HIGH PRIORITY)
+### ✅ Phase 1: Foundation Complete (100%) 
 
-**Goal:** Complete CoinbaseRepository to enable real trading
+**Goal:** Solid architecture foundation with live data integration
 
-**Status:** 🔴 Not Started (Blocking)
-**Estimated Effort:** 3-5 days
-**Dependencies:** JWT generator (✅ Complete)
+| Component | Status | Description |
+|-----------|---------|-------------|
+| **Modularization** | ✅ Complete | 8-module architecture with proper dependencies |
+| **Domain Models** | ✅ Complete | Candle, Order, Portfolio, Decision, Balance, Ticker |
+| **Room Database** | ✅ Complete | 4 entities + 4 DAOs with proper relationships |
+| **JWT Authentication** | ✅ Complete | ES256 signing with BouncyCastle PEM parsing |
+| **Basic API Integration** | ✅ Complete | getBalances() working with real Coinbase data |
+| **Dashboard UI** | ✅ Complete | Live portfolio display with error handling |
 
-**Implementation Plan:**
-```kotlin
-class CoinbaseRepository @Inject constructor(
-    private val apiClient: CoinbaseApiClient,
-    private val authProvider: AuthTokenProvider
-) : ExchangeRepository, BracketOrderRepository {
-
-    // CRITICAL: Use cases are waiting for these methods
-    override suspend fun placeLimitOrder(...): Result<Order> {
-        // Use existing JWT auth + Ktor client
-    }
-    
-    override suspend fun placeBracketOrder(...): Result<Order> {
-        // Coinbase trigger_bracket_gtc format
-        // limit_price = take profit (counterintuitive!)
-        // stop_trigger_price = stop loss
-    }
-    
-    override suspend fun getCandles(...): Result<List<Candle>> {
-        // Handle 350 candle limit
-        // TWO_HOUR granularity + aggregate to H4
-    }
-    
-    override suspend fun getOpenOrders(productId: String): Result<List<Order>> {
-        // For order reconciliation and duplicate prevention
-    }
-    
-    override suspend fun cancelOrders(orderIds: List<String>): Result<Int> {
-        // Batch cancel for emergency liquidation
-    }
-}
-```
-
-**Integration Points:**
-- ExecuteDecisionUseCase.execute() → placeBracketOrder(), placeLimitOrder()
-- ManageGridOrdersUseCase → placeLimitOrder() with postOnly=true
-- HandleEmergencyUseCase → cancelOrders() + placeMarketOrder()
-- TradingDecisionEngine → getCandles() for strategy evaluation
-- All use cases ready to consume via existing interfaces
-
-### Ticket 14: WebSocket Client (HIGH PRIORITY)
-
-**Goal:** Real-time market data and order updates
-
-**Status:** 🔴 Not Started
-**Estimated Effort:** 3-4 days
-**Dependencies:** REST API for auth
-
-**Implementation Plan:**
-```kotlin
-class CoinbaseWebSocket @Inject constructor(
-    private val authProvider: AuthTokenProvider
-) : ExchangeWebSocket {
-
-    override fun subscribeTicker(productIds: List<String>): Flow<Ticker> {
-        // ExecuteTradingCycleUseCase needs current BTC price
-    }
-    
-    override fun subscribeOrderUpdates(): Flow<Order> {
-        // HandleGridFillsUseCase needs fill notifications
-        // ManageOrdersUseCase needs status updates
-    }
-}
-```
-
-**Integration Points:**
-- ExecuteTradingCycleUseCase → current price for TradingContext
-- HandleGridFillsUseCase → order fill detection
-- UpdatePortfolioUseCase → real-time portfolio valuation
-
-### Ticket 16: Risk Manager Implementation (MEDIUM PRIORITY)
-
-**Goal:** Production-ready risk management
-
-**Status:** 🔴 Not Started
-**Estimated Effort:** 2-3 days
-
-**Implementation Plan:**
-```kotlin
-class RiskManager @Inject constructor(
-    private val config: RiskConfig = RiskConfig()
-) {
-    fun checkDrawdown(currentEquity: BigDecimal, highWaterMark: BigDecimal): DrawdownStatus
-    fun calculateTrendPositionSize(portfolio: Portfolio, entryPrice: BigDecimal): BigDecimal
-    fun calculateGridPositionSize(portfolio: Portfolio, levels: Int, entryPrice: BigDecimal): BigDecimal
-    fun validateOrder(request: PlaceOrderRequest, portfolio: Portfolio, currentPrice: BigDecimal): RiskCheck
-    fun validateGridSpacing(spacingPercent: Double): Boolean
-}
-```
-
-**Integration Points:**
-- ExecuteTradingCycleUseCase → checkDrawdown() (15% emergency limit)
-- ExecuteDecisionUseCase → validateOrder() before placement
-- ManageGridOrdersUseCase → validateGridSpacing() (1.5% minimum)
-
-### Ticket 17: Trading Service (HIGH PRIORITY)
-
-**Goal:** 24/7 autonomous trading execution
-
-**Status:** 🔴 Not Started (Final integration)
-**Estimated Effort:** 2-3 days
-**Dependencies:** REST + WebSocket clients
-
-**Implementation Plan:**
-```kotlin
-class TradingService : Service() {
-    @Inject lateinit var executeTradingCycleUseCase: ExecuteTradingCycleUseCase
-    @Inject lateinit var exchangeWebSocket: ExchangeWebSocket
-    
-    private fun startTradingLoop() {
-        scope.launch {
-            // Real-time price monitoring
-            exchangeWebSocket.subscribeTicker(listOf("BTC-USD")).collect { ticker ->
-                currentPrice.set(ticker.price)
-            }
-        }
-        
-        scope.launch {
-            // 15-minute strategy evaluation cycles
-            while (isActive) {
-                val context = TradingContext(
-                    productId = "BTC-USD",
-                    candles = getH4Candles(), // From REST API
-                    currentPrice = currentPrice.get(),
-                    portfolio = getCurrentPortfolio(),
-                    highWaterMark = getHighWaterMark()
-                )
-                
-                val result = executeTradingCycleUseCase.execute(context)
-                handleTradingResult(result)
-                
-                delay(15.minutes)
-            }
-        }
-    }
-}
-```
-
-**Integration Points:**
-- ExecuteTradingCycleUseCase.execute() - Main orchestration
-- All other use cases called through ExecuteTradingCycleUseCase
-- Dashboard UI → start/stop service controls
+**Deliverables:** ✅ All complete
+- Multi-module architecture established
+- Domain layer interfaces defined
+- Room database with complete schema
+- JWT authentication working with real API
+- Dashboard showing live Coinbase balances
+- Repository pattern with dependency injection
 
 ---
 
-## 📊 Implementation Progress Summary
+### ✅ Phase 2: Core Trading Logic Complete (100%)
 
-### Phases 1 & 2: COMPLETE ✅ (100%)
-- ✅ Domain models and interfaces
-- ✅ Room database with entities and DAOs
-- ✅ JWT authentication system
-- ✅ Live Coinbase account data integration
-- ✅ **Complete trading decision engine with technical indicators**
-- ✅ **Complete use case layer with comprehensive trading logic**
-- ✅ **Comprehensive unit testing (20+ tests)**
-- ✅ **Safety-first architecture with emergency liquidation**
-- ✅ **Grid trading with profit-taking logic**
-- ✅ **Risk management interfaces and types**
-- ✅ **Complete dependency injection**
+**Goal:** Complete trading decision engine with comprehensive use case layer
 
-### Phase 3: API Integration (0% - Critical Path)
-- ❌ Full REST API client (order placement, candle fetching)
-- ❌ Real-time WebSocket client (price feeds, order updates)
-- ❌ Risk manager implementation (position sizing, limits)
-- ❌ 24/7 trading service (foreground service orchestration)
+| Component | Status | Description |
+|-----------|---------|-------------|
+| **Decision Engine** | ✅ Complete | SMA/ADX/ATR regime-switching with hysteresis |
+| **Technical Indicators** | ✅ Complete | SMA, ADX, ATR calculators with ta4j integration |
+| **Strategy Configuration** | ✅ Complete | Comprehensive parameters for all trading modes |
+| **Use Case Layer** | ✅ Complete | 7 use cases handling complete trading lifecycle |
+| **Unit Testing** | ✅ Complete | MockK integration with comprehensive test coverage |
 
-### Phase 4: Testing & Validation (0%)
-- ❌ Integration testing with small real trades
-- ❌ 24-hour stability testing
-- ❌ MVP milestone validation
+**Deliverables:** ✅ All complete (v1.8.0)
+- TradingDecisionEngine with 4 modes (DEFENSE/TREND/RANGE/WAIT)
+- 3-candle hysteresis to prevent whipsawing
+- Complete use case layer orchestrating trading operations
+- ExecuteTradingCycleUseCase as master coordinator
+- Comprehensive unit testing with MockK
+- Technical indicators fully integrated and tested
 
-**Overall Progress:** 8/14 tickets complete (57%)
+---
 
-**Critical Path to First Live Trade:** Complete Phase 3 (estimated 2-3 weeks)
+### ❌ Phase 3: API Integration & Service Implementation (0% - NEXT PHASE)
 
-**Key Insight:** The hard part is DONE. Core trading logic, risk management, decision engine, and use case orchestration are complete and tested. What remains is connecting this battle-tested logic to real Coinbase APIs and wrapping in a service.
+**Goal:** Complete Coinbase API integration and 24/7 service implementation
+
+**Priority Order:**
+
+#### 3A: Full REST API Client (HIGH PRIORITY)
+| Ticket | Component | Status | Description |
+|--------|-----------|---------|-------------|
+| **13** | **Full REST API Client** | ❌ Not Started | Order placement, candle fetching, product queries |
+
+**Critical Implementation:**
+- Complete CoinbaseRepository with all 12 ExchangeRepository methods
+- Order placement: bracket orders (TREND), limit orders (RANGE), market orders (emergency)
+- Candle data: Handle 350-candle limit, TWO_HOUR aggregation to H4
+- Product queries: Trading pairs, minimum order sizes, fee structures
+- Error handling: Rate limits, authentication failures, order rejections
+
+#### 3B: Real-Time Data Feeds (HIGH PRIORITY)
+| Ticket | Component | Status | Description |
+|--------|-----------|---------|-------------|
+| **14** | **WebSocket Client** | ❌ Not Started | Real-time price feeds, order status updates |
+
+**Critical Implementation:**
+- CoinbaseWebSocket implementing ExchangeWebSocket interface
+- Ticker subscription for portfolio value updates
+- Order status updates for fill detection
+- Connection management with auto-reconnect and heartbeats
+- Health monitoring to detect stale connections
+
+#### 3C: Risk Management (MEDIUM PRIORITY)
+| Ticket | Component | Status | Description |
+|--------|-----------|---------|-------------|
+| **16** | **Risk Manager Implementation** | ❌ Not Started | Position sizing, drawdown monitoring |
+
+**Critical Implementation:**
+- RiskManagerImpl with position sizing calculations
+- Drawdown monitoring with 15% emergency liquidation
+- Order validation against risk limits
+- High water mark tracking and updates
+
+#### 3D: Trading Service (HIGH PRIORITY)
+| Ticket | Component | Status | Description |
+|--------|-----------|---------|-------------|
+| **17** | **Trading Service** | ❌ Not Started | 24/7 foreground service orchestration |
+
+**Critical Implementation:**
+- Foreground service with proper notifications
+- Use case orchestration (ExecuteTradingCycleUseCase every 15 minutes)
+- Wake lock management for 24/7 operation
+- Battery optimization handling
+- Service lifecycle management
+
+**Phase 3 Success Criteria:**
+- [ ] Can place bracket orders for TREND mode via ExecuteDecisionUseCase
+- [ ] Can place limit orders for RANGE mode via ManageGridOrdersUseCase
+- [ ] Real-time price updates feeding into UpdatePortfolioUseCase
+- [ ] Order fill detection triggering HandleGridFillsUseCase
+- [ ] Emergency liquidation via HandleEmergencyUseCase working end-to-end
+- [ ] Service runs 24/7 without crashes
+- [ ] All use cases integrated with real exchange APIs
+
+**Estimated Timeline:** 3-4 weeks
+
+---
+
+### ❌ Phase 4: Testing & Validation (0%)
+
+**Goal:** Comprehensive testing and system validation
+
+| Ticket | Component | Status | Priority |
+|--------|-----------|---------|----------|
+| **19** | **Integration Tests** | ❌ Not Started | MEDIUM | End-to-end testing with small real trades |
+| **20** | **MVP Milestone** | ❌ Not Started | HIGH | 24-hour live system validation |
+
+**Success Criteria:**
+- [ ] Small real trades ($10-20) execute successfully
+- [ ] System survives 24-hour continuous operation
+- [ ] Emergency liquidation tested and working
+- [ ] All trading modes demonstrate correct behavior
+- [ ] Risk limits enforced properly
+- [ ] No memory leaks or performance degradation
+
+**Estimated Timeline:** 1-2 weeks
+
+---
+
+## 📊 Progress Tracking
+
+### Overall Progress: 8/14 core tickets complete (57%)
+
+```
+Phase 1:  ████████████████████ 100% (4/4) ✅ COMPLETE
+Phase 2:  ████████████████████ 100% (4/4) ✅ COMPLETE  
+Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/4) ← YOU ARE HERE
+Phase 4:  ░░░░░░░░░░░░░░░░░░░░   0% (0/2)
+```
+
+### Current Sprint: Phase 3 Ready to Start
+
+**Critical Path to MVP:**
+
+1. ✅ ~~Complete trading engine~~ (v1.8.0 - DONE)
+2. **Ticket 13: Full REST API Client** ← IMMEDIATE PRIORITY
+3. **Ticket 14: WebSocket Client**
+4. **Ticket 16: Risk Manager Implementation**
+5. **Ticket 17: Trading Service**
+6. **Integration Testing & MVP Validation**
+
+**Estimated Time to MVP:** 4-6 weeks total
+
+---
+
+## 🔍 Architecture Status
+
+### Module Dependency Health
+
+```
+:app ──────────────────────────┐
+  ├─ :core:ui ─────────────────┼─ :core:domain
+  ├─ :core:data ───────────────┘
+  └─ :exchange:coinbase ───────── :core:domain
+
+Status: ✅ Clean dependencies, no circular references
+```
+
+### Key Architecture Decisions
+
+**✅ Successful Patterns:**
+- Multi-module architecture prevents cross-layer dependencies
+- Repository pattern with interfaces enables clean testing
+- Use case layer provides clear business logic separation
+- Hilt dependency injection simplifies testing and configuration
+- Build-time credential injection eliminates UI complexity
+
+**🎯 Ready for Scale:**
+- Domain layer is completely exchange-agnostic
+- Use cases are ready to orchestrate real trading operations
+- Decision engine is fully functional and tested
+- Database schema supports all trading operations
+
+---
+
+## 🚨 Risk Assessment
+
+### Technical Risks
+
+**LOW RISK ✅:**
+- Domain logic (decision engine, use cases) - Fully implemented and tested
+- Database schema - Complete and stable
+- Authentication - JWT working with real API
+- Architecture - Clean separation, no technical debt
+
+**MEDIUM RISK ⚠️:**
+- Real-time WebSocket reliability - Needs robust error handling and reconnection
+- Order execution latency - API response times impact strategy effectiveness  
+- Battery optimization - Android may kill service despite foreground status
+
+**HIGH RISK 🚨:**
+- Exchange API changes - Coinbase could modify endpoints without notice
+- Market conditions - Strategy assumes normal market behavior
+- Regulatory changes - Crypto trading regulations could impact operations
+
+### Financial Risks
+
+**CONTROLLED ✅:**
+- Starting capital: $500 (education budget, not investment)
+- Position sizing: 1-2% risk per trade ($5-10 maximum loss)
+- Emergency stops: 15% drawdown triggers complete liquidation
+- Realistic expectations: 3-5% monthly returns (exceptional skill required)
+
+**See:** [docs/strategy/bitcoin-first-strategy.md](strategy/bitcoin-first-strategy.md) for complete risk analysis
+
+---
+
+## 🎯 Success Metrics
+
+### Phase 3 Targets
+- [ ] All REST API endpoints working (orders, candles, products)
+- [ ] WebSocket stable for 8+ hours continuous operation
+- [ ] Trading service survives overnight with screen off
+- [ ] Emergency liquidation tested with small real trade
+
+### MVP Targets (End of Phase 4)
+- [ ] System runs 24/7 for one week without crashes
+- [ ] Executes at least one successful trade per trading mode
+- [ ] Risk management prevents any single loss > 2% of capital
+- [ ] Complete audit trail of all decisions and trades
+
+### Business Targets (Post-MVP)
+- [ ] Break-even after 6 months (covers all trading fees)
+- [ ] 3% average monthly returns after 12 months
+- [ ] Scale to $2,500+ account size after 18-24 months
+
+---
+
+## 🔮 Future Roadmap (Post-MVP)
+
+### Phase 5: Strategy Enhancement
+- Multi-timeframe analysis (H1 + H4 + D1)
+- Additional indicators (RSI, MACD, Bollinger Bands)
+- Market regime detection improvements
+- Dynamic position sizing based on market volatility
+
+### Phase 6: Multi-Exchange Support
+- Kraken integration (lower fees for larger accounts)
+- Binance.US support (if regulatory environment permits)
+- Cross-exchange arbitrage opportunities
+- Exchange-specific optimization
+
+### Phase 7: Advanced Features
+- Backtesting framework with historical data
+- Paper trading mode for strategy validation
+- Advanced analytics and performance reporting
+- Tax reporting integration
+
+---
+
+## 🛠️ Development Guidelines
+
+### Code Quality Standards
+- ✅ All use cases have comprehensive unit tests
+- ✅ Domain layer remains exchange-agnostic
+- ✅ Repository pattern enforced with interfaces
+- ✅ Dependency injection used throughout
+- ✅ Error handling covers all failure scenarios
+
+### Testing Strategy
+- **Unit Tests:** MockK for isolated component testing
+- **Integration Tests:** Small real trades to validate API integration
+- **System Tests:** 24-hour continuous operation validation
+- **Performance Tests:** Memory usage and battery consumption monitoring
+
+### Deployment Strategy
+- **Development:** Local builds with `local.properties` credentials
+- **Testing:** GitHub Actions with injected credentials
+- **Production:** Direct APK install on dedicated Android device
+- **Monitoring:** Timber logging with Firebase Crashlytics
+
+---
+
+This roadmap is a living document updated as development progresses. The focus remains on building a simple, reliable system that can trade profitably with minimal complexity.
+
