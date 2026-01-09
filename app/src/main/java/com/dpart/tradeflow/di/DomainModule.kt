@@ -1,4 +1,4 @@
-package com.tradeflow.core.domain.di
+package com.dpart.tradeflow.di
 
 import com.tradeflow.core.domain.strategy.DecisionEngine
 import com.tradeflow.core.domain.strategy.TradingDecisionEngine
@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class StrategyModule {
+abstract class DomainModule {
 
     @Binds
     @Singleton
