@@ -14,14 +14,14 @@ sealed class Decision {
         val entryPrice: BigDecimal,
         val stopLoss: BigDecimal,
         val takeProfit: BigDecimal,
-        val positionSize: BigDecimal,
+        val positionSizePercent: BigDecimal,
         val adx: Double,
         val atr: BigDecimal
     ) : Decision()
     data class Range(
         val gridSpacing: BigDecimal,
         val levels: Int,
-        val positionSizePerLevel: BigDecimal,
+        val positionSizePercentPerLevel: BigDecimal,
         val adx: Double,
         val atr: BigDecimal
     ) : Decision()
