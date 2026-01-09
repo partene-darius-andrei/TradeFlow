@@ -65,7 +65,10 @@ class TradingDecisionEngineTest {
         val decision = engine.evaluate(candles, currentPrice)
 
         assertTrue(decision is Decision.Defense)
-        assertTrue((decision as Decision.Defense).reason.contains("below SMA200"))
+        val defenseDecision = decision as Decision.Defense
+        assertTrue(defenseDecision.reason.contains("below SMA200"))
+        assertEquals(currentPrice, defenseDecision.currentPrice)
+        assertEquals(sma200, defenseDecision.sma200)
     }
 
     @Test
@@ -89,7 +92,10 @@ class TradingDecisionEngineTest {
 
         val decision3 = engine.evaluate(candles, currentPrice)
         assertTrue(decision3 is Decision.Trend)
-        assertEquals(currentPrice, (decision3 as Decision.Trend).entryPrice)
+        val trendDecision = decision3 as Decision.Trend
+        assertEquals(currentPrice, trendDecision.entryPrice)
+        assertEquals(30.0, trendDecision.adx)
+        assertEquals(atr, trendDecision.atr)
     }
 
     @Test
@@ -111,7 +117,10 @@ class TradingDecisionEngineTest {
 
         val decision3 = engine.evaluate(candles, currentPrice)
         assertTrue(decision3 is Decision.Range)
-        assertTrue((decision3 as Decision.Range).gridSpacing > BigDecimal.ZERO)
+        val rangeDecision = decision3 as Decision.Range
+        assertTrue(rangeDecision.gridSpacing > BigDecimal.ZERO)
+        assertEquals(20.0, rangeDecision.adx)
+        assertEquals(atr, rangeDecision.atr)
     }
 
     @Test
@@ -184,6 +193,8 @@ class TradingDecisionEngineTest {
 
         assertEquals(expectedStopLoss, trendDecision.stopLoss)
         assertEquals(expectedTakeProfit, trendDecision.takeProfit)
+        assertEquals(30.0, trendDecision.adx)
+        assertEquals(atr, trendDecision.atr)
     }
 
     @Test
@@ -219,6 +230,9 @@ class TradingDecisionEngineTest {
         val defenseDecision = engine.evaluate(candles, lowPrice)
 
         assertTrue(defenseDecision is Decision.Defense)
-        assertTrue((defenseDecision as Decision.Defense).reason.contains("below SMA200"))
+        val defense = defenseDecision as Decision.Defense
+        assertTrue(defense.reason.contains("below SMA200"))
+        assertEquals(lowPrice, defense.currentPrice)
+        assertEquals(sma200, defense.sma200)
     }
 }

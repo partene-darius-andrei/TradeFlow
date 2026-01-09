@@ -36,7 +36,9 @@ class TradingDecisionEngine(
             resetHysteresis()
             currentMode = Mode.DEFENSE
             return Decision.Defense(
-                reason = "Price $currentPrice below SMA200 $sma200"
+                reason = "Price below SMA200 - capital preservation mode",
+                currentPrice = currentPrice,
+                sma200 = sma200
             )
         }
 
@@ -78,7 +80,9 @@ class TradingDecisionEngine(
     ): Decision {
         return when (mode) {
             Mode.DEFENSE -> Decision.Defense(
-                reason = "Defensive mode - price $currentPrice above SMA200 $sma200 but ADX neutral"
+                reason = "Price above SMA200 but ADX neutral (${adx.toInt()}) - waiting for clear direction",
+                currentPrice = currentPrice,
+                sma200 = sma200
             )
             Mode.TREND -> {
                 val stopLoss = currentPrice - (atr * config.stopLossAtrMultiplier)
@@ -89,7 +93,9 @@ class TradingDecisionEngine(
                     entryPrice = currentPrice,
                     stopLoss = stopLoss,
                     takeProfit = takeProfit,
-                    positionSize = positionSize
+                    positionSize = positionSize,
+                    adx = adx,
+                    atr = atr
                 )
             }
             Mode.RANGE -> {
@@ -98,7 +104,9 @@ class TradingDecisionEngine(
                 Decision.Range(
                     gridSpacing = gridSpacing,
                     levels = 5,
-                    positionSizePerLevel = positionSizePerLevel
+                    positionSizePerLevel = positionSizePerLevel,
+                    adx = adx,
+                    atr = atr
                 )
             }
         }

@@ -1,12 +1,10 @@
 package com.tradeflow.core.domain.indicator
 
 import com.tradeflow.core.domain.model.Candle
-import org.ta4j.core.BaseBar
 import org.ta4j.core.BaseBarSeriesBuilder
 import org.ta4j.core.indicators.SMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import java.math.BigDecimal
-import java.time.Duration
 import java.time.ZoneId
 
 class SMACalculator {
@@ -21,16 +19,14 @@ class SMACalculator {
             .build()
 
         candles.forEach { candle ->
-            val bar = BaseBar(
-                Duration.ofMinutes(1),
+            series.addBar(
                 candle.timestamp.atZone(ZoneId.systemDefault()),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
+                candle.open.toDouble(),
+                candle.high.toDouble(),
+                candle.low.toDouble(),
+                candle.close.toDouble(),
+                candle.volume.toDouble()
             )
-            series.addBar(bar)
         }
 
         val closePrice = ClosePriceIndicator(series)
