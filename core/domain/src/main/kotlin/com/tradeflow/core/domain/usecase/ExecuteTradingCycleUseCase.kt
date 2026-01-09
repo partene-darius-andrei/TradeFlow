@@ -17,7 +17,8 @@ class ExecuteTradingCycleUseCase @Inject constructor(
     private val updatePortfolioUseCase: UpdatePortfolioUseCase,
     private val executeDecisionUseCase: ExecuteDecisionUseCase,
     private val handleEmergencyUseCase: HandleEmergencyUseCase,
-    private val manageOrdersUseCase: ManageOrdersUseCase
+    private val manageOrdersUseCase: ManageOrdersUseCase,
+    private val handleGridFillsUseCase: HandleGridFillsUseCase
 ) {
 
     suspend fun execute(context: TradingContext): TradingCycleResult {
@@ -64,6 +65,17 @@ class ExecuteTradingCycleUseCase @Inject constructor(
         )
 
         steps.add(executionResult.toMessage())
+
+        // Handle grid order fills (complete the grid trading cycle)
+        if (decision is Decision.Range) {
+            val gridFillResult = handleGridFillsUseCase.execute(
+                productId = context.productId,
+                gridSpacing = decision.gridSpacing,
+                portfolio = portfolioSnapshot.portfolio,
+                currentPrice = context.currentPrice
+            )
+            steps.add(gridFillResult.toMessage())
+        }
 
         val staleOrderResult = manageOrdersUseCase.cancelStaleOrders(context.productId)
         steps.add(staleOrderResult.toMessage())
