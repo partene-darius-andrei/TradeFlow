@@ -8,9 +8,8 @@ import com.tradeflow.core.domain.risk.model.PlaceOrderRequest
 import com.tradeflow.core.domain.risk.model.RiskCheck
 import java.math.BigDecimal
 import java.math.RoundingMode
-import javax.inject.Inject
 
-class RiskManager @Inject constructor(
+class RiskManager(
     private val config: RiskConfig = RiskConfig()
 ) {
 
