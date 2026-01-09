@@ -1,9 +1,11 @@
 package com.tradeflow.core.domain.indicator
 
 import com.tradeflow.core.domain.model.Candle
+import org.ta4j.core.BaseBar
 import org.ta4j.core.BaseBarSeriesBuilder
 import org.ta4j.core.indicators.adx.ADXIndicator
-import java.time.ZoneId
+import org.ta4j.core.num.DecimalNum
+import java.time.Duration
 
 class ADXCalculator {
 
@@ -17,14 +19,21 @@ class ADXCalculator {
             .build()
 
         candles.forEach { candle ->
-            series.addBar(
-                candle.timestamp.atZone(ZoneId.systemDefault()),
-                candle.open.toDouble(),
-                candle.high.toDouble(),
-                candle.low.toDouble(),
-                candle.close.toDouble(),
-                candle.volume.toDouble()
+            val beginTime = candle.timestamp
+            val endTime = candle.timestamp.plus(Duration.ofMinutes(1))
+            val bar = BaseBar(
+                Duration.ofMinutes(1),
+                beginTime,
+                endTime,
+                DecimalNum.valueOf(candle.open),
+                DecimalNum.valueOf(candle.high),
+                DecimalNum.valueOf(candle.low),
+                DecimalNum.valueOf(candle.close),
+                DecimalNum.valueOf(candle.volume),
+                DecimalNum.valueOf(0),
+                0L
             )
+            series.addBar(bar)
         }
 
         val adx = ADXIndicator(series, period)
