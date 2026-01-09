@@ -65,8 +65,7 @@ class TradingDecisionEngineTest {
         val decision = engine.evaluate(candles, currentPrice)
 
         assertTrue(decision is Decision.Defense)
-        assertEquals(sma200, (decision as Decision.Defense).sma200)
-        assertEquals(currentPrice, decision.currentPrice)
+        assertTrue((decision as Decision.Defense).reason.contains("below SMA200"))
     }
 
     @Test
@@ -82,11 +81,11 @@ class TradingDecisionEngineTest {
 
         val decision1 = engine.evaluate(candles, currentPrice)
         assertTrue(decision1 is Decision.Wait)
-        assertEquals(1, (decision1 as Decision.Wait).confirmationCount)
+        assertTrue((decision1 as Decision.Wait).reason.contains("(1/3)"))
 
         val decision2 = engine.evaluate(candles, currentPrice)
         assertTrue(decision2 is Decision.Wait)
-        assertEquals(2, (decision2 as Decision.Wait).confirmationCount)
+        assertTrue((decision2 as Decision.Wait).reason.contains("(2/3)"))
 
         val decision3 = engine.evaluate(candles, currentPrice)
         assertTrue(decision3 is Decision.Trend)
@@ -112,7 +111,7 @@ class TradingDecisionEngineTest {
 
         val decision3 = engine.evaluate(candles, currentPrice)
         assertTrue(decision3 is Decision.Range)
-        assertEquals(currentPrice, (decision3 as Decision.Range).centerPrice)
+        assertTrue((decision3 as Decision.Range).gridSpacing > BigDecimal.ZERO)
     }
 
     @Test
@@ -128,17 +127,17 @@ class TradingDecisionEngineTest {
         every { adxCalculator.calculate(candles, 14) } returns 30.0
         val decision1 = engine.evaluate(candles, currentPrice)
         assertTrue(decision1 is Decision.Wait)
-        assertEquals(1, (decision1 as Decision.Wait).confirmationCount)
+        assertTrue((decision1 as Decision.Wait).reason.contains("(1/3)"))
 
         every { adxCalculator.calculate(candles, 14) } returns 30.0
         val decision2 = engine.evaluate(candles, currentPrice)
         assertTrue(decision2 is Decision.Wait)
-        assertEquals(2, (decision2 as Decision.Wait).confirmationCount)
+        assertTrue((decision2 as Decision.Wait).reason.contains("(2/3)"))
 
         every { adxCalculator.calculate(candles, 14) } returns 20.0
         val decision3 = engine.evaluate(candles, currentPrice)
         assertTrue(decision3 is Decision.Wait)
-        assertEquals(1, (decision3 as Decision.Wait).confirmationCount)
+        assertTrue((decision3 as Decision.Wait).reason.contains("(1/3)"))
     }
 
     @Test
@@ -220,6 +219,6 @@ class TradingDecisionEngineTest {
         val defenseDecision = engine.evaluate(candles, lowPrice)
 
         assertTrue(defenseDecision is Decision.Defense)
-        assertEquals(lowPrice, (defenseDecision as Decision.Defense).currentPrice)
+        assertTrue((defenseDecision as Decision.Defense).reason.contains("below SMA200"))
     }
 }

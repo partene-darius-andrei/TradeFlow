@@ -5,10 +5,10 @@ import com.tradeflow.core.domain.indicator.ATRCalculator
 import com.tradeflow.core.domain.indicator.SMACalculator
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
+import com.tradeflow.core.domain.model.OrderSide
 import java.math.BigDecimal
-import javax.inject.Inject
 
-class TradingDecisionEngine @Inject constructor(
+class TradingDecisionEngine(
     private val smaCalculator: SMACalculator,
     private val adxCalculator: ADXCalculator,
     private val atrCalculator: ATRCalculator,
@@ -36,9 +36,7 @@ class TradingDecisionEngine @Inject constructor(
             resetHysteresis()
             currentMode = Mode.DEFENSE
             return Decision.Defense(
-                reason = "Price below SMA200",
-                sma200 = sma200,
-                currentPrice = currentPrice
+                reason = "Price $currentPrice below SMA200 $sma200"
             )
         }
 
@@ -67,10 +65,7 @@ class TradingDecisionEngine @Inject constructor(
         }
 
         return Decision.Wait(
-            reason = "Confirming mode switch to ${candidateMode?.name} ($modeConfirmationCount/3)",
-            currentMode = currentMode.name,
-            candidateMode = candidateMode?.name ?: "NONE",
-            confirmationCount = modeConfirmationCount
+            reason = "Confirming mode switch from ${currentMode.name} to ${candidateMode?.name} ($modeConfirmationCount/3)"
         )
     }
 
@@ -83,31 +78,27 @@ class TradingDecisionEngine @Inject constructor(
     ): Decision {
         return when (mode) {
             Mode.DEFENSE -> Decision.Defense(
-                reason = "Defensive mode confirmed",
-                sma200 = sma200,
-                currentPrice = currentPrice
+                reason = "Defensive mode - price $currentPrice above SMA200 $sma200 but ADX neutral"
             )
             Mode.TREND -> {
                 val stopLoss = currentPrice - (atr * config.stopLossAtrMultiplier)
                 val takeProfit = currentPrice + (atr * config.takeProfitAtrMultiplier)
+                val positionSize = currentPrice * config.trendPositionPercent
                 Decision.Trend(
+                    direction = OrderSide.BUY,
                     entryPrice = currentPrice,
                     stopLoss = stopLoss,
                     takeProfit = takeProfit,
-                    positionSizePercent = config.trendPositionPercent,
-                    adx = adx,
-                    atr = atr
+                    positionSize = positionSize
                 )
             }
             Mode.RANGE -> {
                 val gridSpacing = (atr * config.minGridSpacing).max(BigDecimal("0.01"))
+                val positionSizePerLevel = currentPrice * config.gridPositionPercentPerLevel
                 Decision.Range(
-                    centerPrice = currentPrice,
                     gridSpacing = gridSpacing,
-                    positionSizePercentPerLevel = config.gridPositionPercentPerLevel,
                     levels = 5,
-                    adx = adx,
-                    atr = atr
+                    positionSizePerLevel = positionSizePerLevel
                 )
             }
         }
