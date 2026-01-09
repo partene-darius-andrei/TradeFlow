@@ -1,7 +1,7 @@
-Version 1.9.0
+Version 1.10.0
 
-- Implemented complete trading execution logic with 6 use cases for autonomous trading
-- Added grid trading sell side - automatically places profitable sell orders when grid buys fill
-- Enhanced trading cycle orchestrator with emergency liquidation and drawdown monitoring
-- Improved order management with stale order cleanup and exchange reconciliation
-- Added comprehensive risk validation and safety checks for all trading operations
+- Implemented intelligent CI/CD pipeline with Claude AI integration for automated build fixing
+- Added comprehensive portfolio tracking with high water mark functionality
+- Enhanced grid trading system with complete sell-side implementation
+- Improved trading execution engine with better risk management
+- Added automated version management and release note generation
