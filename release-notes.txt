@@ -1,7 +1,7 @@
-Version 1.8.0
+Version 1.9.0
 
-- Added complete trading execution system for automated order placement
-- Implemented emergency liquidation functionality for risk management
-- Added grid trading strategy execution with multi-level order placement
-- Enhanced trading cycle orchestration with comprehensive decision execution
-- Introduced portfolio monitoring and order management capabilities
+- Implemented complete trading execution logic with 6 use cases for autonomous trading
+- Added grid trading sell side - automatically places profitable sell orders when grid buys fill
+- Enhanced trading cycle orchestrator with emergency liquidation and drawdown monitoring
+- Improved order management with stale order cleanup and exchange reconciliation
+- Added comprehensive risk validation and safety checks for all trading operations

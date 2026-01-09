@@ -19,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.8.0"
+        versionName = "1.9.0"
 
         // Inject Coinbase credentials at build time
         // Priority: Environment variables (CI) > local.properties (local dev)
