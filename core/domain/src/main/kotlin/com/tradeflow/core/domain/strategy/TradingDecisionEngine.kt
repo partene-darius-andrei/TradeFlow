@@ -7,8 +7,9 @@ import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
 import java.math.BigDecimal
+import javax.inject.Inject
 
-class TradingDecisionEngine(
+class TradingDecisionEngine @Inject constructor(
     private val smaCalculator: SMACalculator,
     private val adxCalculator: ADXCalculator,
     private val atrCalculator: ATRCalculator,

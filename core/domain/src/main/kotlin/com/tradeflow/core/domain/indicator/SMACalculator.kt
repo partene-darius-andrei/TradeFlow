@@ -8,8 +8,9 @@ import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.num.DecimalNum
 import java.math.BigDecimal
 import java.time.Duration
+import javax.inject.Inject
 
-class SMACalculator {
+class SMACalculator @Inject constructor() {
 
     fun calculate(candles: List<Candle>, period: Int): BigDecimal {
         require(candles.size >= period) {

@@ -6,8 +6,9 @@ import org.ta4j.core.BaseBarSeriesBuilder
 import org.ta4j.core.indicators.adx.ADXIndicator
 import org.ta4j.core.num.DecimalNum
 import java.time.Duration
+import javax.inject.Inject
 
-class ADXCalculator {
+class ADXCalculator @Inject constructor() {
 
     fun calculate(candles: List<Candle>, period: Int): Double {
         require(candles.size >= period * 2) {

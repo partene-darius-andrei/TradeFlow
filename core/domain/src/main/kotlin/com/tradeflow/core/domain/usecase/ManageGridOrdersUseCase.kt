@@ -11,8 +11,9 @@ import com.tradeflow.core.domain.risk.model.RiskCheck
 import com.tradeflow.core.domain.usecase.model.ExecutionResult
 import java.math.BigDecimal
 import java.math.RoundingMode
+import javax.inject.Inject
 
-class ManageGridOrdersUseCase(
+class ManageGridOrdersUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val riskManager: RiskManager
 ) {

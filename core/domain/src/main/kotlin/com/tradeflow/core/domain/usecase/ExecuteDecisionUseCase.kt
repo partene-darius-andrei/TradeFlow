@@ -11,8 +11,9 @@ import com.tradeflow.core.domain.risk.model.PlaceOrderRequest
 import com.tradeflow.core.domain.risk.model.RiskCheck
 import com.tradeflow.core.domain.usecase.model.ExecutionResult
 import java.math.BigDecimal
+import javax.inject.Inject
 
-class ExecuteDecisionUseCase(
+class ExecuteDecisionUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val bracketOrderRepository: BracketOrderRepository,
     private val riskManager: RiskManager,

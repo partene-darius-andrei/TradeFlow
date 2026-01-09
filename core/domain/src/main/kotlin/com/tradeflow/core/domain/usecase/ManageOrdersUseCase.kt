@@ -6,8 +6,9 @@ import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.core.domain.usecase.model.ExecutionResult
 import java.time.Duration
 import java.time.Instant
+import javax.inject.Inject
 
-class ManageOrdersUseCase(
+class ManageOrdersUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val staleOrderThreshold: Duration = Duration.ofHours(48)
 ) {

@@ -5,8 +5,9 @@ import com.tradeflow.core.domain.model.getBtcBalance
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.core.domain.usecase.model.ExecutionResult
 import java.math.BigDecimal
+import javax.inject.Inject
 
-class HandleEmergencyUseCase(
+class HandleEmergencyUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository
 ) {
 

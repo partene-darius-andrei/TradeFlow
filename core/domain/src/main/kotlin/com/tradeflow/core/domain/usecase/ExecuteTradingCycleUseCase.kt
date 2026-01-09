@@ -8,8 +8,9 @@ import com.tradeflow.core.domain.strategy.DecisionEngine
 import com.tradeflow.core.domain.usecase.model.ExecutionResult
 import com.tradeflow.core.domain.usecase.model.TradingContext
 import java.math.BigDecimal
+import javax.inject.Inject
 
-class ExecuteTradingCycleUseCase(
+class ExecuteTradingCycleUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val decisionEngine: DecisionEngine,
     private val riskManager: RiskManager,
