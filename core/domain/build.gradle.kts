@@ -17,4 +17,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.test)
+
+    // HTTP client for historical data fetching in tests
+    testImplementation(libs.ktor.client.core)
+    testImplementation(libs.ktor.client.okhttp)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
 }
