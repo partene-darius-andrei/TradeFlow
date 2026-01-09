@@ -1,6 +1,7 @@
 package com.tradeflow.exchange.coinbase.di
 
 import com.tradeflow.core.domain.auth.AuthTokenProvider
+import com.tradeflow.core.domain.repository.BracketOrderRepository
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.exchange.coinbase.api.CoinbaseApiClient
 import com.tradeflow.exchange.coinbase.repository.CoinbaseRepository
@@ -24,7 +25,19 @@ object ExchangeModule {
 
     @Provides
     @Singleton
-    fun provideExchangeRepository(
+    fun provideCoinbaseRepository(
         apiClient: CoinbaseApiClient
-    ): ExchangeRepository = CoinbaseRepository(apiClient)
+    ): CoinbaseRepository = CoinbaseRepository(apiClient)
+
+    @Provides
+    @Singleton
+    fun provideExchangeRepository(
+        repository: CoinbaseRepository
+    ): ExchangeRepository = repository
+
+    @Provides
+    @Singleton
+    fun provideBracketOrderRepository(
+        repository: CoinbaseRepository
+    ): BracketOrderRepository = repository
 }

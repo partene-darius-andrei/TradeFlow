@@ -31,14 +31,15 @@ class UpdatePortfolioUseCase @Inject constructor(
         balances: List<com.tradeflow.core.domain.model.Balance>,
         btcPrice: BigDecimal
     ): BigDecimal {
+        // Use total (available + hold) to include funds locked in pending orders
         val usdBalance = balances
             .firstOrNull { it.currency == "USD" || it.currency == "USDT" }
-            ?.available
+            ?.total
             ?: BigDecimal.ZERO
 
         val btcBalance = balances
             .firstOrNull { it.currency == "BTC" }
-            ?.available
+            ?.total
             ?: BigDecimal.ZERO
 
         return usdBalance + (btcBalance * btcPrice)

@@ -16,14 +16,20 @@ class TradingDecisionEngine @Inject constructor(
     private val config: StrategyConfig = StrategyConfig()
 ) : DecisionEngine {
 
-    private var currentMode: Mode = Mode.DEFENSE
-    private var modeConfirmationCount: Int = 0
-    private var candidateMode: Mode? = null
+    // Thread-safe mutable state for hysteresis tracking
+    @Volatile private var currentMode: Mode = Mode.DEFENSE
+    @Volatile private var modeConfirmationCount: Int = 0
+    @Volatile private var candidateMode: Mode? = null
 
     private enum class Mode {
         DEFENSE, TREND, RANGE
     }
 
+    /**
+     * Evaluates market conditions and returns a trading decision.
+     * Synchronized to ensure thread-safety when accessing mutable state.
+     */
+    @Synchronized
     override fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
         require(candles.size >= config.smaPeriod) {
             "Need at least ${config.smaPeriod} candles, got ${candles.size}"

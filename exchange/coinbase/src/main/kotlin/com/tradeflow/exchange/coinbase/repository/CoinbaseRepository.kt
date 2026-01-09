@@ -7,7 +7,7 @@ import com.tradeflow.core.domain.model.Order
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.model.Portfolio
 import com.tradeflow.core.domain.model.Ticker
-import com.tradeflow.core.domain.repository.ExchangeRepository
+import com.tradeflow.core.domain.repository.BracketOrderRepository
 import com.tradeflow.exchange.coinbase.api.CoinbaseApiClient
 import com.tradeflow.exchange.coinbase.mapper.toDomain
 import java.math.BigDecimal
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 class CoinbaseRepository @Inject constructor(
     private val apiClient: CoinbaseApiClient
-) : ExchangeRepository {
+) : BracketOrderRepository {
 
     override suspend fun getBalances(): Result<List<Balance>> = runCatching {
         val response = apiClient.getAccounts().getOrThrow()
@@ -71,6 +71,17 @@ class CoinbaseRepository @Inject constructor(
     }
 
     override suspend fun getOpenOrders(productId: String): Result<List<Order>> {
+        TODO("Implement in Ticket 13 - Full REST API Client")
+    }
+
+    override suspend fun placeBracketOrder(
+        productId: String,
+        side: OrderSide,
+        size: BigDecimal,
+        entryPrice: BigDecimal,
+        takeProfit: BigDecimal,
+        stopLoss: BigDecimal
+    ): Result<Order> {
         TODO("Implement in Ticket 13 - Full REST API Client")
     }
 }
