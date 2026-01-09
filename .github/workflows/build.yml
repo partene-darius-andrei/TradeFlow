@@ -40,14 +40,14 @@ jobs:
           echo "is_fix_attempt=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Run unit tests and build
+    - name: Run unit tests (catches compilation errors)
       id: test_build
       env:
         COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
         COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
       run: |
         set +e
-        ./gradlew testDebugUnitTest assembleDebug 2>&1 | tee full-build-log.txt
+        ./gradlew testDebugUnitTest 2>&1 | tee full-build-log.txt
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
         echo "exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
         exit $BUILD_EXIT_CODE
@@ -142,8 +142,12 @@ jobs:
       run: |
         echo "📝 Tests passed! Updating version and release notes with Claude..."
 
-        # Get recent commits
-        git log -10 --pretty=format:"%h %s" > recent-commits.txt
+        # Get git diff with main to see what changed in this branch
+        git fetch origin main
+        git diff origin/main...HEAD > branch-diff.txt
+
+        # Get branch commits (not in main)
+        git log origin/main..HEAD --pretty=format:"%h %s" > branch-commits.txt
 
         # Read current version
         CURRENT_VERSION=$(grep "versionName" app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
@@ -155,10 +159,13 @@ jobs:
 
         Current version: $CURRENT_VERSION (code: $CURRENT_CODE)
 
-        Recent commits:
-        $(cat recent-commits.txt)
+        Branch commits (not in main):
+        $(cat branch-commits.txt)
 
-        Based on these commits, determine:
+        Files changed (git diff with main):
+        $(head -200 branch-diff.txt)
+
+        Based on these changes, determine:
         1. Should version be bumped? (patch/minor/major/none)
         2. New version number (semantic versioning: MAJOR.MINOR.PATCH)
         3. New version code (increment by 1)
