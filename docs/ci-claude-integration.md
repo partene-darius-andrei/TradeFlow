@@ -198,10 +198,9 @@ Add these to **GitHub Settings → Secrets and variables → Actions**:
 **Purpose:** Marks commits that contain Claude's fix analysis
 
 **Behavior:**
-- Pipeline detects this marker
-- Allows one retry after fix attempt
-- If build still fails, requires manual intervention
-- Prevents infinite loop of failed fixes
+- Pipeline recognizes as retry attempt
+- No infinite loops (max 1 retry)
+- Manual intervention required if still fails
 
 **Example:**
 ```
@@ -216,16 +215,16 @@ Error excerpt: error-log.txt
 
 ### `[skip ci]`
 
-**Purpose:** Prevents pipeline from running (standard GitHub convention)
+**Purpose:** Prevents pipeline from retriggering
 
 **Behavior:**
-- Used for version bump commits
-- Used for documentation-only changes
-- Prevents unnecessary builds
+- Used for version bumps
+- Used for documentation updates
+- Prevents infinite commit loops
 
 **Example:**
 ```
-🔖 Bump version to 1.10.0 [skip ci]
+🔖 Bump version to 1.6.1 [skip ci]
 
 Automated version bump by Claude based on recent commits.
 
@@ -234,46 +233,111 @@ See docs/releases/current.md for release notes.
 
 ---
 
-## Example Workflows
+## Workflow Files
 
-### Successful Build Flow
+### `.github/workflows/build.yml`
 
-```bash
-# 1. Developer pushes code
-git push origin claude/new-feature
+**Triggers:**
+- Push to `main` branch
+- Push to `claude/*` branches
+- Manual workflow dispatch
 
-# 2. Pipeline runs
-- Tests pass ✅
-- Build succeeds ✅
-- Claude analyzes commits
-- Version bumped 1.9.0 → 1.10.0
-- Release notes generated
-- APK uploaded to Firebase
+**Key steps:**
+1. **Environment setup** - Java 17, credentials injection
+2. **Build and test** - `testDebugUnitTest` + `assembleDebug`
+3. **Claude error analysis** - On failure, analyze with AI
+4. **Claude version management** - On success, manage versions
+5. **APK upload** - Firebase App Distribution
+6. **Status commit** - Always commits build result
 
-# 3. Developer gets updated code
-git pull  # Gets version bump commit
+**Enhanced features:**
+- Full git history (`fetch-depth: 0`) for Claude analysis
+- Comprehensive error capture and analysis
+- Intelligent version bumping based on commit patterns
+- Automated release note generation
+
+### Example Build Execution
+
+```yaml
+# Smart credential handling with enhanced escaping
+- name: Run unit tests (catches compilation errors)
+  env:
+    COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+    COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+  run: |
+    set +e
+    ./gradlew testDebugUnitTest 2>&1 | tee full-build-log.txt
+    BUILD_EXIT_CODE=${PIPESTATUS[0]}
+    echo "exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
+    exit $BUILD_EXIT_CODE
+  continue-on-error: true
+
+# Claude API integration for error analysis
+- name: Analyze and fix failures with Claude
+  if: steps.test_build.outcome == 'failure' && steps.check_fix.outputs.is_fix_attempt == 'false'
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  run: |
+    # Extract error context
+    tail -500 full-build-log.txt > error-log.txt
+    
+    # Call Claude API with structured prompt
+    RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+      -H "x-api-key: $ANTHROPIC_API_KEY" \
+      -d '{
+        "model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 4096,
+        "messages": [{"role": "user", "content": "..."}]
+      }')
+    
+    # Commit analysis for developer review
+    git add fix-instructions.txt error-log.txt full-build-log.txt
+    git commit -m "[claude-fix] Build failed - Claude analysis attached"
+    git push
 ```
 
-### Failed Build Flow
+---
 
-```bash
-# 1. Developer pushes code with compilation error
-git push origin claude/new-feature
+## Benefits
 
-# 2. Pipeline detects failure
-- Tests/build fail ❌
-- Claude analyzes error log
-- Creates fix-instructions.txt
-- Commits analysis with [claude-fix] marker
-- Retriggers pipeline
+### For Claude Code Development
 
-# 3. Developer reviews Claude's analysis
-git pull
-cat fix-instructions.txt
-# Apply Claude's recommendations
-git commit -m "Fix compilation error based on Claude analysis"
-git push
-```
+**1. Remote Build Capability**
+- No local Gradle required
+- Build with real credentials on GitHub infrastructure  
+- Immediate APK available for testing via Firebase
+
+**2. Intelligent Error Recovery**
+- AI analyzes build failures
+- Provides specific fix recommendations
+- Reduces debugging time
+
+**3. Automated Project Management**
+- Version numbers managed automatically
+- Release notes generated from commits
+- Professional release workflow
+
+**4. Mobile-Friendly Workflow**
+- Push from anywhere → Build → Test on device
+- No heavy local toolchain required
+- Fast iteration cycle
+
+### For Project Quality
+
+**1. Consistent Releases**
+- Semantic versioning enforced
+- Documentation always up-to-date
+- Build status always visible
+
+**2. Error Documentation**
+- All build failures logged and analyzed
+- Historical troubleshooting knowledge
+- Improved code quality over time
+
+**3. CI/CD Best Practices**
+- Comprehensive build validation
+- Automated APK distribution
+- Professional development workflow
 
 ---
 
@@ -281,70 +345,92 @@ git push
 
 ### Build Still Failing After Claude Fix
 
-**Symptoms:**
-- `[claude-fix]` commit exists
-- Build still fails
-- Pipeline shows "Manual intervention required"
-
-**Solutions:**
-1. Read `fix-instructions.txt` carefully
-2. Apply Claude's recommendations
-3. Test locally: `./gradlew testDebugUnitTest assembleDebug`
-4. Push fix without `[claude-fix]` marker
+1. **Check fix-instructions.txt** - Review Claude's analysis
+2. **Apply recommended changes** manually
+3. **Push with descriptive commit** message
+4. **Monitor build logs** for remaining issues
 
 ### Version Not Bumping
 
-**Possible causes:**
-- Commits are documentation-only
-- Changes too minor for version bump
-- Claude determined no bump needed
+1. **Check commit messages** - Must indicate meaningful changes
+2. **Verify ANTHROPIC_API_KEY** is valid
+3. **Review recent-commits.txt** in build artifacts
+4. **Manual version bump** if needed
 
-**Check:**
-- Look for "No version bump needed" in build log
-- Review `version-update.json` file
-- Ensure commits represent meaningful changes
+### APK Not Uploading
 
-### Claude API Rate Limits
+1. **Verify FIREBASE_SERVICE_ACCOUNT_JSON** is valid
+2. **Check Firebase project** configuration
+3. **Ensure proper permissions** for App Distribution
+4. **Download from GitHub artifacts** as fallback
 
-**Symptoms:**
-- API calls failing
-- "Rate limited" errors in logs
+### Claude API Limits
 
-**Solutions:**
-- Wait for rate limit reset
-- Check `ANTHROPIC_API_KEY` secret is valid
-- Reduce pipeline frequency if needed
+1. **Rate limit reached** - Wait and retry
+2. **API key invalid** - Check ANTHROPIC_API_KEY secret
+3. **Response parsing failed** - Check build logs for details
+4. **Manual intervention** when AI analysis fails
 
 ---
 
-## Benefits
+## Advanced Configuration
 
-### ✅ Mobile Development Friendly
+### Custom Version Bump Rules
 
-Perfect for Claude Code mobile development:
-- No local build required
-- Push changes from anywhere
-- Get instant feedback via CI/CD
-- Claude fixes issues automatically
+Add patterns to influence version bumping:
 
-### ✅ Automated Quality Control
+```yaml
+# Commit patterns that trigger specific bumps
+- feat: -> minor bump
+- fix: -> patch bump
+- BREAKING CHANGE: -> major bump
+- docs: -> no bump
+- refactor: -> no bump
+```
 
-- Catches build failures immediately
-- Provides specific fix guidance
-- Maintains version history automatically
-- Generates professional release notes
+### Enhanced Error Analysis
 
-### ✅ Zero-Maintenance Version Management
+Customize Claude prompts for specific error types:
 
-- Semantic versioning applied consistently
-- Release notes match actual changes
-- Version numbers never forgotten
-- Professional release documentation
+```yaml
+# Different prompts for different failure types
+- Compilation errors -> Focus on syntax/imports
+- Test failures -> Focus on logic/mocking
+- Build errors -> Focus on configuration/dependencies
+```
 
-### ✅ Developer Experience
+### Custom Release Notes
 
-- Focus on coding, not pipeline maintenance
-- Clear error analysis when things break
-- Automatic version bumps remove manual work
-- Professional release process
+Influence release note generation:
 
+```yaml
+# Templates for different change types
+- New features: "✨ Added [feature]"
+- Bug fixes: "🐛 Fixed [issue]"  
+- Performance: "⚡ Improved [aspect]"
+```
+
+---
+
+## Security Considerations
+
+### API Key Management
+
+- **Environment variables only** - Never commit API keys
+- **Minimal permissions** - Coinbase keys trade-only
+- **Regular rotation** - Update keys periodically
+- **Audit trail** - Monitor API usage
+
+### Build Security
+
+- **Trusted secrets only** - Verify all GitHub secrets
+- **Code review** - Review all workflow changes
+- **Artifact retention** - 7-day APK retention only
+- **Access control** - Limit repository access
+
+### Claude API Usage
+
+- **Content filtering** - No sensitive data in prompts
+- **Usage monitoring** - Track API consumption
+- **Error handling** - Graceful failures
+- **Privacy** - Build logs may contain sensitive info
