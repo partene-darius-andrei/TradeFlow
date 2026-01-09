@@ -19,6 +19,11 @@ class RiskManager @Inject constructor(
         portfolio: Portfolio,
         currentPrice: BigDecimal
     ): RiskCheck {
+        // Guard against division by zero - reject if portfolio has no equity
+        if (portfolio.totalEquityUsd <= BigDecimal.ZERO) {
+            return RiskCheck.Rejected("Cannot validate order: portfolio equity is zero or negative")
+        }
+
         val orderPrice = request.price ?: currentPrice
         val orderValueUsd = request.size * orderPrice
 
