@@ -1,3 +1,5 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
 
 > Configure project :app
 Detected use of deprecated firebaseAppDistribution { } block. If you used this block in your root project, switch to firebaseAppDistributionDefault { } instead. If you used this block in a productFlavors or buildTypes, import `com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to fix this issue.
@@ -63,59 +65,281 @@ Detected use of deprecated firebaseAppDistribution { } block. If you used this b
 > Task :app:packageDebugResources UP-TO-DATE
 > Task :app:parseDebugLocalResources UP-TO-DATE
 > Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug
-> Task :core:data:extractDeepLinksDebug
-> Task :core:data:processDebugManifest
-> Task :core:ui:extractDeepLinksDebug
-> Task :core:ui:processDebugManifest
-> Task :exchange:coinbase:extractDeepLinksDebug
-> Task :exchange:coinbase:processDebugManifest
-> Task :feature:dashboard:extractDeepLinksDebug
-> Task :feature:dashboard:processDebugManifest
-> Task :feature:settings:extractDeepLinksDebug
-> Task :feature:settings:processDebugManifest
-> Task :feature:trading:extractDeepLinksDebug
-> Task :feature:trading:processDebugManifest
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :core:data:extractDeepLinksDebug UP-TO-DATE
+> Task :core:data:processDebugManifest UP-TO-DATE
+> Task :core:ui:extractDeepLinksDebug UP-TO-DATE
+> Task :core:ui:processDebugManifest UP-TO-DATE
+> Task :exchange:coinbase:extractDeepLinksDebug UP-TO-DATE
+> Task :exchange:coinbase:processDebugManifest UP-TO-DATE
+> Task :feature:dashboard:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:dashboard:processDebugManifest UP-TO-DATE
+> Task :feature:settings:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:settings:processDebugManifest UP-TO-DATE
+> Task :feature:trading:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:trading:processDebugManifest UP-TO-DATE
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
+> Task :core:data:compileDebugLibraryResources UP-TO-DATE
+> Task :core:data:parseDebugLocalResources UP-TO-DATE
+> Task :core:data:generateDebugRFile UP-TO-DATE
+> Task :core:ui:compileDebugLibraryResources UP-TO-DATE
+> Task :core:ui:parseDebugLocalResources UP-TO-DATE
+> Task :core:ui:generateDebugRFile UP-TO-DATE
+> Task :exchange:coinbase:compileDebugLibraryResources UP-TO-DATE
+> Task :exchange:coinbase:parseDebugLocalResources UP-TO-DATE
+> Task :exchange:coinbase:generateDebugRFile UP-TO-DATE
+> Task :feature:dashboard:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:dashboard:parseDebugLocalResources UP-TO-DATE
+> Task :feature:dashboard:generateDebugRFile UP-TO-DATE
+> Task :feature:settings:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:settings:parseDebugLocalResources UP-TO-DATE
+> Task :feature:settings:generateDebugRFile UP-TO-DATE
+> Task :feature:trading:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:trading:parseDebugLocalResources UP-TO-DATE
+> Task :feature:trading:generateDebugRFile UP-TO-DATE
+> Task :core:data:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:data:javaPreCompileDebug UP-TO-DATE
+> Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:ui:javaPreCompileDebug UP-TO-DATE
+> Task :exchange:coinbase:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :exchange:coinbase:javaPreCompileDebug UP-TO-DATE
+> Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:domain:compileKotlin
+> Task :feature:dashboard:javaPreCompileDebug UP-TO-DATE
+> Task :core:domain:compileJava NO-SOURCE
+> Task :core:domain:classes UP-TO-DATE
+> Task :core:domain:jar
 > Task :app:processDebugManifestForPackage
-> Task :core:data:compileDebugLibraryResources
-> Task :core:data:parseDebugLocalResources
-> Task :core:data:generateDebugRFile
-> Task :core:ui:compileDebugLibraryResources
-> Task :core:ui:parseDebugLocalResources
-> Task :core:ui:generateDebugRFile
-> Task :exchange:coinbase:compileDebugLibraryResources
-> Task :exchange:coinbase:parseDebugLocalResources
-> Task :exchange:coinbase:generateDebugRFile
-> Task :feature:dashboard:compileDebugLibraryResources
-> Task :feature:dashboard:parseDebugLocalResources
+> Task :app:processDebugResources
+> Task :feature:settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:settings:javaPreCompileDebug UP-TO-DATE
+> Task :feature:trading:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:trading:javaPreCompileDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :core:data:mergeDebugShaders UP-TO-DATE
+> Task :core:data:compileDebugShaders NO-SOURCE
+> Task :core:data:generateDebugAssets UP-TO-DATE
+> Task :core:data:mergeDebugAssets UP-TO-DATE
+> Task :core:ui:mergeDebugShaders UP-TO-DATE
+> Task :core:ui:compileDebugShaders NO-SOURCE
+> Task :core:ui:generateDebugAssets UP-TO-DATE
+> Task :core:ui:mergeDebugAssets UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugShaders UP-TO-DATE
+> Task :exchange:coinbase:compileDebugShaders NO-SOURCE
+> Task :exchange:coinbase:generateDebugAssets UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugAssets UP-TO-DATE
+> Task :feature:dashboard:mergeDebugShaders UP-TO-DATE
+> Task :feature:dashboard:compileDebugShaders NO-SOURCE
+> Task :feature:dashboard:generateDebugAssets UP-TO-DATE
+> Task :feature:dashboard:mergeDebugAssets UP-TO-DATE
+> Task :feature:settings:mergeDebugShaders UP-TO-DATE
+> Task :feature:settings:compileDebugShaders NO-SOURCE
+> Task :feature:settings:generateDebugAssets UP-TO-DATE
+> Task :feature:settings:mergeDebugAssets UP-TO-DATE
+> Task :feature:trading:mergeDebugShaders UP-TO-DATE
+> Task :feature:trading:compileDebugShaders NO-SOURCE
+> Task :feature:trading:generateDebugAssets UP-TO-DATE
+> Task :feature:trading:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:data:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:data:mergeDebugNativeLibs NO-SOURCE
+> Task :core:data:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:ui:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:ui:mergeDebugNativeLibs NO-SOURCE
+> Task :core:ui:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugJniLibFolders UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugNativeLibs NO-SOURCE
+> Task :exchange:coinbase:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:dashboard:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:dashboard:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:dashboard:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:settings:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:settings:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:settings:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:trading:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:trading:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:trading:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :core:data:checkDebugAarMetadata UP-TO-DATE
+> Task :core:data:stripDebugDebugSymbols NO-SOURCE
+> Task :core:data:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:data:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:data:prepareDebugArtProfile UP-TO-DATE
+> Task :core:data:prepareLintJarForPublish UP-TO-DATE
+> Task :core:ui:checkDebugAarMetadata UP-TO-DATE
+> Task :core:ui:stripDebugDebugSymbols NO-SOURCE
+> Task :core:ui:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:ui:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:ui:prepareDebugArtProfile UP-TO-DATE
+> Task :core:ui:prepareLintJarForPublish UP-TO-DATE
+> Task :exchange:coinbase:checkDebugAarMetadata UP-TO-DATE
+> Task :exchange:coinbase:stripDebugDebugSymbols NO-SOURCE
+> Task :exchange:coinbase:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :exchange:coinbase:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :exchange:coinbase:prepareDebugArtProfile UP-TO-DATE
+> Task :exchange:coinbase:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:dashboard:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:dashboard:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:dashboard:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:dashboard:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:dashboard:prepareDebugArtProfile UP-TO-DATE
+> Task :core:ui:compileDebugKotlin
+> Task :feature:dashboard:prepareLintJarForPublish UP-TO-DATE
+> Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:ui:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:ui:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:ui:processDebugJavaRes UP-TO-DATE
+> Task :core:ui:createFullJarDebug UP-TO-DATE
+> Task :core:ui:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core:ui:extractDebugAnnotations UP-TO-DATE
+> Task :core:ui:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:ui:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:ui:mergeDebugJavaResource UP-TO-DATE
+> Task :core:ui:syncDebugLibJars UP-TO-DATE
+> Task :core:ui:bundleDebugAar UP-TO-DATE
+> Task :core:ui:assembleDebug UP-TO-DATE
+> Task :feature:settings:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:settings:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:settings:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:settings:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:settings:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:settings:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:trading:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:trading:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:trading:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:trading:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:trading:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:trading:prepareLintJarForPublish UP-TO-DATE
+> Task :exchange:coinbase:kspDebugKotlin
+> Task :exchange:coinbase:compileDebugKotlin
+> Task :core:data:kspDebugKotlin
+> Task :exchange:coinbase:compileDebugJavaWithJavac
+> Task :exchange:coinbase:processDebugJavaRes UP-TO-DATE
+> Task :exchange:coinbase:extractDebugAnnotations UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugJavaResource UP-TO-DATE
+> Task :exchange:coinbase:transformDebugClassesWithAsm
+> Task :exchange:coinbase:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :exchange:coinbase:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :exchange:coinbase:createFullJarDebug UP-TO-DATE
+> Task :exchange:coinbase:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :exchange:coinbase:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :exchange:coinbase:syncDebugLibJars UP-TO-DATE
+> Task :exchange:coinbase:bundleDebugAar UP-TO-DATE
+> Task :exchange:coinbase:assembleDebug UP-TO-DATE
 
-> Task :core:domain:compileKotlin FAILED
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:5:8 Unresolved reference 'dagger'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:6:8 Unresolved reference 'dagger'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:7:8 Unresolved reference 'dagger'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:8:8 Unresolved reference 'dagger'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:11:2 Illegal annotation class 'Module'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:12:2 Unresolved reference 'InstallIn'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:12:12 Unresolved reference 'SingletonComponent'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:15:6 Unresolved reference 'Binds'.
+> Task :core:data:compileDebugKotlin
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:4:8 'class EncryptedSharedPreferences : Any, SharedPreferences' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:5:8 'class MasterKey : Any' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:15:29 'class MasterKey : Any' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:15:39 'constructor(p0: @NonNull() Context): MasterKey.Builder' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:16:23 'class MasterKey : Any' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:16:33 'enum class KeyScheme : Enum<MasterKey.KeyScheme!>' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:19:25 'class EncryptedSharedPreferences : Any, SharedPreferences' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:23:9 'class EncryptedSharedPreferences : Any, SharedPreferences' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:23:36 'enum class PrefKeyEncryptionScheme : Enum<EncryptedSharedPreferences.PrefKeyEncryptionScheme!>' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:24:9 'class EncryptedSharedPreferences : Any, SharedPreferences' is deprecated. Deprecated in Java.
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/core/data/src/main/kotlin/com/tradeflow/core/data/security/SecureCredentialStore.kt:24:36 'enum class PrefValueEncryptionScheme : Enum<EncryptedSharedPreferences.PrefValueEncryptionScheme!>' is deprecated. Deprecated in Java.
 
-> Task :feature:dashboard:generateDebugRFile
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1767958466850.json
+> Task :core:data:compileDebugJavaWithJavac
+> Task :core:data:processDebugJavaRes UP-TO-DATE
+> Task :core:data:extractDebugAnnotations
+> Task :core:data:mergeDebugJavaResource UP-TO-DATE
+> Task :core:data:transformDebugClassesWithAsm
+> Task :core:data:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:data:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:data:bundleLibRuntimeToJarDebug
+> Task :core:data:bundleLibCompileToJarDebug
+> Task :core:data:syncDebugLibJars
+> Task :feature:dashboard:kspDebugKotlin NO-SOURCE
+> Task :feature:dashboard:compileDebugKotlin NO-SOURCE
+> Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:data:bundleLibRuntimeToDirDebug
+> Task :feature:settings:kspDebugKotlin NO-SOURCE
+> Task :feature:settings:compileDebugKotlin NO-SOURCE
+> Task :feature:settings:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:trading:kspDebugKotlin NO-SOURCE
+> Task :feature:trading:compileDebugKotlin NO-SOURCE
+> Task :feature:trading:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:settings:transformDebugClassesWithAsm
+> Task :feature:dashboard:transformDebugClassesWithAsm
+> Task :feature:dashboard:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:trading:transformDebugClassesWithAsm
+> Task :feature:settings:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:trading:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:dashboard:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:trading:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:settings:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:dashboard:processDebugJavaRes NO-SOURCE
+> Task :feature:dashboard:createFullJarDebug UP-TO-DATE
+> Task :feature:trading:processDebugJavaRes NO-SOURCE
+> Task :feature:trading:createFullJarDebug UP-TO-DATE
+> Task :feature:settings:processDebugJavaRes NO-SOURCE
+> Task :feature:settings:createFullJarDebug UP-TO-DATE
+> Task :core:data:createFullJarDebug
+> Task :feature:dashboard:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:trading:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:settings:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core:data:bundleDebugAar
+> Task :core:data:assembleDebug
+> Task :feature:dashboard:extractDebugAnnotations
+> Task :feature:dashboard:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:dashboard:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:dashboard:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:dashboard:syncDebugLibJars UP-TO-DATE
+> Task :feature:dashboard:bundleDebugAar UP-TO-DATE
+> Task :feature:dashboard:assembleDebug UP-TO-DATE
+> Task :feature:settings:extractDebugAnnotations
+> Task :feature:settings:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:settings:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:settings:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:settings:syncDebugLibJars UP-TO-DATE
+> Task :feature:settings:bundleDebugAar UP-TO-DATE
+> Task :feature:settings:assembleDebug UP-TO-DATE
+> Task :feature:trading:extractDebugAnnotations
+> Task :feature:trading:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:trading:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:trading:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:trading:syncDebugLibJars UP-TO-DATE
+> Task :feature:trading:bundleDebugAar UP-TO-DATE
+> Task :feature:trading:assembleDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug
+> Task :app:kspDebugKotlin
 
-FAILURE: Build failed with an exception.
+> Task :app:compileDebugKotlin
+w: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/app/src/main/java/com/dpart/tradeflow/presentation/dashboard/DashboardScreen.kt:37:37 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
 
-* What went wrong:
-Execution failed for task ':core:domain:compileKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+> Task :app:compileDebugJavaWithJavac
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
 
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
+> Task :app:hiltJavaCompileDebug
+Note: /Users/dariuspartene/AndroidStudioProjects/TradeFlow/app/build/generated/hilt/component_sources/debug/com/dpart/tradeflow/Hilt_TradeFlowApp.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
 
-BUILD FAILED in 8s
-71 actionable tasks: 31 executed, 40 up-to-date
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+
+[Incubating] Problems report is available at: file:///Users/dariuspartene/AndroidStudioProjects/TradeFlow/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 16s
+241 actionable tasks: 41 executed, 200 up-to-date
