@@ -29,19 +29,24 @@ class BacktestEngine {
         val riskManager = RiskManager()
         val performanceTracker = PerformanceTracker(config.startingCapital)
 
+        // CRITICAL: Set initial price from first candle before any trading
+        val firstCandle = config.historicalCandles.first()
+        exchange.advanceTime(firstCandle)
+
         // Record initial equity
         performanceTracker.recordEquitySnapshot(
-            config.historicalCandles.first().timestamp,
+            firstCandle.timestamp,
             config.startingCapital
         )
 
-        // Process each candle
-        config.historicalCandles.forEachIndexed { index, candle ->
+        // Process each candle (skip first as it was used for initialization)
+        config.historicalCandles.drop(1).forEachIndexed { index, candle ->
             // 1. Advance time and match pending orders
             exchange.advanceTime(candle)
 
             // Wait until we have enough candles for indicators
-            if (index < config.strategyConfig.smaPeriod) {
+            // +1 because we dropped first candle (it's already in history)
+            if (index + 1 < config.strategyConfig.smaPeriod) {
                 return@forEachIndexed
             }
 
@@ -69,34 +74,55 @@ class BacktestEngine {
                 is Decision.Trend -> {
                     // Check if we should enter a trend position
                     val openOrders = exchange.getOpenOrders(config.productId).getOrNull() ?: emptyList()
-                    if (openOrders.isEmpty() && decision.positionSize > BigDecimal.ZERO) {
-                        // Place limit entry order (Decision already contains position size)
-                        exchange.placeLimitOrder(
-                            productId = config.productId,
-                            side = decision.direction,
-                            size = decision.positionSize,
-                            price = decision.entryPrice,
-                            postOnly = true
-                        )
+                    if (openOrders.isEmpty()) {
+                        // Calculate position size using RiskManager
+                        val positionSize = riskManager.calculateTrendPositionSize(portfolio, decision.entryPrice)
+                        val orderCost = positionSize * decision.entryPrice
+                        val usdAvailable = portfolio.balances.find { it.currency == "USD" }?.available ?: BigDecimal.ZERO
+
+                        // Only place order if we have enough available USD
+                        if (positionSize > BigDecimal.ZERO && usdAvailable >= orderCost) {
+                            exchange.placeLimitOrder(
+                                productId = config.productId,
+                                side = decision.direction,
+                                size = positionSize,
+                                price = decision.entryPrice,
+                                postOnly = true
+                            )
+                        }
                     }
                 }
                 is Decision.Range -> {
                     // Place grid orders
                     val openOrders = exchange.getOpenOrders(config.productId).getOrNull() ?: emptyList()
                     val maxGridOrders = 5
-                    if (openOrders.size < maxGridOrders && decision.positionSizePerLevel > BigDecimal.ZERO) {
-                        // Calculate grid price levels
-                        val ordersToPlace = maxGridOrders - openOrders.size
-                        repeat(ordersToPlace.coerceAtMost(decision.levels)) { i ->
-                            val gridPrice = currentPrice - (decision.gridSpacing * BigDecimal(i + 1))
-                            if (gridPrice > BigDecimal.ZERO) {
-                                exchange.placeLimitOrder(
-                                    productId = config.productId,
-                                    side = OrderSide.BUY,
-                                    size = decision.positionSizePerLevel,
-                                    price = gridPrice,
-                                    postOnly = true
-                                )
+                    val usdAvailable = portfolio.balances.find { it.currency == "USD" }?.available ?: BigDecimal.ZERO
+
+                    if (openOrders.size < maxGridOrders) {
+                        // Calculate position size per level using RiskManager
+                        val positionSizePerLevel = riskManager.calculateGridPositionSize(
+                            portfolio,
+                            maxGridOrders,
+                            currentPrice
+                        )
+                        if (positionSizePerLevel > BigDecimal.ZERO) {
+                            // Calculate grid price levels and place orders one at a time
+                            val ordersToPlace = maxGridOrders - openOrders.size
+                            var remainingUsd = usdAvailable
+                            repeat(ordersToPlace.coerceAtMost(decision.levels)) { i ->
+                                val gridPrice = currentPrice - (decision.gridSpacing * BigDecimal(i + 1))
+                                val orderCost = positionSizePerLevel * gridPrice
+                                // Only place order if we have enough USD left
+                                if (gridPrice > BigDecimal.ZERO && remainingUsd >= orderCost) {
+                                    exchange.placeLimitOrder(
+                                        productId = config.productId,
+                                        side = OrderSide.BUY,
+                                        size = positionSizePerLevel,
+                                        price = gridPrice,
+                                        postOnly = true
+                                    )
+                                    remainingUsd -= orderCost  // Reserve the funds
+                                }
                             }
                         }
                     }

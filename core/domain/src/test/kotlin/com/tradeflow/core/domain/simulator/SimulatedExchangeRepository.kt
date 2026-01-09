@@ -143,8 +143,14 @@ class SimulatedExchangeRepository(
             createdAt = Instant.now()
         )
 
-        orderBook.addOrder(order)
-        return Result.success(order)
+        return try {
+            // Reserve funds for the order
+            portfolio.reserveForOrder(order, price)
+            orderBook.addOrder(order)
+            Result.success(order)
+        } catch (e: IllegalArgumentException) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun placeBracketOrder(
@@ -161,7 +167,11 @@ class SimulatedExchangeRepository(
     }
 
     override suspend fun cancelOrder(orderId: String): Result<Unit> {
-        return if (orderBook.removeOrder(orderId)) {
+        val order = orderBook.getOrder(orderId)
+        return if (order != null) {
+            // Release reserved funds before removing order
+            portfolio.releaseReservedFunds(order, order.price ?: currentPrice)
+            orderBook.removeOrder(orderId)
             Result.success(Unit)
         } else {
             Result.failure(IllegalArgumentException("Order not found: $orderId"))

@@ -14,6 +14,8 @@ class PortfolioSimulator(
 ) {
     private var usdBalance: BigDecimal = startingCapitalUsd
     private var btcBalance: BigDecimal = BigDecimal.ZERO
+    private var usdHold: BigDecimal = BigDecimal.ZERO
+    private var btcHold: BigDecimal = BigDecimal.ZERO
     var highWaterMark: BigDecimal = startingCapitalUsd
         private set
 
@@ -22,28 +24,52 @@ class PortfolioSimulator(
         const val MAKER_FEE_PERCENT = 0.0025 // 0.25% (limit orders)
     }
 
+    fun reserveForOrder(order: Order, orderPrice: BigDecimal) {
+        when (order.side) {
+            OrderSide.BUY -> {
+                val cost = order.size * orderPrice
+                require(usdBalance >= cost) { "Insufficient USD to reserve: have $usdBalance, need $cost" }
+                usdBalance -= cost
+                usdHold += cost
+            }
+            OrderSide.SELL -> {
+                require(btcBalance >= order.size) { "Insufficient BTC to reserve: have $btcBalance, need ${order.size}" }
+                btcBalance -= order.size
+                btcHold += order.size
+            }
+        }
+    }
+
+    fun releaseReservedFunds(order: Order, orderPrice: BigDecimal) {
+        when (order.side) {
+            OrderSide.BUY -> {
+                val cost = order.size * orderPrice
+                usdHold -= cost
+                usdBalance += cost
+            }
+            OrderSide.SELL -> {
+                btcHold -= order.size
+                btcBalance += order.size
+            }
+        }
+    }
+
     fun applyFill(order: Order, fillPrice: BigDecimal, isMaker: Boolean) {
         val feePercent = if (isMaker) MAKER_FEE_PERCENT else TAKER_FEE_PERCENT
 
         when (order.side) {
             OrderSide.BUY -> {
-                // Spend USD to buy BTC
+                // Funds already reserved in hold, just release them
                 val cost = order.size * fillPrice
-                require(usdBalance >= cost) { "Insufficient USD balance: have $usdBalance, need $cost" }
-
-                // Deduct cost from USD
-                usdBalance -= cost
+                usdHold -= cost
 
                 // Receive BTC minus fees (fees paid in BTC)
                 val btcReceived = order.size * (BigDecimal.ONE - BigDecimal(feePercent))
                 btcBalance += btcReceived
             }
             OrderSide.SELL -> {
-                // Sell BTC to receive USD
-                require(btcBalance >= order.size) { "Insufficient BTC balance: have $btcBalance, need ${order.size}" }
-
-                // Deduct BTC sold
-                btcBalance -= order.size
+                // BTC already reserved in hold, just release it
+                btcHold -= order.size
 
                 // Receive USD minus fees (fees paid in USD)
                 val usdReceived = order.size * fillPrice * (BigDecimal.ONE - BigDecimal(feePercent))
@@ -53,8 +79,11 @@ class PortfolioSimulator(
     }
 
     fun calculateEquity(currentBtcPrice: BigDecimal): BigDecimal {
-        val btcValueInUsd = btcBalance * currentBtcPrice
-        return (usdBalance + btcValueInUsd).setScale(2, RoundingMode.HALF_UP)
+        // Total equity includes both available and hold balances
+        val totalBtc = btcBalance + btcHold
+        val totalUsd = usdBalance + usdHold
+        val btcValueInUsd = totalBtc * currentBtcPrice
+        return (totalUsd + btcValueInUsd).setScale(2, RoundingMode.HALF_UP)
     }
 
     fun updateHighWaterMark(currentBtcPrice: BigDecimal) {
@@ -69,8 +98,8 @@ class PortfolioSimulator(
 
         return Portfolio(
             balances = listOf(
-                Balance(currency = "USD", available = usdBalance, hold = BigDecimal.ZERO),
-                Balance(currency = "BTC", available = btcBalance, hold = BigDecimal.ZERO)
+                Balance(currency = "USD", available = usdBalance, hold = usdHold),
+                Balance(currency = "BTC", available = btcBalance, hold = btcHold)
             ),
             totalEquityUsd = equity,
             timestamp = Instant.now()

@@ -86,6 +86,10 @@ class OrderBook(
         return buyRemoved || sellRemoved
     }
 
+    fun getOrder(orderId: String): Order? {
+        return buyOrders.find { it.id == orderId } ?: sellOrders.find { it.id == orderId }
+    }
+
     fun getOpenOrders(): List<Order> {
         return (buyOrders + sellOrders).toList()
     }
