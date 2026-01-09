@@ -60,14 +60,49 @@ Detected use of deprecated firebaseAppDistribution { } block. If you used this b
 > Task :app:mapDebugSourceSetPaths UP-TO-DATE
 > Task :app:generateDebugResources UP-TO-DATE
 > Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :core:data:extractDeepLinksDebug
+> Task :core:data:processDebugManifest
+> Task :core:ui:extractDeepLinksDebug
+> Task :core:ui:processDebugManifest
+> Task :exchange:coinbase:extractDeepLinksDebug
+> Task :exchange:coinbase:processDebugManifest
+> Task :feature:dashboard:extractDeepLinksDebug
+> Task :feature:dashboard:processDebugManifest
+> Task :feature:settings:extractDeepLinksDebug
+> Task :feature:settings:processDebugManifest
+> Task :feature:trading:extractDeepLinksDebug
+> Task :feature:trading:processDebugManifest
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :core:data:compileDebugLibraryResources
+> Task :core:data:parseDebugLocalResources
+> Task :core:data:generateDebugRFile
+> Task :core:ui:compileDebugLibraryResources
+> Task :core:ui:parseDebugLocalResources
+> Task :core:ui:generateDebugRFile
+> Task :exchange:coinbase:compileDebugLibraryResources
+> Task :exchange:coinbase:parseDebugLocalResources
+> Task :exchange:coinbase:generateDebugRFile
+> Task :feature:dashboard:compileDebugLibraryResources
+> Task :feature:dashboard:parseDebugLocalResources
 
 > Task :core:domain:compileKotlin FAILED
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/RiskManager.kt:11:14 Unresolved reference 'inject'.
-e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/RiskManager.kt:13:20 Unresolved reference 'Inject'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:5:8 Unresolved reference 'dagger'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:6:8 Unresolved reference 'dagger'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:7:8 Unresolved reference 'dagger'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:8:8 Unresolved reference 'dagger'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:11:2 Illegal annotation class 'Module'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:12:2 Unresolved reference 'InstallIn'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:12:12 Unresolved reference 'SingletonComponent'.
+e: file:///home/runner/work/TradeFlow/TradeFlow/core/domain/src/main/kotlin/com/tradeflow/core/domain/di/StrategyModule.kt:15:6 Unresolved reference 'Binds'.
 
-> Task :app:parseDebugLocalResources
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1767955095244.json
+> Task :feature:dashboard:generateDebugRFile
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1767958466850.json
 
 FAILURE: Build failed with an exception.
 
@@ -82,5 +117,5 @@ Execution failed for task ':core:domain:compileKotlin'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 6s
-42 actionable tasks: 4 executed, 38 up-to-date
+BUILD FAILED in 8s
+71 actionable tasks: 31 executed, 40 up-to-date

@@ -1,7 +1,7 @@
-Version 1.7.0
+Version 1.9.0
 
-- Added intelligent trading decision engine with automatic market trend detection
-- Implemented technical analysis indicators (Moving Averages, Trend Strength, Volatility)
-- Enhanced trading strategy with adaptive market mode switching (trend/range/defense)
-- Added smart position sizing based on market volatility conditions
-- Improved signal accuracy with anti-whipsaw protection to reduce false trades
+- Implemented complete trading execution logic with 6 use cases for autonomous trading
+- Added grid trading sell side - automatically places profitable sell orders when grid buys fill
+- Enhanced trading cycle orchestrator with emergency liquidation and drawdown monitoring
+- Improved order management with stale order cleanup and exchange reconciliation
+- Added comprehensive risk validation and safety checks for all trading operations

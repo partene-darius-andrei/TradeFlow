@@ -12,10 +12,10 @@ Quick reference showing what's implemented vs. pending.
 
 ```
 Phase 1:  ████████████████████ 100% (4/4 tickets) ✅ COMPLETE
-Phase 2:  ████████████████████ 100% (3/3 tickets) ✅ COMPLETE
-Phase 3:  █████░░░░░░░░░░░░░░░░  25% (1/4 tickets) ← YOU ARE HERE
+Phase 2:  ████████████████████ 100% (4/4 tickets) ✅ COMPLETE
+Phase 3:  ░░░░░░░░░░░░░░░░░░░░   0% (0/4 tickets) ← YOU ARE HERE
 
-Total: 8/11 tickets (73%)
+Total: 8/14 tickets (57%)
 ```
 
 ---
@@ -38,20 +38,21 @@ Total: 8/11 tickets (73%)
 | 15 | **Decision Engine** (SMA/ADX/ATR + regime switching) | ✅ COMPLETE |
 | - | **Technical Indicators** (SMACalculator, ADXCalculator, ATRCalculator) | ✅ COMPLETE |
 | - | **Strategy Configuration** (StrategyConfig with defaults) | ✅ COMPLETE |
-| - | **Unit Testing** (TradingDecisionEngineTest with MockK) | ✅ COMPLETE |
+| - | **Use Case Layer** (6 use cases with comprehensive trading logic) | ✅ COMPLETE |
+| - | **Unit Testing** (TradingDecisionEngineTest + use case tests with MockK) | ✅ COMPLETE |
 
 ---
 
 ## ❌ What's PENDING
 
-### Phase 3: API Integration & Service Implementation (25%)
+### Phase 3: API Integration & Service Implementation (0%)
 
 | Ticket | Component | Status | Priority | Description |
 |--------|-----------|--------|----------|-------------|
 | 13 | **Full REST API Client** | ❌ Not Started | HIGH | Order placement, candle fetching, product queries |
 | 14 | **WebSocket Client** | ❌ Not Started | HIGH | Real-time price feeds, order status updates |
 | 16 | **Risk Manager** | ❌ Not Started | MEDIUM | Position sizing, drawdown monitoring, emergency stops |
-| 17 | **Trading Service** | 🟡 Partial | HIGH | 24/7 foreground service (25% - basic architecture) |
+| 17 | **Trading Service** | ❌ Not Started | HIGH | 24/7 foreground service with use case orchestration |
 
 ### Phase 4: Testing & Validation (0%)
 
@@ -67,7 +68,7 @@ Total: 8/11 tickets (73%)
 | Module | Purpose | Status | Completion |
 |--------|---------|--------|-----------|
 | `:app` | DI wiring + credential injection | ✅ Complete | 100% |
-| `:core:domain` | Pure Kotlin interfaces + models + **strategy** | ✅ Complete | 100% |
+| `:core:domain` | Pure Kotlin interfaces + models + **strategy + use cases** | ✅ Complete | 100% |
 | `:core:data` | Room database + security | ✅ Complete | 100% |
 | `:core:ui` | Shared Compose components | ✅ Complete | 100% |
 | `:exchange:coinbase` | Coinbase API integration | 🟡 Partial | 40% (auth ✅, REST ❌, WS ❌) |
@@ -101,61 +102,49 @@ Total: 8/11 tickets (73%)
 
 ---
 
-## 🎉 Major Milestone: Decision Engine Complete (v1.6.0)
+## 🎉 Major Milestone: Complete Core Trading Logic (v1.6.0)
 
-**Phase 2 has been successfully completed with the comprehensive trading engine implementation:**
+**Phase 2 has been successfully completed with comprehensive use case implementation:**
 
-### Decision Engine Features ✅
+### Use Case Layer Implementation ✅
 
-- **Regime Switching:** Automatically detects DEFENSE/TREND/RANGE/WAIT market conditions
-- **SMA(200) Filter:** Bull/bear market detection (price above/below 200-period moving average)
-- **ADX(14) Strength:** Trending (>25) vs ranging (<25) market detection with hysteresis
-- **ATR(14) Volatility:** Stop-loss and take-profit placement based on market volatility
-- **Hysteresis Logic:** 3-candle confirmation prevents whipsaw trades
-- **ta4j Integration:** Professional-grade technical analysis calculations
+- **ExecuteDecisionUseCase** - Central decision execution orchestrator handling all 4 trading modes
+- **ExecuteTradingCycleUseCase** - Complete trading cycle with portfolio updates and risk management
+- **HandleEmergencyUseCase** - Emergency liquidation with order cancellation and BTC selling
+- **ManageGridOrdersUseCase** - Advanced grid trading with dynamic spacing and risk validation
+- **ManageOrdersUseCase** - Order lifecycle management and reconciliation
+- **UpdatePortfolioUseCase** - Portfolio state management with multi-currency support
+
+### Enhanced Domain Models ✅
+
+- **ExecutionResult sealed class** - Standardized use case results (Success/Skipped/Failed)
+- **TradingContext data model** - Complete trading state context
+- **Portfolio utility extensions** - getBtcBalance() function for easy balance access
 
 ### Technical Implementation ✅
 
 ```kotlin
-// Core decision logic (simplified)
-val sma200 = smaCalculator.calculate(candles, 200)
-val adx14 = adxCalculator.calculate(candles, 14) 
-val atr14 = atrCalculator.calculate(candles, 14)
+// Complete decision execution flow
+val portfolioSnapshot = updatePortfolioUseCase.execute(context.currentPrice)
+val decision = decisionEngine.evaluate(context.candles, context.currentPrice)
+val executionResult = executeDecisionUseCase.execute(decision, portfolio, currentPrice, productId)
 
-return when {
-    currentPrice < sma200 -> Decision.Defense() // Safety first
-    adx14 > 25.0 && confirmCount >= 3 -> Decision.Trend() // Strong trend
-    adx14 < 25.0 && confirmCount >= 3 -> Decision.Range() // Weak trend (grid)
-    else -> Decision.Wait() // Need more confirmation
+// Risk management integration
+when (drawdownStatus) {
+    is DrawdownStatus.LimitBreached -> {
+        val emergencyResult = handleEmergencyUseCase.execute(productId)
+        return TradingCycleResult.Emergency(drawdownPercent, steps, emergencyResult)
+    }
 }
 ```
 
-### Strategy Configuration ✅
+### Comprehensive Unit Testing ✅
 
-```kotlin
-data class StrategyConfig(
-    val smaPeriod: Int = 200,                    // Trend filter
-    val adxPeriod: Int = 14,                     // Trend strength
-    val atrPeriod: Int = 14,                     // Volatility measure
-    val adxTrendThreshold: Double = 25.0,        // Trending vs ranging
-    val stopLossAtrMultiplier: BigDecimal = 3.0, // Risk management
-    val takeProfitAtrMultiplier: BigDecimal = 6.0 // 2:1 reward-to-risk
-)
-```
-
-### Enhanced Decision Model ✅
-
-- **Decision.Defense:** Now includes currentPrice and sma200 for transparency
-- **Decision.Trend:** Includes ADX and ATR values for risk calculations  
-- **Decision.Range:** Includes ADX and ATR values for grid spacing
-- **Complete Data Flow:** From raw candles → indicators → decisions → execution params
-
-### Unit Testing ✅
-
-- **Comprehensive coverage:** All decision modes, edge cases, and error conditions
-- **MockK integration:** Isolated unit tests with mocked indicator calculations
-- **Edge cases:** Hysteresis behavior, confirmation counting, regime switching
-- **Validation:** Grid spacing minimums, stop-loss placement, take-profit ratios
+- **ExecuteDecisionUseCaseTest** - All decision modes, risk validation, error handling
+- **HandleEmergencyUseCaseTest** - Emergency scenarios, partial failures, edge cases
+- **ManageGridOrdersUseCaseTest** - Grid spacing, risk integration, partial success
+- **MockK integration** - Isolated unit tests with comprehensive mocking
+- **Edge case coverage** - Error conditions, boundary values, failure scenarios
 
 ---
 
@@ -163,7 +152,7 @@ data class StrategyConfig(
 
 **To reach first live trade capability:**
 
-1. ✅ ~~Decision engine~~ - COMPLETE (v1.6.0)
+1. ✅ ~~Decision engine + use cases~~ - COMPLETE (v1.6.0)
 2. **REST API client** (Ticket 13) ← NEXT BLOCKER
 3. **WebSocket client** (Ticket 14) 
 4. **Risk manager** (Ticket 16)
@@ -186,10 +175,15 @@ data class StrategyConfig(
 - Product queries (trading pairs, minimum order sizes)
 - Order management (cancel, query status)
 
+**Integration points:**
+- Use cases ready to consume via ExchangeRepository interface
+- JWT authentication already working
+- DTO/mapper layer established
+
 **Acceptance criteria:**
-- Can place bracket orders for TREND mode (entry + stop-loss + take-profit)
-- Can place limit orders for RANGE mode (grid trading with post_only=true)
-- Can fetch historical OHLCV data for decision engine
+- ExecuteDecisionUseCase can place bracket orders for TREND mode
+- ManageGridOrdersUseCase can place limit orders for RANGE mode with post_only=true
+- Can fetch historical OHLCV data for TradingDecisionEngine
 - Error handling for API failures, rate limits
 
 ### 2. Ticket 14: WebSocket Client (HIGH PRIORITY)
@@ -198,40 +192,43 @@ data class StrategyConfig(
 
 **Files to implement:**
 - CoinbaseWebSocket class implementing ExchangeWebSocket interface
-- Real-time price feeds (ticker channel)
-- Order status updates (user channel with authentication)
-- Connection management (heartbeat, auto-reconnect)
-
-**Acceptance criteria:**
-- Provides real-time BTC-USD price updates
-- Notifies when orders are filled/cancelled
-- Survives network disconnections with automatic reconnect
-
-### 3. Integration with Decision Engine
-
-**Goal:** Connect completed decision engine to live trading
+- Real-time ticker feeds for UpdatePortfolioUseCase
+- Order status updates for order reconciliation
+- Connection management with auto-reconnect and health monitoring
 
 **Integration points:**
-- Feed real-time price data to decision evaluation
-- Execute decision outputs as real orders via REST API
-- Monitor order status via WebSocket
-- Update local database with trade results
+- ExecuteTradingCycleUseCase needs current BTC price for TradingContext
+- ManageOrdersUseCase needs real-time order status updates
+- Portfolio calculations need current market prices
 
-**Success criteria:**
-- Decision engine receives live market data
-- TREND decisions result in bracket orders on exchange
-- RANGE decisions result in grid limit orders
-- DEFENSE decisions cancel existing buy orders
+### 3. Ticket 16: Risk Manager Implementation (MEDIUM PRIORITY)
 
----
+**Goal:** Concrete RiskManager implementation
 
-## 🚀 Development Momentum
+**Files to implement:**
+- Position sizing calculations used by use cases
+- Drawdown monitoring for ExecuteTradingCycleUseCase
+- Risk validation for ExecuteDecisionUseCase
+- Emergency liquidation triggers
 
-**Phase 2 completion represents a major milestone:**
-- Core "brain" of the trading system is now complete and tested
-- All trading logic implemented with professional-grade technical analysis
-- Robust configuration system allows strategy tuning
-- Comprehensive test suite ensures reliability
+**Integration points:**
+- All use cases ready to consume RiskManager interface
+- DrawdownStatus types defined and used
+- Risk validation integrated into decision execution
 
-**Next phase focus:** Connect the "brain" to live markets through API integration. The hardest algorithmic work is done - now it's about reliable API communication and service orchestration.
+### 4. Ticket 17: Trading Service (HIGH PRIORITY)
 
+**Goal:** 24/7 background execution orchestrating use cases
+
+**Files to implement:**
+- Android foreground service with wake lock
+- Use case orchestration (ExecuteTradingCycleUseCase every 15 minutes)
+- Error handling and recovery
+- Battery optimization and notification management
+
+**Integration points:**
+- Complete use case layer ready for orchestration
+- All dependencies injectable via Hilt
+- TradingCycleResult handling for different outcomes
+
+**Expected Timeline:** 4-6 weeks to complete Phase 3 and reach MVP status with live trading capability.

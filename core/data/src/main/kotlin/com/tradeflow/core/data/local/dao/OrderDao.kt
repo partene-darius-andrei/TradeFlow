@@ -18,6 +18,9 @@ interface OrderDao {
     @Query("SELECT * FROM orders ORDER BY createdAt DESC LIMIT :limit")
     fun getRecentOrders(limit: Int = 100): Flow<List<OrderEntity>>
 
+    @Query("SELECT * FROM orders WHERE productId = :productId AND status = 'FILLED' ORDER BY createdAt DESC LIMIT :limit")
+    suspend fun getRecentFilledOrders(productId: String, limit: Int = 50): List<OrderEntity>
+
     @Query("UPDATE orders SET status = :status, updatedAt = :updatedAt WHERE clientOrderId = :clientOrderId")
     suspend fun updateStatus(clientOrderId: String, status: String, updatedAt: Long = System.currentTimeMillis())
 
