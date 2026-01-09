@@ -1,7 +1,7 @@
 # TradeFlow - Claude Code Entry Point
 
 **Last Updated:** 2026-01-09
-**Project Status:** Phase 2 Complete - Core Trading Logic (v1.10.0)
+**Project Status:** Phase 2 Complete - Core Trading Logic (v1.8.0)
 **Current Build:** #31 SUCCESS
 
 This is the entry point for Claude Code when working with TradeFlow. All essential context, navigation, and workflows are documented here.
@@ -15,7 +15,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 | **[docs/roadmap.md](docs/roadmap.md)** | Implementation roadmap organized in phases | Planning what to build next |
 | **[docs/README.md](docs/README.md)** | Complete documentation index and ticket mapping | Finding specific documentation |
 | **[docs/reference.md](docs/reference.md)** | Implementation blueprint with code examples | Implementing features |
-| **[docs/ci-claude-integration.md](docs/ci-claude-integration.md)** | CI/CD workflows with Claude API integration | Understanding build pipeline |
+| **[docs/ci.md](docs/ci.md)** | CI/CD workflows and troubleshooting | Understanding build pipeline |
 | **[docs/tickets/](docs/tickets/)** | All ticket files organized by status | Reading detailed requirements |
 
 ---
@@ -49,7 +49,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 
 ## 🚦 Current Status
 
-### What EXISTS (Phases 1 & 2 COMPLETE - v1.10.0)
+### What EXISTS (Phases 1 & 2 COMPLETE - v1.8.0)
 
 ```
 ✅ Modern Android app structure
@@ -59,18 +59,10 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
 ✅ Timber logging initialized
 ✅ Firebase Analytics + Crashlytics
 ✅ All trading dependencies added (ta4j, nimbus-jose-jwt, security-crypto)
-✅ GitHub Actions CI/CD pipeline with INTELLIGENT CLAUDE INTEGRATION
+✅ GitHub Actions CI/CD pipeline with environment credentials
 ✅ Adaptive app icon with trading chart design (day/night variants)
 
-✅ ENHANCED CI/CD WITH CLAUDE API (v1.10.0):
-✅ Intelligent build failure analysis with Claude API
-✅ Automatic fix recommendations on build failures
-✅ Automated version management with semantic versioning
-✅ Release notes generation based on commit analysis
-✅ No infinite loops protection with [claude-fix] markers
-✅ Manual intervention detection for persistent failures
-
-✅ DOMAIN LAYER COMPLETE (v1.10.0):
+✅ DOMAIN LAYER COMPLETE (v1.8.0):
 ✅ core/domain/src/main/kotlin/com/tradeflow/core/domain/
     ├── auth/
     │   ├── AuthTokenProvider.kt        ✅ Token generation interface
@@ -88,7 +80,7 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     │   ├── BracketOrderRepository.kt   ✅ Bracket order support interface
     │   ├── ExchangeRepository.kt       ✅ Core exchange operations (12 methods)
     │   ├── ExchangeWebSocket.kt        ✅ Real-time data streams
-    │   └── TradingDataRepository.kt    ✅ Local trading data queries
+    │   └── TradingDataRepository.kt    ✅ Local trading data queries (NEW in v1.8.0)
     ├── strategy/ ← COMPLETE
     │   ├── DecisionEngine.kt           ✅ Decision engine interface
     │   ├── TradingDecisionEngine.kt    ✅ Complete regime-switching implementation with hysteresis + DI
@@ -99,11 +91,11 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     │   └── ATRCalculator.kt            ✅ Average True Range with ta4j integration + @Inject
     ├── risk/
     │   └── RiskManager.kt              ✅ Risk management interface with enhanced types + @Inject
-    └── usecase/ ← COMPLETE IMPLEMENTATION
+    └── usecase/ ← COMPLETE IMPLEMENTATION (v1.8.0)
         ├── ExecuteDecisionUseCase.kt   ✅ Trading decision execution orchestrator
-        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management (UPDATED v1.10.0)
+        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management
         ├── HandleEmergencyUseCase.kt   ✅ Emergency liquidation handler
-        ├── HandleGridFillsUseCase.kt   ✅ Grid order fill detection and profit taking
+        ├── HandleGridFillsUseCase.kt   ✅ Grid order fill detection and profit taking (NEW)
         ├── ManageGridOrdersUseCase.kt  ✅ Grid order management for range trading
         ├── ManageOrdersUseCase.kt      ✅ Order lifecycle and reconciliation
         ├── UpdatePortfolioUseCase.kt   ✅ Portfolio state updates
@@ -111,44 +103,41 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
             ├── ExecutionResult.kt      ✅ Use case result types (Success/Skipped/Failed)
             └── TradingContext.kt       ✅ Trading context data model
 
-✅ DATA LAYER COMPLETE (v1.10.0):
+✅ DATA LAYER COMPLETE (v1.8.0):
 ✅ core/data/src/main/kotlin/com/tradeflow/core/data/
     ├── local/ ← COMPLETE
-    │   ├── database/
-    │   │   └── EngineDatabase.kt       ✅ Room database with 4 tables
     │   ├── entity/
     │   │   ├── CandleEntity.kt        ✅ Room entity for candles
-    │   │   ├── OrderEntity.kt         ✅ Room entity for orders
+    │   │   ├── OrderEntity.kt         ✅ Room entity for orders + getRecentFilledOrders()
     │   │   ├── DecisionEntity.kt      ✅ Room entity for decisions
     │   │   └── PortfolioSnapshotEntity.kt ✅ Room entity for portfolio
     │   └── dao/
     │       ├── CandleDao.kt           ✅ CRUD + delete old candles
     │       ├── OrderDao.kt            ✅ CRUD + query by status/product + filled orders
     │       ├── DecisionDao.kt         ✅ CRUD + latest decision query
-    │       └── PortfolioDao.kt        ✅ CRUD + snapshot history + high water mark queries
+    │       └── PortfolioDao.kt        ✅ CRUD + snapshot history
     ├── security/
-    │   └── StaticCredentialStore.kt    ✅ Static credential injection
+    │   └── StaticCredentialStore.kt    ✅ Static credential injection (replaces UI input)
     ├── mapper/
-    │   └── OrderMapper.kt              ✅ OrderEntity ↔ Order domain model mapping
+    │   └── OrderMapper.kt              ✅ OrderEntity ↔ Order domain model mapping (NEW)
     ├── repository/
-    │   ├── TradingDataRepositoryImpl.kt ✅ Implementation for local data queries
-    │   └── PortfolioRepositoryImpl.kt   ✅ Portfolio data repository (ENHANCED v1.10.0)
+    │   └── TradingDataRepositoryImpl.kt ✅ Implementation for local data queries (NEW)
     └── di/
         ├── SecurityModule.kt           ✅ Static credential DI binding
-        └── RepositoryModule.kt         ✅ Repository DI bindings (ENHANCED v1.10.0)
+        └── RepositoryModule.kt         ✅ TradingDataRepository DI binding (NEW)
 
-✅ COINBASE INTEGRATION COMPLETE:
+✅ COINBASE INTEGRATION COMPLETE (v1.5.5):
 ✅ exchange/coinbase/src/main/kotlin/com/tradeflow/exchange/coinbase/
     ├── auth/
-    │   └── CoinbaseJwtGenerator.kt     ✅ ES256 JWT with comprehensive BouncyCastle PEM parsing
+    │   └── CoinbaseJwtGenerator.kt     ✅ ES256 JWT with ADVANCED BouncyCastle PEM parsing + enhanced escape handling + comprehensive error recovery
     ├── api/
-    │   └── CoinbaseApiClient.kt        ✅ Complete Ktor-based API client (accounts)
+    │   └── CoinbaseApiClient.kt        ✅ Complete Ktor-based API client (accounts) with robust error handling
     ├── dto/
     │   └── AccountDto.kt               ✅ Account DTOs for API responses  
     ├── mapper/
     │   └── AccountMapper.kt            ✅ DTO to domain mapping
     ├── repository/
-    │   └── CoinbaseRepository.kt       ✅ Implementation (getBalances working)
+    │   └── CoinbaseRepository.kt       ✅ Implementation (getBalances working, others TODO for Phase 3)
     └── di/
         ├── AuthModule.kt               ✅ JWT generator DI binding
         └── ExchangeModule.kt           ✅ Repository DI binding
@@ -164,201 +153,320 @@ This is the entry point for Claude Code when working with TradeFlow. All essenti
     └── extension/
         └── BigDecimalExt.kt           ✅ Currency/percentage formatting
 
-✅ PRESENTATION LAYER WITH ENHANCED LIVE DATA:
+✅ PRESENTATION LAYER WITH ENHANCED LIVE DATA (v1.5.5):
 ✅ app/src/main/java/com/dpart/tradeflow/
     ├── navigation/
-    │   └── AppNavHost.kt               ✅ Complete navigation with centralized TopAppBar
+    │   └── AppNavHost.kt               ✅ Complete navigation with CENTRALIZED TopAppBar ("TradeFlow" title)
     ├── presentation/dashboard/
-    │   ├── DashboardScreen.kt          ✅ Complete implementation with real data integration
-    │   ├── DashboardViewModel.kt       ✅ Full state management + robust error handling
+    │   ├── DashboardScreen.kt          ✅ Complete implementation with ENHANCED real data integration
+    │   ├── DashboardViewModel.kt       ✅ Full state management + ROBUST error handling + loading states
     │   └── components/
-    │       ├── PortfolioCard.kt        ✅ Live data, BTC/USD balances
+    │       ├── PortfolioCard.kt        ✅ Live data, BTC/USD balances with "Live Data" indicator + enhanced formatting
     │       ├── ModeCard.kt             ✅ Trading mode + current price
     │       ├── ServiceCard.kt          ✅ Service status + start/stop button
     │       └── OrdersList.kt           ✅ Recent orders + empty state
     └── di/
-        └── DomainModule.kt             ✅ DecisionEngine DI binding
+        └── DomainModule.kt             ✅ DecisionEngine DI binding (NEW in v1.8.0)
 
 ✅ APP BRANDING COMPLETE:
 ✅ Adaptive app icon with trading chart design
-✅ Day/night background variants
+✅ Day/night background variants (white/black)
 ✅ Android 8.0+ adaptive icon support
 ✅ Proper launcher configuration
 
-✅ ENHANCED CREDENTIALS SYSTEM:
-✅ app/build.gradle.kts                 ✅ Advanced build-time credential injection
+✅ ENHANCED CREDENTIALS SYSTEM (v1.5.5):
+✅ app/build.gradle.kts                 ✅ ADVANCED build-time credential injection with ENHANCED PEM key escaping + security improvements
 ✅ app/src/main/java/com/dpart/tradeflow/di/
     └── CredentialsModule.kt            ✅ Provides credentials from BuildConfig
 ```
 
-### What DOESN'T EXIST YET (Phase 3)
+### 🎉 Major Milestone: Complete Trading Engine Implementation (v1.8.0)
+
+**Phase 2 has been successfully completed with comprehensive trading engine and use case implementation:**
+
+🆕 **Complete Use Case Layer Implementation (v1.8.0):**
+- ✅ **ExecuteDecisionUseCase** - Complete decision execution orchestrator
+  - Handles all 4 trading modes (DEFENSE/TREND/RANGE/WAIT)
+  - Risk validation before order placement
+  - Bracket order support for trend trading
+  - Grid order management for range trading
+  - Comprehensive duplicate prevention
+
+- ✅ **ExecuteTradingCycleUseCase** - Master trading orchestrator
+  - Portfolio updates with high water mark tracking
+  - Drawdown monitoring with emergency liquidation at 15%
+  - Complete trading cycle with safety-first design
+  - Grid fill handling integration
+  - Order reconciliation and management
+
+- ✅ **HandleEmergencyUseCase** - Emergency liquidation handler
+  - Cancel all open orders first
+  - Market sell all BTC positions
+  - Complete portfolio liquidation with error handling
+
+- ✅ **ManageGridOrdersUseCase** - Advanced grid trading
+  - Dynamic grid spacing calculation (max of 1.5% or ATR)
+  - Risk-validated position sizing per level
+  - Post-only orders for maker fees (0.60% vs 1.20%)
+  - Partial success handling
+
+- ✅ **HandleGridFillsUseCase** - Grid profit realization (NEW)
+  - Detects filled grid BUY orders
+  - Places corresponding SELL orders for profit
+  - Risk validation and position sizing
+  - Completes the grid trading cycle
+
+- ✅ **ManageOrdersUseCase** - Order lifecycle management
+  - Stale order cancellation (48-hour timeout)
+  - Order reconciliation between local and exchange
+  - Status tracking and updates
+
+- ✅ **UpdatePortfolioUseCase** - Portfolio state management
+  - Multi-currency balance updates
+  - Total equity calculation with current prices
+  - High water mark tracking for drawdown calculation
+
+🆕 **Enhanced Domain Infrastructure (v1.8.0):**
+- ✅ **TradingDataRepository** - Local data query abstraction
+- ✅ **OrderMapper** - Clean entity ↔ domain model mapping
+- ✅ **Complete Dependency Injection** - All components with @Inject
+- ✅ **Comprehensive Unit Testing** - 20+ tests with MockK
+- ✅ **Enhanced Error Handling** - Result<T> pattern throughout
+- ✅ **Safety-First Design** - Emergency liquidation as first-class citizen
+
+### What's MISSING (Ready for Phase 3)
 
 ```
-❌ Full Coinbase REST API client (orders, candles, products)
-❌ Coinbase WebSocket client (real-time feeds)
-❌ Risk manager implementation (position sizing, drawdown)
-❌ Trading service (24/7 background execution)
-❌ Integration testing with real API
-❌ Live trading capability
+❌ Phase 3: API Integration (0% - Ready to Start)
+❌ exchange/coinbase/ - Full REST API implementation
+    ├── Complete CoinbaseRepository (only getBalances working)
+    ├── Order placement methods (bracket, limit, market)
+    ├── Candle data fetching (TWO_HOUR + H4 aggregation)
+    ├── Real-time WebSocket client
+    ├── Order status tracking and updates
+    └── Error handling and retry logic
 
-Estimated: 3-4 weeks to first live trade
+❌ Phase 4: Service & Testing (0%)
+❌ Foreground trading service (TradingService)
+❌ 24/7 background execution
+❌ Integration testing with small real trades
+❌ MVP validation milestone
 ```
 
 ---
 
-## 🏗️ Tech Stack & Dependencies
+## 🏗️ Tech Stack
 
-### Core Framework
-- **Kotlin:** 2.3.0
-- **Android:** minSdk 29, targetSdk 36
-- **Compose:** BOM 2025.12.01 (Material 3)
-- **Gradle:** 8.13
+| Component | Library/Version | Status | Usage |
+|-----------|----------------|--------|-------|
+| **Language** | Kotlin 2.3.0 | ✅ Active | Core language |
+| **UI** | Compose BOM 2025.12.01 | ✅ Active | Modern Android UI |
+| **DI** | Hilt 2.57.2 | ✅ Active | Dependency injection |
+| **Database** | Room 2.8.4 | ✅ Active | Local persistence (4 entities) |
+| **HTTP** | Ktor 3.3.3 | ⚠️ Partial | REST API client (auth only) |
+| **Async** | Coroutines 1.10.2 | ✅ Active | Concurrency |
+| **Serialization** | kotlinx.serialization | ✅ Active | JSON parsing |
+| **Logging** | Timber 5.0.1 | ✅ Active | Structured logging |
+| **Charts** | Vico 2.4.0 | ⏳ Ready | Trading charts (future) |
+| **Analytics** | Firebase BOM 34.7.0 | ✅ Active | Crashlytics + Analytics |
 
-### Architecture & DI
-- **Hilt:** 2.57.2 ✅ ACTIVE (dependency injection)
-- **Room:** 2.8.4 ✅ ACTIVE (local database with 4 entities)
-- **Coroutines:** 1.10.2 ✅ ACTIVE (async operations)
+### Trading-Specific Dependencies
 
-### Network & Security
-- **Ktor:** 3.3.3 ✅ ACTIVE (HTTP client with OkHttp engine)
-- **nimbus-jose-jwt:** 9.47 ✅ ACTIVE (ES256 JWT signing)
-- **BouncyCastle:** 1.78 ✅ ACTIVE (advanced PEM parsing)
-- **security-crypto:** 1.1.0-alpha06 ⚠️ CONFIGURED
-
-### Trading & Analytics
-- **ta4j-core:** 0.16 ✅ ACTIVE (technical indicators - SMA/ADX/ATR)
-- **work-runtime-ktx:** 2.11.0 ⚠️ CONFIGURED (background tasks)
-
-### Testing
-- **mockk:** 1.14.7 ✅ ACTIVE (unit testing with mocks)
-- **kotlin-test:** 2.1.0 ✅ ACTIVE (testing framework)
-
-### Utilities
-- **Timber:** 5.0.1 ✅ ACTIVE (logging)
-- **Vico:** 2.4.0 ⚠️ CONFIGURED (charts - future use)
+| Library | Version | Status | Purpose |
+|---------|---------|--------|---------|
+| **nimbus-jose-jwt** | 9.47 | ✅ Active | ES256 JWT signing for Coinbase |
+| **BouncyCastle** | 1.78 | ✅ Active | Advanced PEM key parsing |
+| **ta4j-core** | 0.16 | ✅ Active | Technical indicators (SMA/ADX/ATR) |
+| **mockk** | 1.14.7 | ✅ Active | Unit testing with mocks |
+| **kotlin-test** | 2.1.0 | ✅ Active | Testing framework |
+| **security-crypto** | 1.1.0-alpha06 | ⏳ Ready | Encrypted preferences (if needed) |
+| **work-runtime-ktx** | 2.11.0 | ⏳ Ready | Background work scheduling |
+| **datastore-preferences** | 1.2.0 | ⏳ Ready | Settings persistence |
+| **material-icons-extended** | ✅ Active | UI icons for ModeIndicator |
 
 **Legend:**
-- ✅ ACTIVE = Currently used in implemented code
-- ⚠️ CONFIGURED = Added to build but not yet used
-- ❌ MISSING = Needed but not added
+- ✅ Active (currently used in implemented code)
+- ⚠️ Partial (configured but incomplete implementation) 
+- ⏳ Ready (configured, awaiting implementation)
 
 ---
 
-## ⚡ CI/CD Integration
+## 🎯 Next Steps (Phase 3 - Critical Path)
 
-### Intelligent Build Pipeline (v1.10.0)
+### Immediate Priority: Complete Coinbase API Integration
 
-**TradeFlow features advanced CI/CD with Claude API integration for intelligent build failure analysis and automated version management.**
+**Goal:** Transform existing use cases from pure domain logic to working trading system
 
-#### Key Features:
+**Blocking Path to MVP:**
+1. **Complete CoinbaseRepository** - Order placement, candle fetching, product queries
+2. **WebSocket Client** - Real-time price feeds, order status updates  
+3. **Trading Service** - 24/7 foreground service orchestrating use cases
+4. **Integration Testing** - Small real trades to verify system works end-to-end
 
-**🤖 Intelligent Build Failure Analysis:**
-- Automatically analyzes build failures with Claude API
-- Provides specific fix recommendations
-- Commits analysis files for developer review
-- Prevents infinite loops with `[claude-fix]` markers
+**Estimated Timeline:** 3-4 weeks to first live trade capability
 
-**📋 Automated Version Management:**
-- Analyzes recent commits to determine version bump type
-- Updates `versionName` and `versionCode` automatically
-- Generates contextual release notes
-- Follows semantic versioning (major.minor.patch)
+### Critical Implementation Notes
 
-**🔄 Workflow Process:**
+**For REST API Client (Phase 3A):**
+- Use cases are **ready to consume** - just implement ExchangeRepository methods
+- JWT authentication **already working** - CoinbaseJwtGenerator complete
+- Error handling patterns established - use Result<T> consistently
+- Order placement: Bracket orders for TREND, limit orders with post_only for RANGE
+- Candle fetching: Handle 350-candle limit, TWO_HOUR → H4 aggregation
+
+**For WebSocket Client (Phase 3B):**
+- ExecuteTradingCycleUseCase needs current BTC price for TradingContext
+- HandleGridFillsUseCase needs order fill notifications 
+- Connection health monitoring with auto-reconnect
+- Heartbeat subscription required (60-90 second timeout)
+
+**For Trading Service (Phase 3C):**
+- ExecuteTradingCycleUseCase is the main orchestrator
+- 15-minute evaluation cycles (not continuous)
+- Foreground service with wake lock for 24/7 operation
+- Emergency liquidation at 15% drawdown (hardcoded safety limit)
+
+---
+
+## 🔥 Critical Context for Claude Code
+
+### Build System (Mobile Optimized)
+
+**The project uses GitHub Actions for builds** - optimized for mobile development with Claude Code:
+
+1. **No local Gradle execution needed** - Push → Actions builds → Firebase distribution
+2. **Real credentials injected at build time** - No credential entry UI needed  
+3. **Commit-back pattern** - Build results in `.build-status` and `build-log.txt`
+4. **Enhanced PEM key handling** - Supports complex JWT private keys with newlines
+
+**Workflow:**
+```bash
+# Make changes in Claude Code
+git add . && git commit -m "Implement X feature"
+git push origin claude/your-branch
+
+# GitHub Actions:
+# 1. Injects real Coinbase credentials from secrets
+# 2. Builds APK with embedded credentials  
+# 3. Uploads to Firebase App Distribution
+# 4. Commits build status back to branch
+
+# Check result
+git pull
+cat .build-status  # SUCCESS or FAILURE
 ```
-Push Code → Run Tests + Build → 
-  ├─ SUCCESS: Update version + release notes → Build APK → Upload
-  └─ FAILURE: Claude analysis → Commit fix instructions → Retrigger
+
+### Dependency Injection Architecture
+
+**Everything uses Hilt DI** - no manual object creation:
+
+```kotlin
+// Domain classes with @Inject constructor
+class TradingDecisionEngine @Inject constructor(
+    private val smaCalculator: SMACalculator,
+    private val adxCalculator: ADXCalculator,
+    private val atrCalculator: ATRCalculator
+) : DecisionEngine
+
+// Use cases with @Inject constructor  
+class ExecuteTradingCycleUseCase @Inject constructor(
+    private val exchangeRepository: ExchangeRepository,
+    private val decisionEngine: DecisionEngine,
+    private val riskManager: RiskManager,
+    // ... all dependencies injected
+)
+
+// Modules bind interfaces to implementations
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class DomainModule {
+    @Binds
+    abstract fun bindDecisionEngine(impl: TradingDecisionEngine): DecisionEngine
+}
 ```
 
-#### Required Secrets:
+### Testing Strategy
 
-| Secret | Purpose | Required For |
-|--------|---------|--------------|
-| `ANTHROPIC_API_KEY` | Claude API access | Build analysis & version management |
-| `COINBASE_API_KEY` | Embedded in APK | Trading functionality |
-| `COINBASE_API_SECRET` | Embedded in APK | Authentication |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | App distribution | APK deployment |
+**Comprehensive unit testing with MockK:**
 
-**See:** [docs/ci-claude-integration.md](docs/ci-claude-integration.md) for complete pipeline documentation.
-
----
-
-## 📁 Project Structure
-
-### Modular Architecture
-```
-TradeFlow/
-├── app/                    # Main application + DI wiring
-├── core/
-│   ├── domain/            # ✅ Pure Kotlin (business logic)
-│   ├── data/              # ✅ Room + repositories  
-│   └── ui/                # ✅ Shared Compose components
-├── exchange/
-│   └── coinbase/          # ✅ Coinbase API integration
-├── feature/
-│   ├── dashboard/         # ✅ Portfolio + trading status
-│   ├── trading/           # ❌ TODO: Trading execution
-│   └── settings/          # ✅ App configuration
-└── build-logic/           # ✅ Gradle convention plugins
+```kotlin
+class ExecuteDecisionUseCaseTest {
+    private val exchangeRepository: ExchangeRepository = mockk()
+    private val riskManager: RiskManager = mockk()
+    
+    @Test
+    fun `execute places bracket order for Trend decision`() = runTest {
+        // Given
+        val decision = Decision.Trend(...)
+        every { riskManager.validateOrder(any(), any(), any()) } returns RiskCheck.Approved
+        coEvery { exchangeRepository.placeBracketOrder(...) } returns Result.success(mockOrder)
+        
+        // When
+        val result = useCase.execute(decision, portfolio, currentPrice, productId)
+        
+        // Then
+        assertTrue(result is ExecutionResult.Success)
+        coVerify { exchangeRepository.placeBracketOrder(...) }
+    }
+}
 ```
 
-### Key Directories
-- **`docs/`** - Complete documentation (roadmap, tickets, guides)
-- **`.github/workflows/`** - CI/CD with Claude integration
-- **`app/src/main/res/`** - Adaptive icon + resources
+**20+ tests covering:**
+- Happy paths and edge cases
+- Error conditions and recovery
+- Risk validation and rejection
+- Partial successes and failures
+- Emergency scenarios
+
+### Architecture Principles
+
+**Clean Architecture with Clear Boundaries:**
+
+```
+┌─────────────────────────────────────┐
+│           Presentation              │ ← ViewModels, Compose UI
+│        (app module)                 │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│            Use Cases                │ ← Business logic orchestration  
+│         (core:domain)               │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│          Domain Models              │ ← Pure Kotlin, no Android deps
+│       Repositories (interfaces)    │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│       Infrastructure               │ ← Coinbase API, Room database
+│      (exchange:coinbase,            │
+│       core:data)                   │
+└─────────────────────────────────────┘
+```
+
+**Key Rules:**
+- Domain layer is **pure Kotlin** (no Android dependencies)
+- Use cases orchestrate business logic (not ViewModels)
+- Repository interfaces define contracts (implementations are swappable)
+- Always use Result<T> for operations that can fail
+- All async operations are suspending functions
+- Dependency injection throughout (no manual instantiation)
 
 ---
 
-## 🎯 Development Workflow
+## 📚 Documentation Quick Access
 
-### For Implementation (Claude Code)
+**When implementing features:**
+- Read the ticket file in `docs/tickets/backlog/` first
+- Check `docs/reference.md` for code examples  
+- Update `docs/roadmap.md` when tickets complete
+- Use `docs/ci.md` for build troubleshooting
 
-1. **Check current status:** Read [docs/roadmap.md](docs/roadmap.md) for next tickets
-2. **Read ticket details:** Find specific ticket in [docs/tickets/backlog/](docs/tickets/backlog/)
-3. **Reference implementation:** Use [docs/reference.md](docs/reference.md) for code patterns
-4. **Push changes:** CI/CD handles build + analysis automatically
-5. **Review results:** Check `.build-status` and `build-log.txt` if needed
+**When debugging:**
+- Check `.build-status` for build results
+- Read `build-log.txt` if build failed
+- Use `cat app/build/reports/lint-results-debug.html` for lint issues
+- Firebase Crashlytics for runtime errors
 
-### For Testing
-- **Local:** `./gradlew testDebugUnitTest` for unit tests
-- **Integration:** Small real trades with live API (when ready)
-- **APK:** Download from Firebase App Distribution
-
-### For Troubleshooting
-- **Build failures:** Check Claude's analysis in `fix-instructions.txt`
-- **API issues:** Review [docs/api/coinbase.md](docs/api/coinbase.md)
-- **Dependencies:** Verify versions in [docs/roadmap.md](docs/roadmap.md)
-
----
-
-## 🚨 Critical Constraints
-
-| Constraint | Value | Impact |
-|------------|-------|--------|
-| **Coinbase fees** | 0.60% maker (intro tier) | Grid spacing ≥ 1.5% |
-| **JWT expiry** | 2 minutes | Regenerate per API call |
-| **Max candles/request** | 350 | Multiple requests for H4 data |
-| **WebSocket timeout** | 60-90 seconds | Must use heartbeats |
-| **Rate limits** | 10,000 requests/hour | Use WebSocket for real-time |
-| **Position size** | 2% portfolio max | Risk management critical |
-| **Drawdown limit** | 15% → emergency stop | Hardcoded safety |
-
----
-
-## 📈 Success Metrics
-
-### Technical Milestones
-- [x] **Phase 1:** Foundation + API integration (COMPLETE)
-- [x] **Phase 2:** Trading logic + decision engine (COMPLETE) 
-- [ ] **Phase 3:** Full API + service implementation (IN PROGRESS)
-- [ ] **Phase 4:** Live trading validation (PENDING)
-
-### Performance Targets
-- **Win rate:** 52-58% (realistic for directional trading)
-- **Risk per trade:** 1-2% of portfolio
-- **Monthly returns:** 3-5% (exceptional skill required)
-- **Drawdown:** Never exceed 15% (automatic stop)
-
-**Remember:** 97% of day traders fail. Treat initial $500 as education cost, not expected profit.
-
+**Key insight:** The core trading logic is **completely implemented** in v1.8.0. What remains is connecting it to the real Coinbase API and wrapping it in a foreground service. The hard part (strategy, risk management, order logic) is done.

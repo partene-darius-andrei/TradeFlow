@@ -1,7 +1,7 @@
-Version 1.11.0
+Version 1.9.0
 
-- Added comprehensive CI/CD pipeline with Claude API integration for intelligent build fixing
-- Implemented automated version management and release note generation
-- Enhanced portfolio tracking with high water mark functionality
-- Fixed critical risk calculation bug in trading engine
-- Improved dependency injection architecture for better code organization
+- Implemented complete trading execution logic with 6 use cases for autonomous trading
+- Added grid trading sell side - automatically places profitable sell orders when grid buys fill
+- Enhanced trading cycle orchestrator with emergency liquidation and drawdown monitoring
+- Improved order management with stale order cleanup and exchange reconciliation
+- Added comprehensive risk validation and safety checks for all trading operations
