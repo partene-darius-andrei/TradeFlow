@@ -13,11 +13,11 @@ class TradingDecisionEngine @Inject constructor(
 ) : DecisionEngine {
 
     // Persistent state for hysteresis
-    private var lastMode: Mode = Mode.DEFENSE
+    private var lastMode: Mode = Mode.RANGE
     private var confirmationCount = 0
     private var candidateMode: Mode? = null
 
-    private enum class Mode { DEFENSE, TREND, RANGE }
+    private enum class Mode { TREND, RANGE }
 
     override fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
         if (candles.size < config.smaPeriod) {
@@ -25,21 +25,23 @@ class TradingDecisionEngine @Inject constructor(
         }
 
         val indicators = taService.calculateAll(candles, config.smaPeriod, config.adxPeriod, config.atrPeriod)
-        
-        // Log indicators for visibility
-        // println("DEBUG: Price: $currentPrice | SMA200: ${indicators.sma200} | ADX: ${indicators.adx} | ATR: ${indicators.atr}")
 
-        // 1. Immediate Defense check (No hysteresis for capital protection)
-        if (currentPrice < indicators.sma200) {
-            resetHysteresis(Mode.DEFENSE)
-            return Decision.Defense("Price below SMA200", currentPrice, indicators.sma200)
-        }
+        println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
 
-        // 2. Determine desired mode based on Trend Strength (ADX)
+        // 1. Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
-            indicators.adx >= config.adxTrendThreshold -> Mode.TREND
-            indicators.adx <= config.adxRangeThreshold -> Mode.RANGE
-            else -> lastMode // Stay in current mode if in the "neutral zone"
+            indicators.adx >= config.adxTrendThreshold -> {
+                println("  [DECISION] ADX ${indicators.adx} >= ${config.adxTrendThreshold} → Wants TREND")
+                Mode.TREND
+            }
+            indicators.adx <= config.adxRangeThreshold -> {
+                println("  [DECISION] ADX ${indicators.adx} <= ${config.adxRangeThreshold} → Wants RANGE")
+                Mode.RANGE
+            }
+            else -> {
+                println("  [DECISION] ADX ${indicators.adx} in neutral zone (${config.adxRangeThreshold}-${config.adxTrendThreshold}) → Stay in $lastMode")
+                lastMode
+            }
         }
 
         // 3. Apply Hysteresis (3-candle confirmation)
@@ -68,23 +70,31 @@ class TradingDecisionEngine @Inject constructor(
 
     private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: TechnicalAnalysisService.Indicators): Decision {
         return when (mode) {
-            Mode.DEFENSE -> Decision.Defense("Above SMA but ADX neutral", currentPrice, indicators.sma200)
-            Mode.TREND -> Decision.Trend(
-                direction = OrderSide.BUY,
-                entryPrice = currentPrice,
-                stopLoss = currentPrice - (indicators.atr * config.stopLossAtrMultiplier),
-                takeProfit = currentPrice + (indicators.atr * config.takeProfitAtrMultiplier),
-                positionSizePercent = config.trendPositionPercent,
-                adx = indicators.adx,
-                atr = indicators.atr
-            )
-            Mode.RANGE -> Decision.Range(
-                gridSpacing = (indicators.atr * config.minGridSpacing).max(BigDecimal("0.01")),
-                levels = 10,
-                positionSizePercentPerLevel = config.gridPositionPercentPerLevel,
-                adx = indicators.adx,
-                atr = indicators.atr
-            )
+            Mode.TREND -> {
+                val sl = currentPrice - (indicators.atr * config.stopLossAtrMultiplier)
+                val tp = currentPrice + (indicators.atr * config.takeProfitAtrMultiplier)
+                println("  [DECISION] → Final: TREND ${config.trendPositionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
+                Decision.Trend(
+                    direction = OrderSide.BUY,
+                    entryPrice = currentPrice,
+                    stopLoss = currentPrice - (indicators.atr * config.stopLossAtrMultiplier),
+                    takeProfit = currentPrice + (indicators.atr * config.takeProfitAtrMultiplier),
+                    positionSizePercent = config.trendPositionPercent,
+                    adx = indicators.adx,
+                    atr = indicators.atr
+                )
+            }
+            Mode.RANGE -> {
+                val spacing = (indicators.atr * config.minGridSpacing).max(BigDecimal("0.01"))
+                println("  [DECISION] → Final: RANGE 3 levels | Spacing: $$spacing | ${config.gridPositionPercentPerLevel.multiply(BigDecimal("100"))}% per level")
+                Decision.Range(
+                    gridSpacing = spacing,
+                    levels = 3,
+                    positionSizePercentPerLevel = config.gridPositionPercentPerLevel,
+                    adx = indicators.adx,
+                    atr = indicators.atr
+                )
+            }
         }
     }
 

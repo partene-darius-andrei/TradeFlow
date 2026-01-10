@@ -35,9 +35,11 @@ class TradeOrchestrator @Inject constructor(
             }
 
             // 1. Risk Check
+            println("  [RISK] Equity: \$${portfolio.totalEquityUsd.setScale(2, RoundingMode.HALF_UP)} | HWM: \$${currentHighWaterMark.setScale(2, RoundingMode.HALF_UP)}")
             if (currentHighWaterMark > BigDecimal.ZERO) {
                 val drawdown = (currentHighWaterMark - portfolio.totalEquityUsd)
                     .divide(currentHighWaterMark, 4, RoundingMode.HALF_UP)
+                println("  [RISK] Drawdown: ${drawdown.multiply(BigDecimal("100")).setScale(2, RoundingMode.HALF_UP)}%")
                 if (drawdown > BigDecimal("0.15")) {
                     exchangeRepository.cancelOrders(openOrders.map { it.id })
                     val btc = portfolio.getBtcBalance()
@@ -56,6 +58,7 @@ class TradeOrchestrator @Inject constructor(
             val hasBtcBalance = btcBalance > BigDecimal("0.00001")
             val hasOpenOrders = openOrders.isNotEmpty()
             val isInTrade = hasBtcBalance || hasOpenOrders
+            println("  [STATE] BTC: $btcBalance | Open Orders: ${openOrders.size} | In Trade: $isInTrade")
 
             val decision = decisionEngine.evaluate(candles, currentPrice)
 
@@ -77,22 +80,31 @@ class TradeOrchestrator @Inject constructor(
                     if (!isInTrade) {
                         val sizeUsd = portfolio.totalEquityUsd * decision.positionSizePercent
                         val btcSize = sizeUsd.divide(decision.entryPrice, 8, RoundingMode.HALF_UP)
+                        println("  [EXEC] TREND: Size \$${sizeUsd.setScale(2, RoundingMode.HALF_UP)} = ${btcSize.setScale(8, RoundingMode.HALF_UP)} BTC")
 
                         bracketOrderRepository.placeBracketOrder(
                             productId, decision.direction, btcSize,
                             decision.entryPrice, decision.takeProfit, decision.stopLoss
                         ).getOrThrow()
                         ExecutionResult.Success("Trend: Opened position.")
-                    } else ExecutionResult.Skipped("Trend: Already in trade.")
+                    } else {
+                        println("  [EXEC] TREND: Skipped (already in trade)")
+                        ExecutionResult.Skipped("Trend: Already in trade.")
+                    }
                 }
                 is Decision.Range -> {
                     if (!isInTrade) {
                         val sizeUsd = portfolio.totalEquityUsd * decision.positionSizePercentPerLevel
                         var ordersPlaced = 0
+                        println("  [EXEC] RANGE: \$${sizeUsd.setScale(2, RoundingMode.HALF_UP)} per level × ${decision.levels} levels | Spacing: \$${decision.gridSpacing.setScale(2, RoundingMode.HALF_UP)}")
 
                         for (level in 1..decision.levels) {
                             val levelPrice = currentPrice - (decision.gridSpacing * BigDecimal(level))
                             val btcSize = sizeUsd.divide(levelPrice, 8, RoundingMode.HALF_UP)
+
+                            if (level == 1) {
+                                println("  [EXEC] Grid level 1: BUY ${btcSize.setScale(8, RoundingMode.HALF_UP)} BTC @ \$${levelPrice.setScale(2, RoundingMode.HALF_UP)}")
+                            }
 
                             exchangeRepository.placeLimitOrder(
                                 productId, OrderSide.BUY, btcSize, levelPrice, true

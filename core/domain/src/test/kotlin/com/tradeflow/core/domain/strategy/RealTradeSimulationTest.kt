@@ -78,6 +78,10 @@ class RealTradeSimulationTest {
         println("--------------------------------------------------------------------------------")
         println("🚀 SIMULATION LOG END\n")
 
-        assertTrue(finalEquity > BigDecimal.ZERO)
+        val targetBalance = BigDecimal("550.00")
+        assertTrue(
+            finalEquity >= targetBalance,
+            "❌ FAILED: Balance $finalEquity is below target $targetBalance (need 10%+ profit)"
+        )
     }
 }
