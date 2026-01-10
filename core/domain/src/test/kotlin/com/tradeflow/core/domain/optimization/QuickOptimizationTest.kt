@@ -2,9 +2,9 @@ package com.tradeflow.core.domain.optimization
 
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Decision
-import com.tradeflow.core.domain.strategy.TradingDecisionEngine
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.synthetic.StationaryBootstrapGenerator
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import org.junit.Test
@@ -51,8 +51,8 @@ class QuickOptimizationTest {
                     profile = RiskProfile.BALANCED
                 )
 
-                val taService = TechnicalAnalysisService()
-                val engine = TradingDecisionEngine(taService, customConfig)
+                val taService = AnalyzeCandlesUseCase()
+                val engine = MakeTradingDecisionUseCase(taService, customConfig)
 
                 val metrics = simulateStrategy(syntheticCandles, engine)
 
@@ -88,8 +88,8 @@ class QuickOptimizationTest {
             profile = RiskProfile.BALANCED
         )
 
-        val taService = TechnicalAnalysisService()
-        val optimizedEngine = TradingDecisionEngine(taService, optimizedConfig)
+        val taService = AnalyzeCandlesUseCase()
+        val optimizedEngine = MakeTradingDecisionUseCase(taService, optimizedConfig)
 
         val oosMetrics = simulateStrategy(outOfSampleData, optimizedEngine)
 
@@ -118,7 +118,7 @@ class QuickOptimizationTest {
 
     private fun simulateStrategy(
         candles: List<com.tradeflow.core.domain.model.Candle>,
-        engine: TradingDecisionEngine
+        engine: MakeTradingDecisionUseCase
     ): PerformanceMetrics {
         var capital = 1000.0
         var btcHeld = 0.0
@@ -135,7 +135,7 @@ class QuickOptimizationTest {
             val currentPrice = candle.close.toDouble()
 
             engine.resetState()
-            val decision = engine.evaluate(history, candle.close)
+            val decision = engine.execute(history, candle.close)
 
             val currentEquity = capital + btcHeld * currentPrice
             equity.add(currentEquity)

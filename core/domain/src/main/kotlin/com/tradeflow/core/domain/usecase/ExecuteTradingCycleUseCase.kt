@@ -6,8 +6,7 @@ import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.repository.BracketOrderRepository
 import com.tradeflow.core.domain.repository.ExchangeRepository
-import com.tradeflow.core.domain.strategy.DecisionEngine
-import com.tradeflow.core.domain.strategy.TradingDecisionEngine
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -38,7 +37,7 @@ import javax.inject.Inject
  *           Unit: USD (total portfolio value).
  *
  * @see ExecutionResult for the three outcome types
- * @see TradeOrchestrator.runCycle for how this result is generated
+ * @see ExecuteTradingCycleUseCase.runCycle for how this result is generated
  */
 data class CycleResult(
     val execution: ExecutionResult,
@@ -52,7 +51,7 @@ data class CycleResult(
  * 1. **Adaptive Risk:** Automatically switches risk profiles based on portfolio balance
  * 2. **Risk Management:** Monitors drawdown circuit breaker, liquidates on breach
  * 3. **State Tracking:** Tracks current positions and open orders
- * 4. **Decision Making:** Delegates to TradingDecisionEngine for strategy decisions
+ * 4. **Decision Making:** Delegates to MakeTradingDecisionUseCase for strategy decisions
  * 5. **Order Execution:** Places/cancels orders based on decisions
  *
  * **Trading Cycle Flow:**
@@ -73,7 +72,7 @@ data class CycleResult(
  *   ↓
  * 6. State Analysis (am I already in a trade?)
  *   ↓
- * 7. Get Decision from TradingDecisionEngine (Wait, Defense, Trend, or Range)
+ * 7. Get Decision from MakeTradingDecisionUseCase (Wait, Defense, Trend, or Range)
  *   ↓
  * 8. Execute Decision:
  *   ├─ Wait: Do nothing, log reason
@@ -93,11 +92,11 @@ data class CycleResult(
  *
  * When a profile switch occurs:
  * 1. New TradingConfig is loaded with appropriate parameters
- * 2. TradingDecisionEngine state is RESET (clears hysteresis)
+ * 2. MakeTradingDecisionUseCase state is RESET (clears hysteresis)
  * 3. Console logs the switch: "[ADAPTIVE] BALANCED → CONSERVATIVE | Balance: $1250.00"
  *
  * **State Management (Stateful):**
- * Unlike most domain components, TradeOrchestrator maintains internal state:
+ * Unlike most domain components, ExecuteTradingCycleUseCase maintains internal state:
  * - `currentConfig`: Active trading configuration (strategy, risk, technical params)
  * - `currentProfile`: Active risk profile (AGGRESSIVE, BALANCED, etc.)
  *
@@ -189,15 +188,15 @@ data class CycleResult(
  * **Dependencies:**
  * - **ExchangeRepository:** Fetches market data, places/cancels orders
  * - **BracketOrderRepository:** Places complex bracket orders (entry + stop + target)
- * - **DecisionEngine:** Generates trading decisions (injected as TradingDecisionEngine)
+ * - **DecisionEngine:** Generates trading decisions (injected as MakeTradingDecisionUseCase)
  * - **AdaptiveOptimizer:** Detects when to switch risk profiles
  *
  * **Usage in Backtesting:**
  * ```kotlin
- * val orchestrator = TradeOrchestrator(
+ * val orchestrator = ExecuteTradingCycleUseCase(
  *     exchangeRepository = SimulatedExchange(...),
  *     bracketOrderRepository = SimulatedBracketOrders(...),
- *     decisionEngine = TradingDecisionEngine(...),
+ *     decisionEngine = MakeTradingDecisionUseCase(...),
  *     adaptiveOptimizer = AdaptiveOptimizer()
  * )
  *
@@ -226,21 +225,21 @@ data class CycleResult(
  * @property bracketOrderRepository Repository for placing bracket orders (entry + stop + target).
  *           Simplifies complex order placement logic.
  *
- * @property decisionEngine Strategy decision generator (typically TradingDecisionEngine).
+ * @property decisionEngine Strategy decision generator (typically MakeTradingDecisionUseCase).
  *           Injected as DecisionEngine interface for testability.
  *
  * @property adaptiveOptimizer Detects when portfolio balance crosses risk profile thresholds.
  *           Automatically switches from AGGRESSIVE → BALANCED → CONSERVATIVE → ULTRA_CONSERVATIVE.
  *
- * @see TradingDecisionEngine for how decisions are generated
+ * @see MakeTradingDecisionUseCase for how decisions are generated
  * @see RiskProfile for the four risk profile tiers
  * @see Decision for the four decision types (Wait, Defense, Trend, Range)
  * @see CycleResult for the return type
  */
-class TradeOrchestrator @Inject constructor(
+class ExecuteTradingCycleUseCase @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val bracketOrderRepository: BracketOrderRepository,
-    private val decisionEngine: DecisionEngine,
+    private val makeDecisionUseCase: MakeTradingDecisionUseCase,
     private val adaptiveOptimizer: AdaptiveOptimizer
 ) {
     private var currentConfig: TradingConfig = TradingConfig.forProfile(RiskProfile.BALANCED)
@@ -402,8 +401,8 @@ class TradeOrchestrator @Inject constructor(
                 currentConfig = TradingConfig.forProfile(switchEvent.to)
                 currentProfile = switchEvent.to
                 println("  [ADAPTIVE] ${switchEvent.from} → ${switchEvent.to} | Balance: \$${switchEvent.balance.setScale(2, RoundingMode.HALF_UP)}")
-                // Reset decision engine state when profile changes
-                (decisionEngine as? TradingDecisionEngine)?.resetState()
+                // Reset decision use case state when profile changes
+                makeDecisionUseCase.resetState()
             }
 
             val currentPrice = exchangeRepository.getCurrentPrice(productId).getOrThrow().price
@@ -442,7 +441,7 @@ class TradeOrchestrator @Inject constructor(
             val isInTrade = hasBtcBalance || hasOpenOrders
             println("  [STATE] BTC: $btcBalance | Open Orders: ${openOrders.size} | In Trade: $isInTrade")
 
-            val decision = decisionEngine.evaluate(candles, currentPrice)
+            val decision = makeDecisionUseCase.execute(candles, currentPrice)
 
             // 3. Execution
             val executionResult = when (decision) {

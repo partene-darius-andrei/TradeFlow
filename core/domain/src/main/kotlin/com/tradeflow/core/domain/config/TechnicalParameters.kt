@@ -13,7 +13,7 @@ import com.tradeflow.core.domain.model.Granularity
  * 2. **ADX (Average Directional Index):** Trend strength measurement
  * 3. **ATR (Average True Range):** Volatility measurement
  *
- * **Usage in TechnicalAnalysisService:**
+ * **Usage in AnalyzeCandlesUseCase:**
  * ```kotlin
  * val params = TechnicalParameters(
  *     smaPeriod = 200,     // 200-period SMA (long-term trend)
@@ -88,7 +88,7 @@ import com.tradeflow.core.domain.model.Granularity
  *           **Rationale:** 4-hour candles balance signal frequency with noise reduction.
  *           Default: FOUR_HOUR (balanced timeframe for crypto swing trading).
  *
- * @see TechnicalAnalysisService for how these parameters are used to calculate indicators
+ * @see AnalyzeCandlesUseCase for how these parameters are used to calculate indicators
  * @see Granularity for available candle timeframes
  */
 data class TechnicalParameters(

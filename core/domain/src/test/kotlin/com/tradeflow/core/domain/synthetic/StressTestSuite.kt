@@ -2,9 +2,9 @@ package com.tradeflow.core.domain.synthetic
 
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Decision
-import com.tradeflow.core.domain.strategy.TradingDecisionEngine
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import org.junit.Test
 import java.math.BigDecimal
@@ -23,9 +23,9 @@ class StressTestSuite {
 
     @Test
     fun `stress test strategy across 1000 alternate timelines`() {
-        val taService = TechnicalAnalysisService()
+        val taService = AnalyzeCandlesUseCase()
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-        val engine = TradingDecisionEngine(taService, config)
+        val engine = MakeTradingDecisionUseCase(taService, config)
 
         val historicalCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 500)
         val generator = StationaryBootstrapGenerator(historicalCandles)
@@ -92,9 +92,9 @@ class StressTestSuite {
 
     @Test
     fun `stress test with jump diffusion black swan events`() {
-        val taService = TechnicalAnalysisService()
+        val taService = AnalyzeCandlesUseCase()
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-        val engine = TradingDecisionEngine(taService, config)
+        val engine = MakeTradingDecisionUseCase(taService, config)
 
         val generator = JumpDiffusionGenerator(
             jumpIntensity = 0.10,
@@ -146,7 +146,7 @@ class StressTestSuite {
 
     private fun simulateStrategy(
         candles: List<com.tradeflow.core.domain.model.Candle>,
-        engine: TradingDecisionEngine
+        engine: MakeTradingDecisionUseCase
     ): PerformanceMetrics {
         var capital = 1000.0
         var btcHeld = 0.0
@@ -163,7 +163,7 @@ class StressTestSuite {
             val history = candles.subList(index - 200, index)
             val currentPrice = candle.close.toDouble()
 
-            val decision = engine.evaluate(history, candle.close)
+            val decision = engine.execute(history, candle.close)
 
             val currentEquity = capital + btcHeld * currentPrice
             equity.add(currentEquity)

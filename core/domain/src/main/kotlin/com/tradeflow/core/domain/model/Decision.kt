@@ -3,7 +3,7 @@ package com.tradeflow.core.domain.model
 import java.math.BigDecimal
 
 /**
- * Sealed class hierarchy representing trading decisions from TradingDecisionEngine.
+ * Sealed class hierarchy representing trading decisions from MakeTradingDecisionUseCase.
  *
  * The decision engine analyzes market conditions (ADX, SMA, ATR) and outputs ONE of four
  * decision types. Each decision type contains all parameters needed to execute it.
@@ -17,7 +17,7 @@ import java.math.BigDecimal
  *
  * **Decision Flow:**
  * ```
- * Market Data → TradingDecisionEngine → Decision (one of 4 types)
+ * Market Data → MakeTradingDecisionUseCase → Decision (one of 4 types)
  *                                            ↓
  *                                      TradeOrchestrator
  *                                            ↓
@@ -39,7 +39,7 @@ import java.math.BigDecimal
  * Each decision subclass validates its parameters in init blocks. Invalid parameters
  * (negative prices, wrong stop/target placement, etc.) throw IllegalArgumentException.
  *
- * @see TradingDecisionEngine for how decisions are generated
+ * @see MakeTradingDecisionUseCase for how decisions are generated
  * @see TradeOrchestrator for how decisions are executed
  */
 sealed class Decision {

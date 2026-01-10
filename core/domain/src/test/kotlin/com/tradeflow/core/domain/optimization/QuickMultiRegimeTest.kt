@@ -2,9 +2,9 @@ package com.tradeflow.core.domain.optimization
 
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Decision
-import com.tradeflow.core.domain.strategy.TradingDecisionEngine
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.synthetic.JumpDiffusionGenerator
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -68,8 +68,8 @@ class QuickMultiRegimeTest {
                 (0 until 3).forEach { seed ->
                     val candles = generator.generate(nSteps = 400, seed = seed.toLong(), noiseLevel = 0.15)
 
-                    val taService = TechnicalAnalysisService()
-                    val engine = TradingDecisionEngine(taService, customConfig)
+                    val taService = AnalyzeCandlesUseCase()
+                    val engine = MakeTradingDecisionUseCase(taService, customConfig)
 
                     val metrics = simulateStrategy(candles, engine)
 
@@ -114,7 +114,7 @@ class QuickMultiRegimeTest {
 
     private fun simulateStrategy(
         candles: List<com.tradeflow.core.domain.model.Candle>,
-        engine: TradingDecisionEngine
+        engine: MakeTradingDecisionUseCase
     ): PerformanceMetrics {
         var capital = 1000.0
         var btcHeld = 0.0
@@ -131,7 +131,7 @@ class QuickMultiRegimeTest {
             val currentPrice = candle.close.toDouble()
 
             engine.resetState()
-            val decision = engine.evaluate(history, candle.close)
+            val decision = engine.execute(history, candle.close)
 
             val currentEquity = capital + btcHeld * currentPrice
             equity.add(currentEquity)

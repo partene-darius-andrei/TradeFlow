@@ -585,7 +585,7 @@ class RiskManager @Inject constructor(
      * - This ensures meaningful price separation between levels
      *
      * **How Spacing is Determined:**
-     * In TradingDecisionEngine, grid spacing is calculated as:
+     * In MakeTradingDecisionUseCase, grid spacing is calculated as:
      * ```kotlin
      * gridSpacing = max(
      *     atr × minGridSpacingAtrMultiplier,  // Volatility-based
@@ -608,10 +608,10 @@ class RiskManager @Inject constructor(
      * - Min spacing percent: 1.5%
      * - Spacing percent: $1,000 / $95,000 = 0.0105 = 1.05%
      * - Result: **INVALID** (1.05% < 1.5%)
-     * - TradingDecisionEngine would reject this grid configuration
+     * - MakeTradingDecisionUseCase would reject this grid configuration
      *
      * **When This is Used:**
-     * Called by TradingDecisionEngine after calculating grid spacing to ensure
+     * Called by MakeTradingDecisionUseCase after calculating grid spacing to ensure
      * the spacing is wide enough before creating Range decision.
      *
      * @param spacingPercent Grid spacing as a percentage (e.g., 0.015 for 1.5%).

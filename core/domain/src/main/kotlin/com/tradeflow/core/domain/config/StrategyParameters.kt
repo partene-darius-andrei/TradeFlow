@@ -15,7 +15,7 @@ import java.math.BigDecimal
  * 1. **TREND Mode:** Strong directional market (high ADX) → larger positions, wider stops
  * 2. **RANGE Mode:** Choppy sideways market (low ADX) → grid trading, tighter stops
  *
- * **Usage in TradingDecisionEngine:**
+ * **Usage in MakeTradingDecisionUseCase:**
  * ```kotlin
  * val params = StrategyParameters(
  *     adxTrendThreshold = 20.0,  // ADX > 20 = trend mode
@@ -101,7 +101,7 @@ import java.math.BigDecimal
  *           Ensures grid doesn't degenerate into a single level.
  *           Default: 1% (reasonable minimum for crypto markets).
  *
- * @see TradingDecisionEngine for how these parameters drive mode detection and decision-making
+ * @see MakeTradingDecisionUseCase for how these parameters drive mode detection and decision-making
  * @see RiskProfile for pre-configured strategy parameter sets optimized for different risk levels
  */
 data class StrategyParameters(
@@ -139,7 +139,7 @@ data class StrategyParameters(
  * Requires `confirmationCandles` consecutive candles to confirm before switching.
  * This prevents whipsaw (rapid mode flipping) at the ADX threshold boundary.
  *
- * @see TradingDecisionEngine for the state machine that manages mode transitions
+ * @see MakeTradingDecisionUseCase for the state machine that manages mode transitions
  */
 enum class DecisionMode {
     TREND,

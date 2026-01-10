@@ -2,7 +2,8 @@ package com.tradeflow.core.domain.strategy
 
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import org.junit.Test
@@ -16,9 +17,9 @@ import kotlin.test.assertTrue
  */
 class HistoricalBacktestTest {
 
-    private val taService = TechnicalAnalysisService()
+    private val taService = AnalyzeCandlesUseCase()
     private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-    private val engine = TradingDecisionEngine(taService, config)
+    private val engine = MakeTradingDecisionUseCase(taService, config)
 
     @Test
     fun `monte carlo strategy behavior analysis`() {
@@ -49,9 +50,9 @@ class HistoricalBacktestTest {
             val date = allCandles[randomIndex].timestamp
 
             // Reset engine state for each independent sample
-            (engine as? TradingDecisionEngine)?.resetState()
+            (engine as? MakeTradingDecisionUseCase)?.resetState()
 
-            val decision = engine.evaluate(history, currentPrice)
+            val decision = engine.execute(history, currentPrice)
 
             val mode = when(decision) {
                 is Decision.Defense -> { totalDefense++; "DEFENSE" }

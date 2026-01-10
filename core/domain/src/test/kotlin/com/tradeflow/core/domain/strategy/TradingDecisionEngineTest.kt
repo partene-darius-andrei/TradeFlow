@@ -2,7 +2,8 @@ package com.tradeflow.core.domain.strategy
 
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
@@ -14,15 +15,15 @@ import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class TradingDecisionEngineTest {
+class MakeTradingDecisionUseCaseTest {
 
-    private val taService = TechnicalAnalysisService()
+    private val taService = AnalyzeCandlesUseCase()
     private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-    private lateinit var engine: TradingDecisionEngine
+    private lateinit var engine: MakeTradingDecisionUseCase
 
     @Before
     fun setup() {
-        engine = TradingDecisionEngine(taService, config)
+        engine = MakeTradingDecisionUseCase(taService, config)
         engine.resetState()
     }
 
@@ -62,9 +63,9 @@ class TradingDecisionEngineTest {
         val currentPrice = candles.last().close
 
         // Engine requires 3 confirmations to switch to TREND mode due to hysteresis
-        engine.evaluate(candles, currentPrice) // Confirmation 1
-        engine.evaluate(candles, currentPrice) // Confirmation 2
-        val decision = engine.evaluate(candles, currentPrice) // Confirmation 3 -> switches to TREND
+        engine.execute(candles, currentPrice) // Confirmation 1
+        engine.execute(candles, currentPrice) // Confirmation 2
+        val decision = engine.execute(candles, currentPrice) // Confirmation 3 -> switches to TREND
 
         assertTrue(decision is Decision.Trend)
         assertEquals(OrderSide.BUY, (decision as Decision.Trend).direction)
@@ -76,7 +77,7 @@ class TradingDecisionEngineTest {
         val candles = createDefenseCandles()
         val currentPrice = BigDecimal("10000") 
         
-        val decision = engine.evaluate(candles, currentPrice)
+        val decision = engine.execute(candles, currentPrice)
         
         assertTrue(decision is Decision.Defense)
         assertTrue((decision as Decision.Defense).reason.contains("below SMA200"))
@@ -88,7 +89,7 @@ class TradingDecisionEngineTest {
             Candle(Instant.now(), BigDecimal("50000"), BigDecimal("50000"), BigDecimal("50000"), BigDecimal("50000"), BigDecimal(100)) 
         }
         
-        val decision = engine.evaluate(candles, BigDecimal("50000"))
+        val decision = engine.execute(candles, BigDecimal("50000"))
         assertTrue(decision is Decision.Wait)
     }
 }

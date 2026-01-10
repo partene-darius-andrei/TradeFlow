@@ -1,8 +1,8 @@
-package com.tradeflow.core.domain.strategy
+package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.config.DecisionMode
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
@@ -110,10 +110,10 @@ import javax.inject.Inject
  * @see Decision for the output decision types
  * @see StrategyParameters for hysteresis configuration (confirmationCandles, ADX thresholds)
  */
-class TradingDecisionEngine @Inject constructor(
-    private val taService: TechnicalAnalysisService,
+class MakeTradingDecisionUseCase @Inject constructor(
+    private val taService: AnalyzeCandlesUseCase,
     private val config: TradingConfig
-) : DecisionEngine {
+) {
 
     /**
      * Last confirmed mode (TREND or RANGE).
@@ -176,7 +176,7 @@ class TradingDecisionEngine @Inject constructor(
      *
      * **Example:**
      * ```kotlin
-     * val engine = TradingDecisionEngine(taService, config)
+     * val engine = MakeTradingDecisionUseCase(taService, config)
      * // Run backtest 1
      * runBacktest(engine, historicalData1)
      *
@@ -293,7 +293,7 @@ class TradingDecisionEngine @Inject constructor(
      *
      * @see createDecision for how Trend and Range decisions are constructed
      */
-    override fun evaluate(candles: List<Candle>, currentPrice: BigDecimal): Decision {
+    fun execute(candles: List<Candle>, currentPrice: BigDecimal): Decision {
         if (candles.size < config.technical.minCandlesRequired) {
             return Decision.Wait("Not enough candles: ${candles.size}/${config.technical.minCandlesRequired}")
         }
@@ -423,7 +423,7 @@ class TradingDecisionEngine @Inject constructor(
      *
      * @return Decision.Trend or Decision.Range with calculated parameters
      */
-    private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: TechnicalAnalysisService.Indicators): Decision {
+    private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: AnalyzeCandlesUseCase.Indicators): Decision {
         return when (mode) {
             Mode.TREND -> {
                 val sl = currentPrice - (indicators.atr * config.strategy.stopLossAtrMultiplier)

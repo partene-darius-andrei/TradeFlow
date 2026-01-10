@@ -42,9 +42,9 @@ import java.math.BigDecimal
  * val config = TradingConfig.forProfile(RiskProfile.BALANCED)
  *
  * // Inject into trading components
- * val decisionEngine = TradingDecisionEngine(config.strategy)
+ * val decisionEngine = MakeTradingDecisionUseCase(config.strategy)
  * val riskManager = RiskManager(config.risk)
- * val technicalService = TechnicalAnalysisService()
+ * val technicalService = AnalyzeCandlesUseCase()
  * val orchestrator = TradeOrchestrator(
  *     config = config,
  *     decisionEngine = decisionEngine,

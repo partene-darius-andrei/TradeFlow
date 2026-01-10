@@ -112,7 +112,7 @@ interface ExchangeRepository {
      * Fetches historical candlestick (OHLCV) data for technical analysis.
      *
      * Returns a list of Candle objects in chronological order (oldest first).
-     * Used by TechnicalAnalysisService to calculate SMA, ADX, ATR indicators.
+     * Used by AnalyzeCandlesUseCase to calculate SMA, ADX, ATR indicators.
      *
      * **Example Request:**
      * ```
@@ -132,7 +132,7 @@ interface ExchangeRepository {
      *
      * **Minimum Candles Required:**
      * - 200+ for SMA200 calculation
-     * - TradingDecisionEngine rejects decisions if insufficient candles
+     * - MakeTradingDecisionUseCase rejects decisions if insufficient candles
      *
      * **Granularity Options:**
      * - FOUR_HOUR (default, used by this strategy)

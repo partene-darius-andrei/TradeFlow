@@ -55,7 +55,7 @@ import java.time.Instant
  *           Unit: Base currency (e.g., BTC for BTC-USD pair).
  *           Can be zero (no trades during period, rare in liquid markets).
  *
- * @see TechnicalAnalysisService for how candles are used to calculate indicators
+ * @see AnalyzeCandlesUseCase for how candles are used to calculate indicators
  * @see Granularity for available candle timeframes
  */
 data class Candle(

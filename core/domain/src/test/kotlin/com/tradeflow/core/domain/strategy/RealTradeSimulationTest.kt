@@ -3,11 +3,12 @@ package com.tradeflow.core.domain.strategy
 import com.tradeflow.core.domain.config.AdaptiveOptimizer
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.simulator.SimulatedExchange
 import com.tradeflow.core.domain.usecase.CycleResult
-import com.tradeflow.core.domain.usecase.TradeOrchestrator
+import com.tradeflow.core.domain.usecase.ExecuteTradingCycleUseCase
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -24,13 +25,13 @@ class RealTradeSimulationTest {
 
     @Test
     fun `analyze PnL and equity curve over 30 days of real data`() = runBlocking {
-        val taService = TechnicalAnalysisService()
+        val taService = AnalyzeCandlesUseCase()
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-        val engine = TradingDecisionEngine(taService, config)
+        val engine = MakeTradingDecisionUseCase(taService, config)
         val initialCapital = BigDecimal("500.00")
         val exchange = SimulatedExchange(initialCapital)
         val adaptiveOptimizer = AdaptiveOptimizer()
-        val orchestrator = TradeOrchestrator(exchange, exchange, engine, adaptiveOptimizer)
+        val orchestrator = ExecuteTradingCycleUseCase(exchange, exchange, engine, adaptiveOptimizer)
 
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 400)
         val primeHistory = allCandles.take(200)

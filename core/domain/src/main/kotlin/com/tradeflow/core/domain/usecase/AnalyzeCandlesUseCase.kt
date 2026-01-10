@@ -1,4 +1,4 @@
-package com.tradeflow.core.domain.indicator
+package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.model.Candle
 import org.ta4j.core.BaseBar
@@ -31,7 +31,7 @@ import javax.inject.Inject
  *
  * **Usage in Trading Decision Engine:**
  * ```kotlin
- * val service = TechnicalAnalysisService()
+ * val service = AnalyzeCandlesUseCase()
  * val indicators = service.calculateAll(
  *     candles = recentCandles,
  *     smaPeriod = 200,
@@ -52,7 +52,7 @@ import javax.inject.Inject
  *
  * @see Indicators for the result object containing all calculated indicator values
  */
-class TechnicalAnalysisService @Inject constructor() {
+class AnalyzeCandlesUseCase @Inject constructor() {
 
     /**
      * Result object containing all calculated technical indicators.

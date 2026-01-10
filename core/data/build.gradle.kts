@@ -1,51 +1,25 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    kotlin("jvm")
 }
 
-android {
-    namespace = "com.tradeflow.core.data"
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 29
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-        }
-    }
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
     // Modules
     implementation(project(":core:domain"))
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    // Dependency Injection (annotations only, no Android deps)
+    implementation(libs.javax.inject)
 
-    // Room (local database)
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    // Room is Android-specific - removing for now
+    // TODO: Replace with SQLite or H2 database for JVM
 
-    // Security (encrypted credentials)
-    implementation(libs.security.crypto)
-
-    // DataStore (settings)
-    implementation(libs.datastore.preferences)
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.5.18")
 
     // Testing
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.room.testing)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
 }
