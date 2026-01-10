@@ -75,8 +75,8 @@ app/src/main/java/com/dpart/tradeflow/
     ├── AppNavHost.kt            ✅ Complete navigation with UNIFIED TopAppBar ("TradeFlow" title)
     └── Screen.kt                ✅ Dashboard + Settings routes
 
-✅ COMPLETE: Enhanced Domain Layer Foundation with Improved Risk Management (v1.8.1)
-└── core/domain/                 ✅ Complete domain layer with enhanced use cases
+✅ COMPLETE: Enhanced Domain Layer Foundation with Improved Risk Management
+└── core/domain/                 ✅ Complete domain layer with simplified use cases
     ├── auth/
     │   ├── AuthTokenProvider.kt ✅ Token generation interface
     │   └── CredentialStore.kt   ✅ Secure storage interface
@@ -104,14 +104,9 @@ app/src/main/java/com/dpart/tradeflow/
     │   └── ATRCalculator.kt     ✅ Average True Range with ta4j integration + @Inject
     ├── risk/
     │   └── RiskManager.kt       ✅ Enhanced risk management with ZERO EQUITY PROTECTION + @Inject (v1.8.1)
-    └── usecase/                 ✅ Complete Use Case Layer Implementation with Enhanced Portfolio Calculations (v1.8.1)
-        ├── ExecuteDecisionUseCase.kt   ✅ Trading decision execution orchestrator
-        ├── ExecuteTradingCycleUseCase.kt ✅ Complete trading cycle with risk management
-        ├── HandleEmergencyUseCase.kt   ✅ Emergency liquidation handler
-        ├── HandleGridFillsUseCase.kt   ✅ Grid fill detection and profit taking
-        ├── ManageGridOrdersUseCase.kt  ✅ Grid order management for range trading
-        ├── ManageOrdersUseCase.kt      ✅ Order lifecycle and reconciliation
-        ├── UpdatePortfolioUseCase.kt   ✅ Portfolio state updates with TOTAL BALANCE CALCULATIONS (v1.8.1)
+    └── usecase/                 ✅ Simplified Use Case Layer (2 core use cases)
+        ├── TradeOrchestrator.kt        ✅ Main orchestrator - handles trading cycle, risk checks, order execution
+        ├── UpdatePortfolioUseCase.kt   ✅ Portfolio state updates and balance aggregation
         └── model/
             ├── ExecutionResult.kt      ✅ Use case result types
             └── TradingContext.kt       ✅ Trading context data model
@@ -243,10 +238,10 @@ app/src/main/java/com/dpart/tradeflow/
 - ✅ **Room database** (4 entities + 4 DAOs with proper BigDecimal handling)
 - ✅ **Secure credential management** (build-time injection with enhanced PEM parsing)
 
-### Phase 2: Core Trading Logic (100% Complete - Enhanced v1.8.1)
-- ✅ **Complete decision engine** (SMA/ADX/ATR with 3-candle hysteresis) - NOW THREAD-SAFE
-- ✅ **6 comprehensive use cases** (trading cycle, emergency handling, grid management)
-- ✅ **Enhanced risk management** (drawdown monitoring, position sizing) - NOW WITH ZERO EQUITY PROTECTION
+### Phase 2: Core Trading Logic (100% Complete)
+- ✅ **Complete decision engine** (SMA/ADX/ATR with 3-candle hysteresis)
+- ✅ **2 simplified use cases** (TradeOrchestrator + UpdatePortfolioUseCase)
+- ✅ **Complete risk management** (RiskManager with position sizing, drawdown monitoring, validation)
 - ✅ **Technical indicators** (ta4j integration: SMACalculator, ADXCalculator, ATRCalculator)
 - ✅ **Robust unit testing** (MockK integration with comprehensive test coverage)
 - ✅ **Thread-safe architecture** ready for concurrent real-time data processing
@@ -268,7 +263,7 @@ app/src/main/java/com/dpart/tradeflow/
 |--------|-------|----------|------------------|--------|-------------|
 | **13** | **Full REST API Client** | 🔥 CRITICAL | Large (3-4 days) | ❌ Not Started | Order placement, candle fetching, product queries |
 | **14** | **WebSocket Client** | 🔥 HIGH | Large (3-4 days) | ❌ Not Started | Real-time price feeds, order status updates |
-| **16** | **Risk Manager Implementation** | 🟡 MEDIUM | Medium (2-3 days) | ❌ Not Started | Complete risk manager with drawdown monitoring |
+| ~~**16**~~ | ~~**Risk Manager**~~ | - | - | ✅ **COMPLETE** | ✅ Fully implemented with 22 unit tests |
 | **17** | **Trading Service** | 🔥 HIGH | Large (4-5 days) | ❌ Not Started | 24/7 foreground service orchestration |
 
 ### Phase 4: Testing & Validation
@@ -341,23 +336,24 @@ class CoinbaseWebSocket : ExchangeWebSocket {
 - ✅ Enhanced portfolio calculations can incorporate real-time price data
 - ✅ Use cases support real-time order status updates
 
-#### Ticket 16: Risk Manager Implementation (MEDIUM PRIORITY)
-**Note:** Interface and enhanced core logic already complete, need full implementation
+#### ~~Ticket 16: Risk Manager~~ - ✅ COMPLETE
+**Status:** FULLY IMPLEMENTED
 
-**Remaining Work:**
+**What Exists:**
 ```kotlin
-// core/domain/risk/RiskManager.kt - COMPLETE IMPLEMENTATION
-class RiskManagerImpl @Inject constructor(
+// core/domain/risk/RiskManager.kt - COMPLETE
+class RiskManager @Inject constructor(
     private val config: RiskConfig
-) : RiskManager {
-    // ✅ Already implemented: validateOrder with zero equity protection
-    
-    // TODO: Complete implementation
-    override fun calculatePositionSize(...)
-    override fun checkDrawdownStatus(...)
-    override fun shouldLiquidate(...)
+) {
+    ✅ validateOrder() - Position size validation with zero equity protection
+    ✅ calculatePositionSize() - Risk-based position sizing
+    ✅ checkDrawdownStatus() - Drawdown monitoring with thresholds
+    ✅ shouldLiquidate() - Emergency liquidation triggers
 }
 ```
+
+**Test Coverage:** 22 unit tests in `RiskManagerTest.kt`
+**Location:** `core/domain/src/main/kotlin/com/tradeflow/core/domain/risk/RiskManager.kt`
 
 #### Ticket 17: Trading Service (HIGH PRIORITY - FINAL ORCHESTRATOR)
 **Blocked by:** Tickets 13, 14 (needs REST API + WebSocket)

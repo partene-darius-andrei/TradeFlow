@@ -3,6 +3,7 @@ package com.tradeflow.core.domain.strategy
 import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.simulator.SimulatedExchange
+import com.tradeflow.core.domain.usecase.CycleResult
 import com.tradeflow.core.domain.usecase.TradeOrchestrator
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import kotlinx.coroutines.runBlocking
@@ -41,23 +42,23 @@ class RealTradeSimulationTest {
 
         simulationDays.forEachIndexed { index, candle ->
             exchange.advanceTime(candle)
-            
-            val currentEquity = exchange.getTotalEquity()
-            if (currentEquity > highWaterMark) highWaterMark = currentEquity
 
-            val result = orchestrator.runCycle("BTC-USD", highWaterMark)
-            
+            val currentEquity = exchange.getTotalEquity()
+
+            val cycleResult = orchestrator.runCycle("BTC-USD", highWaterMark)
+            highWaterMark = cycleResult.updatedHighWaterMark
+
             val timestamp = dateFormatter.format(candle.timestamp)
             val pnl = currentEquity - initialCapital
             val pnlPct = if (initialCapital > BigDecimal.ZERO) pnl.divide(initialCapital, 4, RoundingMode.HALF_UP) * BigDecimal("100") else BigDecimal.ZERO
             val sign = if (pnl >= BigDecimal.ZERO) "+" else ""
-            
-            val resultMsg = when(result) {
-                is ExecutionResult.Success -> "✅ ${result.message}"
-                is ExecutionResult.Skipped -> "◽ ${result.reason}"
-                is ExecutionResult.Failed -> "❌ ${result.error}"
+
+            val resultMsg = when(cycleResult.execution) {
+                is ExecutionResult.Success -> "✅ ${cycleResult.execution.message}"
+                is ExecutionResult.Skipped -> "◽ ${cycleResult.execution.reason}"
+                is ExecutionResult.Failed -> "❌ ${cycleResult.execution.error}"
             }
-            
+
             // Log EVERY candle for full visibility
             println("[$timestamp] | BTC: ${candle.close.setScale(2, RoundingMode.HALF_UP)} | $resultMsg | Equity: ${currentEquity.setScale(2, RoundingMode.HALF_UP)} | PnL: $sign${pnl.setScale(2, RoundingMode.HALF_UP)} ($sign${pnlPct.setScale(2, RoundingMode.HALF_UP)}%)")
         }

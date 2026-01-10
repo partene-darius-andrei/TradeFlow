@@ -8,6 +8,22 @@ Strategy specification and Android architecture for TradeFlow.
 
 ## Strategy Specification (Phase 1)
 
+### 🚨 CRITICAL WARNING - Known Bug
+**Issue:** TradingDecisionEngine ALWAYS goes LONG in Trend mode (hardcoded `OrderSide.BUY`).
+- ADX measures trend *strength*, not *direction*.
+- Current code will open LONG positions even in strong downtrends.
+- This WILL cause losses in bear markets.
+
+**Fix Required:** Add trend direction detection:
+- **Option 1:** Use SMA slope (is price rising above SMA200?)
+- **Option 2:** Add +DI/-DI from ADX calculation
+- **Option 3:** Compare recent candle closes (bullish = close > open)
+
+**Status:** Bug documented in CODE_REVIEW_DEEP_ANALYSIS.md (#5)
+**Priority:** MUST FIX before live trading
+
+---
+
 ### What's IN Phase 1
 
 | Component | Implementation |

@@ -80,7 +80,7 @@ class TradingDecisionEngine @Inject constructor(
             )
             Mode.RANGE -> Decision.Range(
                 gridSpacing = (indicators.atr * config.minGridSpacing).max(BigDecimal("0.01")),
-                levels = 5,
+                levels = 10,
                 positionSizePercentPerLevel = config.gridPositionPercentPerLevel,
                 adx = indicators.adx,
                 atr = indicators.atr
