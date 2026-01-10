@@ -36,24 +36,28 @@ class HistoricalBacktestTest {
         var totalDefense = 0
         var totalTrend = 0
         var totalRange = 0
-        
+        var totalWait = 0
+
         println("\n--- Monte Carlo Report (100 Random Samples) ---")
-        
+
         repeat(iterations) { i ->
             // Pick a random point in time that has at least 200 candles of history
             val randomIndex = Random.nextInt(windowSize, allCandles.size)
-            
+
             val history = allCandles.subList(randomIndex - windowSize, randomIndex)
             val currentPrice = allCandles[randomIndex].close
             val date = allCandles[randomIndex].timestamp
-            
+
+            // Reset engine state for each independent sample
+            (engine as? TradingDecisionEngine)?.resetState()
+
             val decision = engine.evaluate(history, currentPrice)
-            
+
             val mode = when(decision) {
                 is Decision.Defense -> { totalDefense++; "DEFENSE" }
                 is Decision.Trend -> { totalTrend++; "TREND" }
                 is Decision.Range -> { totalRange++; "RANGE" }
-                is Decision.Wait -> "WAIT"
+                is Decision.Wait -> { totalWait++; "WAIT" }
             }
             
             // Print every 10th sample to keep logs clean but representative
@@ -66,9 +70,10 @@ class HistoricalBacktestTest {
         println("DEFENSE: $totalDefense (${(totalDefense * 100.0 / iterations).toInt()}%)")
         println("TREND:   $totalTrend (${(totalTrend * 100.0 / iterations).toInt()}%)")
         println("RANGE:   $totalRange (${(totalRange * 100.0 / iterations).toInt()}%)")
+        println("WAIT:    $totalWait (${(totalWait * 100.0 / iterations).toInt()}%)")
 
         // Validation: Ensure the strategy actually switches regimes
-        assertTrue(totalDefense + totalTrend + totalRange == iterations, "All iterations should produce a decision")
+        assertTrue(totalDefense + totalTrend + totalRange + totalWait == iterations, "All iterations should produce a decision")
         assertTrue(totalDefense > 0, "Strategy should have encountered some bearish periods in 1000 days")
         assertTrue(totalTrend > 0 || totalRange > 0, "Strategy should have encountered some bullish/neutral periods")
     }

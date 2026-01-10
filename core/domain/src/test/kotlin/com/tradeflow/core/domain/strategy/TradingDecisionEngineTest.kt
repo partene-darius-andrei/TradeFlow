@@ -60,9 +60,12 @@ class TradingDecisionEngineTest {
     fun `evaluate Trend scenario`() {
         val candles = createTrendCandles()
         val currentPrice = candles.last().close
-        
-        val decision = engine.evaluate(candles, currentPrice)
-        
+
+        // Engine requires 3 confirmations to switch to TREND mode due to hysteresis
+        engine.evaluate(candles, currentPrice) // Confirmation 1
+        engine.evaluate(candles, currentPrice) // Confirmation 2
+        val decision = engine.evaluate(candles, currentPrice) // Confirmation 3 -> switches to TREND
+
         assertTrue(decision is Decision.Trend)
         assertEquals(OrderSide.BUY, (decision as Decision.Trend).direction)
         assertEquals(config.strategy.trendPositionPercent, decision.positionSizePercent)

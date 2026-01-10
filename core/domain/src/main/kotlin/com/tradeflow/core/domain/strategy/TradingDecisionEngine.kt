@@ -36,7 +36,18 @@ class TradingDecisionEngine @Inject constructor(
 
         println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
 
-        // 1. Determine desired mode based on Trend Strength (ADX)
+        // 1. Defense Mode Check (Price below SMA200 = Capital Preservation)
+        if (currentPrice < indicators.sma200) {
+            candidateMode = null
+            confirmationCount = 0
+            return Decision.Defense(
+                reason = "Price below SMA200 - capital preservation mode",
+                currentPrice = currentPrice,
+                sma200 = indicators.sma200
+            )
+        }
+
+        // 2. Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
             indicators.adx >= config.strategy.adxTrendThreshold -> {
                 println("  [DECISION] ADX ${indicators.adx} >= ${config.strategy.adxTrendThreshold} → Wants TREND")
