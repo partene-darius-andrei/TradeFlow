@@ -2,6 +2,10 @@ plugins {
     kotlin("jvm")  // Pure Kotlin, NO Android
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     // Core Kotlin only
     implementation(libs.kotlinx.coroutines.core)
