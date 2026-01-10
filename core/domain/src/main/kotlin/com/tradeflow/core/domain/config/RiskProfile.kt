@@ -35,7 +35,15 @@ enum class RiskProfile {
                 stopLossAtrMultiplier = BigDecimal("8.0"),
                 takeProfitAtrMultiplier = BigDecimal("25.0")
             )
-            BALANCED -> StrategyParameters()
+            BALANCED -> StrategyParameters(
+                confirmationCandles = 4,
+                adxTrendThreshold = 15.69036802888202,
+                adxRangeThreshold = 1.3818857881651878,
+                stopLossAtrMultiplier = BigDecimal("8.298988671516664"),
+                takeProfitAtrMultiplier = BigDecimal("22.53153609428897"),
+                trendPositionPercent = BigDecimal("0.0523"),
+                gridPositionPercentPerLevel = BigDecimal("0.0710")
+            )
             CONSERVATIVE -> StrategyParameters(
                 trendPositionPercent = BigDecimal("0.03"),
                 gridPositionPercentPerLevel = BigDecimal("0.05"),
