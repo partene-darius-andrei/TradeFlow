@@ -11,23 +11,19 @@ application {
 }
 
 dependencies {
-    // Kotlin coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    // REUSE existing modules (domain logic + Coinbase integration)
+    implementation(project(":core:domain"))
+    implementation(project(":exchange:coinbase"))
 
-    // Ktor HTTP client
+    // Ktor (needed for HTTP client in Main.kt)
     implementation("io.ktor:ktor-client-core:3.3.3")
     implementation("io.ktor:ktor-client-okhttp:3.3.3")
     implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
     implementation("io.ktor:ktor-client-logging:3.3.3")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
 
-    // Kotlinx serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-
-    // JWT generation (ES256)
-    implementation("com.nimbusds:nimbus-jose-jwt:9.47")
-    implementation("org.bouncycastle:bcprov-jdk18on:1.78")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.78")
+    // Coroutines (needed for runBlocking in Main.kt)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")

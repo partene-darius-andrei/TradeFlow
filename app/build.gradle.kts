@@ -6,8 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.appdistribution)
 }
 
 android {
@@ -91,14 +89,4 @@ dependencies {
     // Hilt (DI for business logic modules)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-}
-
-apply(plugin = "com.google.firebase.appdistribution")
-configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
-    releaseNotesFile = "release-notes.txt"
-    testers = "partene.darius@gmail.com"
-    serviceCredentialsFile = "app/tradeflow.json"
 }
