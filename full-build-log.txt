@@ -1,26 +1,11 @@
-Starting a Gradle Daemon (subsequent builds will be faster)
-
-> Configure project :app
-e: file:///home/runner/work/TradeFlow/TradeFlow/app/build.gradle.kts:8:33: Unresolved reference: crashlytics
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/test_build-1767966104196.json
 
 FAILURE: Build failed with an exception.
 
-* Where:
-Build file '/home/runner/work/TradeFlow/TradeFlow/app/build.gradle.kts' line: 8
-
 * What went wrong:
-Script compilation error:
-
-  Line 8:     alias(libs.plugins.firebase.crashlytics)
-                                          ^ Unresolved reference: crashlytics
-
-1 error
+Value '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home' given for org.gradle.java.home Gradle property is invalid (Java home supplied is invalid)
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
 > Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
-
-BUILD FAILED in 23s
