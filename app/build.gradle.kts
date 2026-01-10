@@ -72,37 +72,25 @@ android {
 }
 
 dependencies {
-    // Module dependencies
+    // Module dependencies (business logic only)
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
-    implementation(project(":core:ui"))
     implementation(project(":exchange:coinbase"))
-    implementation(project(":feature:dashboard"))
-    implementation(project(":feature:trading"))
-    implementation(project(":feature:settings"))
 
     // App-level dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // Compose (minimal for app entry point)
+    // Compose (minimal for "Hello" screen)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    // Navigation (app-level NavHost)
-    implementation(libs.androidx.navigation.compose)
-
-    // Hilt (app-level DI wiring)
+    // Hilt (DI for business logic modules)
     implementation(libs.hilt.android)
-    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
-
-    // Timber (app-level logging)
-    implementation(libs.timber)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
