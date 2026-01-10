@@ -51,7 +51,7 @@ class TechnicalAnalysisService @Inject constructor() {
         val smaIndicator = SMAIndicator(closePrice, smaPeriod)
 
         val smaValue = smaIndicator.getValue(series.endIndex).doubleValue()
-        val smaPreviousIndex = (series.endIndex - 10).coerceAtLeast(smaPeriod)
+        val smaPreviousIndex = (series.endIndex - 10).coerceAtLeast(0)
         val smaPreviousValue = smaIndicator.getValue(smaPreviousIndex).doubleValue()
 
         val adxValue = ADXIndicator(series, adxPeriod).getValue(series.endIndex).doubleValue()
