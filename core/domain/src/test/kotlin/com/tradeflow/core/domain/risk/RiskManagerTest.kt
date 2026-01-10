@@ -1,5 +1,7 @@
 package com.tradeflow.core.domain.risk
 
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.Balance
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.model.OrderType
@@ -15,13 +17,7 @@ import kotlin.test.assertTrue
 
 class RiskManagerTest {
 
-    private val testConfig = RiskConfig(
-        maxPositionPercent = BigDecimal("0.05"),
-        maxTotalExposurePercent = BigDecimal("0.10"),
-        maxDrawdownPercent = 0.15,
-        drawdownWarningPercent = 0.12,
-        minGridSpacingPercent = BigDecimal("0.015")
-    )
+    private val testConfig = TradingConfig.forProfile(RiskProfile.BALANCED)
 
     private val riskManager = RiskManager(testConfig)
 

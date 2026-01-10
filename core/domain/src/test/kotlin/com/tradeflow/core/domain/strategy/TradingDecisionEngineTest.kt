@@ -1,9 +1,12 @@
 package com.tradeflow.core.domain.strategy
 
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
+import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.Instant
@@ -14,8 +17,14 @@ import kotlin.test.assertTrue
 class TradingDecisionEngineTest {
 
     private val taService = TechnicalAnalysisService()
-    private val config = StrategyConfig()
-    private val engine = TradingDecisionEngine(taService, config)
+    private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
+    private lateinit var engine: TradingDecisionEngine
+
+    @Before
+    fun setup() {
+        engine = TradingDecisionEngine(taService, config)
+        engine.resetState()
+    }
 
     private fun createTrendCandles(): List<Candle> {
         val now = Instant.now().minus(Duration.ofDays(40))
@@ -56,7 +65,7 @@ class TradingDecisionEngineTest {
         
         assertTrue(decision is Decision.Trend)
         assertEquals(OrderSide.BUY, (decision as Decision.Trend).direction)
-        assertEquals(config.trendPositionPercent, decision.positionSizePercent)
+        assertEquals(config.strategy.trendPositionPercent, decision.positionSizePercent)
     }
 
     @Test

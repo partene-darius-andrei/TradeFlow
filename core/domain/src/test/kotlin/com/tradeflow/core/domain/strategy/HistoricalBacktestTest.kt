@@ -1,5 +1,7 @@
 package com.tradeflow.core.domain.strategy
 
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.util.BinanceDataLoader
@@ -15,7 +17,8 @@ import kotlin.test.assertTrue
 class HistoricalBacktestTest {
 
     private val taService = TechnicalAnalysisService()
-    private val engine = TradingDecisionEngine(taService)
+    private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
+    private val engine = TradingDecisionEngine(taService, config)
 
     @Test
     fun `monte carlo strategy behavior analysis`() {

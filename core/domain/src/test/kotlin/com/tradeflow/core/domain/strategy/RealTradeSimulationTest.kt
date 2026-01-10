@@ -1,5 +1,8 @@
 package com.tradeflow.core.domain.strategy
 
+import com.tradeflow.core.domain.config.AdaptiveOptimizer
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.indicator.TechnicalAnalysisService
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.simulator.SimulatedExchange
@@ -22,10 +25,12 @@ class RealTradeSimulationTest {
     @Test
     fun `analyze PnL and equity curve over 30 days of real data`() = runBlocking {
         val taService = TechnicalAnalysisService()
-        val engine = TradingDecisionEngine(taService)
+        val config = TradingConfig.forProfile(RiskProfile.BALANCED)
+        val engine = TradingDecisionEngine(taService, config)
         val initialCapital = BigDecimal("500.00")
         val exchange = SimulatedExchange(initialCapital)
-        val orchestrator = TradeOrchestrator(exchange, exchange, engine)
+        val adaptiveOptimizer = AdaptiveOptimizer()
+        val orchestrator = TradeOrchestrator(exchange, exchange, engine, adaptiveOptimizer)
 
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 400)
         val primeHistory = allCandles.take(200)
