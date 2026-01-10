@@ -1,9 +1,13 @@
 package com.tradeflow.core.domain.usecase
 
+import com.tradeflow.core.domain.config.AdaptiveOptimizer
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.repository.BracketOrderRepository
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.core.domain.strategy.DecisionEngine
+import com.tradeflow.core.domain.strategy.TradingDecisionEngine
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -14,18 +18,33 @@ data class CycleResult(
 )
 
 /**
- * Single orchestrator for the trading cycle.
+ * Single orchestrator for the trading cycle with adaptive risk profiles.
  */
 class TradeOrchestrator @Inject constructor(
     private val exchangeRepository: ExchangeRepository,
     private val bracketOrderRepository: BracketOrderRepository,
     private val decisionEngine: DecisionEngine,
+    private val adaptiveOptimizer: AdaptiveOptimizer
 ) {
+    private var currentConfig: TradingConfig = TradingConfig.forProfile(RiskProfile.BALANCED)
+    private var currentProfile: RiskProfile = RiskProfile.BALANCED
+
     suspend fun runCycle(productId: String, highWaterMark: BigDecimal): CycleResult {
         return try {
             val portfolio = exchangeRepository.getPortfolio().getOrThrow()
+
+            // Adaptive profile switching
+            val switchEvent = adaptiveOptimizer.detectProfileSwitch(currentProfile, portfolio.totalEquityUsd)
+            if (switchEvent != null) {
+                currentConfig = TradingConfig.forProfile(switchEvent.to)
+                currentProfile = switchEvent.to
+                println("  [ADAPTIVE] ${switchEvent.from} → ${switchEvent.to} | Balance: \$${switchEvent.balance.setScale(2, RoundingMode.HALF_UP)}")
+                // Reset decision engine state when profile changes
+                (decisionEngine as? TradingDecisionEngine)?.resetState()
+            }
+
             val currentPrice = exchangeRepository.getCurrentPrice(productId).getOrThrow().price
-            val candles = exchangeRepository.getCandles(productId, Granularity.FOUR_HOUR).getOrThrow()
+            val candles = exchangeRepository.getCandles(productId, currentConfig.technical.granularity).getOrThrow()
             val openOrders = exchangeRepository.getOpenOrders(productId).getOrThrow()
 
             val currentHighWaterMark = if (portfolio.totalEquityUsd > highWaterMark) {
@@ -38,16 +57,16 @@ class TradeOrchestrator @Inject constructor(
             println("  [RISK] Equity: \$${portfolio.totalEquityUsd.setScale(2, RoundingMode.HALF_UP)} | HWM: \$${currentHighWaterMark.setScale(2, RoundingMode.HALF_UP)}")
             if (currentHighWaterMark > BigDecimal.ZERO) {
                 val drawdown = (currentHighWaterMark - portfolio.totalEquityUsd)
-                    .divide(currentHighWaterMark, 4, RoundingMode.HALF_UP)
+                    .divide(currentHighWaterMark, currentConfig.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
                 println("  [RISK] Drawdown: ${drawdown.multiply(BigDecimal("100")).setScale(2, RoundingMode.HALF_UP)}%")
-                if (drawdown > BigDecimal("0.15")) {
+                if (drawdown > BigDecimal.valueOf(currentConfig.risk.maxDrawdownPercent)) {
                     exchangeRepository.cancelOrders(openOrders.map { it.id })
                     val btc = portfolio.getBtcBalance()
-                    if (btc > BigDecimal("0.00001")) {
+                    if (btc > currentConfig.execution.minBtcDustThreshold) {
                         exchangeRepository.placeMarketOrder(productId, OrderSide.SELL, btc)
                     }
                     return CycleResult(
-                        ExecutionResult.Failed("EMERGENCY: 15% Drawdown reached. Liquidated."),
+                        ExecutionResult.Failed("EMERGENCY: ${currentConfig.risk.maxDrawdownPercent * 100}% Drawdown reached. Liquidated."),
                         currentHighWaterMark
                     )
                 }
@@ -55,7 +74,7 @@ class TradeOrchestrator @Inject constructor(
 
             // 2. State Check
             val btcBalance = portfolio.getBtcBalance()
-            val hasBtcBalance = btcBalance > BigDecimal("0.00001")
+            val hasBtcBalance = btcBalance > currentConfig.execution.minBtcDustThreshold
             val hasOpenOrders = openOrders.isNotEmpty()
             val isInTrade = hasBtcBalance || hasOpenOrders
             println("  [STATE] BTC: $btcBalance | Open Orders: ${openOrders.size} | In Trade: $isInTrade")

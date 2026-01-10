@@ -1,5 +1,6 @@
 package com.tradeflow.core.domain.risk
 
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.model.Portfolio
 import com.tradeflow.core.domain.risk.model.DrawdownStatus
@@ -10,7 +11,7 @@ import java.math.RoundingMode
 import javax.inject.Inject
 
 class RiskManager @Inject constructor(
-    private val config: RiskConfig = RiskConfig()
+    private val config: TradingConfig
 ) {
 
     fun validateOrder(
@@ -26,23 +27,23 @@ class RiskManager @Inject constructor(
         val orderValueUsd = request.size * orderPrice
 
         val positionPercent = orderValueUsd
-            .divide(portfolio.totalEquityUsd, 4, RoundingMode.HALF_UP)
+            .divide(portfolio.totalEquityUsd, config.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
 
-        if (positionPercent > config.maxPositionPercent) {
+        if (positionPercent > config.risk.maxPositionPercent) {
             return RiskCheck.Rejected(
-                "Position size ${formatPercent(positionPercent)} exceeds limit ${formatPercent(config.maxPositionPercent)}"
+                "Position size ${formatPercent(positionPercent)} exceeds limit ${formatPercent(config.risk.maxPositionPercent)}"
             )
         }
 
         if (request.side == OrderSide.BUY) {
             val currentBtcValue = portfolio.getBtcBalance() * currentPrice
             val currentExposure = currentBtcValue
-                .divide(portfolio.totalEquityUsd, 4, RoundingMode.HALF_UP)
+                .divide(portfolio.totalEquityUsd, config.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
             val newExposure = currentExposure + positionPercent
 
-            if (newExposure > config.maxTotalExposurePercent) {
+            if (newExposure > config.risk.maxTotalExposurePercent) {
                 return RiskCheck.Rejected(
-                    "Total exposure ${formatPercent(newExposure)} would exceed limit ${formatPercent(config.maxTotalExposurePercent)}"
+                    "Total exposure ${formatPercent(newExposure)} would exceed limit ${formatPercent(config.risk.maxTotalExposurePercent)}"
                 )
             }
         }
@@ -56,16 +57,16 @@ class RiskManager @Inject constructor(
     ): DrawdownStatus {
         val drawdown = if (highWaterMark > BigDecimal.ZERO) {
             (highWaterMark - currentEquity)
-                .divide(highWaterMark, 4, RoundingMode.HALF_UP)
+                .divide(highWaterMark, config.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
                 .toDouble()
         } else {
             0.0
         }
 
         return when {
-            drawdown >= config.maxDrawdownPercent ->
+            drawdown >= config.risk.maxDrawdownPercent ->
                 DrawdownStatus.LimitBreached(drawdown)
-            drawdown >= config.drawdownWarningPercent ->
+            drawdown >= config.risk.drawdownWarningPercent ->
                 DrawdownStatus.Warning(drawdown)
             else ->
                 DrawdownStatus.Normal(drawdown)
@@ -76,9 +77,9 @@ class RiskManager @Inject constructor(
         portfolio: Portfolio,
         entryPrice: BigDecimal
     ): BigDecimal {
-        val riskAmountUsd = portfolio.totalEquityUsd * config.maxPositionPercent
+        val riskAmountUsd = portfolio.totalEquityUsd * config.risk.maxPositionPercent
         return riskAmountUsd
-            .divide(entryPrice, 8, RoundingMode.HALF_UP)
+            .divide(entryPrice, config.risk.btcDecimalPlaces, RoundingMode.HALF_UP)
     }
 
     fun calculateGridPositionSize(
@@ -88,16 +89,16 @@ class RiskManager @Inject constructor(
     ): BigDecimal {
         require(gridLevels > 0) { "Grid levels must be positive" }
 
-        val totalRiskUsd = portfolio.totalEquityUsd * config.maxTotalExposurePercent
+        val totalRiskUsd = portfolio.totalEquityUsd * config.risk.maxTotalExposurePercent
         val perLevelRiskUsd = totalRiskUsd
-            .divide(BigDecimal(gridLevels), 8, RoundingMode.HALF_UP)
+            .divide(BigDecimal(gridLevels), config.risk.btcDecimalPlaces, RoundingMode.HALF_UP)
 
         return perLevelRiskUsd
-            .divide(entryPrice, 8, RoundingMode.HALF_UP)
+            .divide(entryPrice, config.risk.btcDecimalPlaces, RoundingMode.HALF_UP)
     }
 
     fun validateGridSpacing(spacingPercent: BigDecimal): Boolean {
-        return spacingPercent >= config.minGridSpacingPercent
+        return spacingPercent >= config.risk.minGridSpacingPercent
     }
 
     private fun formatPercent(value: BigDecimal): String {
