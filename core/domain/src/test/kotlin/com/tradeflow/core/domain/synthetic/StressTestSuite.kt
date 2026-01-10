@@ -41,7 +41,7 @@ class StressTestSuite {
         repeat(1000) { iteration ->
             val noiseLevel = (iteration / 1000.0) * 0.5
             val syntheticCandles = generator.generate(
-                nSteps = 200,
+                nSteps = 400,
                 seed = iteration.toLong(),
                 noiseLevel = noiseLevel
             )
@@ -112,7 +112,7 @@ class StressTestSuite {
 
         repeat(500) { iteration ->
             val syntheticCandles = generator.generate(
-                nSteps = 200,
+                nSteps = 400,
                 seed = iteration.toLong(),
                 noiseLevel = iteration / 500.0
             )

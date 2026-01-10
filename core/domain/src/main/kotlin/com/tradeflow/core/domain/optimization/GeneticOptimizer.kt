@@ -88,9 +88,9 @@ class GeneticOptimizer(
             evolutionHistory.add(stats)
 
             if (gen % 10 == 0) {
-                println("Gen $gen | Best: ${stats.bestFitness.toBigDecimal().setScale(4)} | " +
-                    "Avg: ${stats.avgFitness.toBigDecimal().setScale(4)} | " +
-                    "Worst: ${stats.worstFitness.toBigDecimal().setScale(4)}")
+                println("Gen $gen | Best: ${stats.bestFitness.toBigDecimal().setScale(4, java.math.RoundingMode.HALF_UP)} | " +
+                    "Avg: ${stats.avgFitness.toBigDecimal().setScale(4, java.math.RoundingMode.HALF_UP)} | " +
+                    "Worst: ${stats.worstFitness.toBigDecimal().setScale(4, java.math.RoundingMode.HALF_UP)}")
             }
 
             if (gen < generations - 1) {
@@ -108,8 +108,8 @@ class GeneticOptimizer(
         println("  ADX Range Threshold:       ${champion.chromosome.adxRangeThreshold}")
         println("  Stop Loss ATR Multiplier:  ${champion.chromosome.stopLossAtrMultiplier}")
         println("  Take Profit ATR Multiplier: ${champion.chromosome.takeProfitAtrMultiplier}")
-        println("  Trend Position %:          ${(champion.chromosome.trendPositionPercent * 100).toBigDecimal().setScale(2)}%")
-        println("  Grid Position %:           ${(champion.chromosome.gridPositionPercentPerLevel * 100).toBigDecimal().setScale(2)}%")
+        println("  Trend Position %:          ${(champion.chromosome.trendPositionPercent * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
+        println("  Grid Position %:           ${(champion.chromosome.gridPositionPercentPerLevel * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
         println("  Confirmation Candles:      ${champion.chromosome.confirmationCandles}")
         println("=".repeat(80))
 
