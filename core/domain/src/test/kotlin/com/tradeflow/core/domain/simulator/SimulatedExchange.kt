@@ -15,36 +15,65 @@ class SimulatedExchange(
     var usdBalance = initialUsd
     var btcBalance = BigDecimal.ZERO
     private val openOrders = mutableListOf<Order>()
+    private val orderGroups = mutableMapOf<String, MutableList<Order>>() // Track OCO groups
     var currentPrice = BigDecimal.ZERO
     private var history = mutableListOf<Candle>()
-    
-    private val feeRate = BigDecimal("0.006")
+
+    // Coinbase Advanced Trade fees (Tier 1): 0.4% taker, 0.25% maker
+    // Using taker fee for conservative simulation (worst case)
+    private val feeRate = BigDecimal("0.004") // 0.4% (was 0.6% - FIXED)
 
     fun advanceTime(newCandle: Candle) {
         this.currentPrice = newCandle.close
         this.history.add(newCandle)
-        
+
         val iterator = openOrders.iterator()
         while (iterator.hasNext()) {
             val order = iterator.next()
+
+            // Check if limit price was touched
+            val limitPrice = order.price ?: currentPrice
             val hit = when(order.side) {
-                OrderSide.BUY -> newCandle.low <= (order.price ?: currentPrice)
-                OrderSide.SELL -> newCandle.high >= (order.price ?: currentPrice)
+                OrderSide.BUY -> newCandle.low <= limitPrice
+                OrderSide.SELL -> newCandle.high >= limitPrice
             }
-            
+
             if (hit) {
                 if (canExecute(order)) {
-                    executeOrder(order)
-                    // OCO Logic: If one part of a trade fills, cancel the others associated with this product
-                    if (order.side == OrderSide.SELL) {
-                        iterator.remove()
-                        clearOpenOrders() // Simplified OCO for simulation
-                        return
+                    // Apply slippage: ±0.1% (BUY pays slightly more, SELL gets slightly less)
+                    val fillPrice = applySlippage(limitPrice, order.side)
+                    executeOrder(order, fillPrice)
+
+                    // OCO Logic: If order filled, cancel other orders in same group
+                    val groupId = order.clientOrderId // Use clientOrderId as group ID for bracket orders
+                    if (groupId.isNotEmpty()) {
+                        cancelOrderGroup(groupId)
                     }
                 }
                 iterator.remove()
             }
         }
+    }
+
+    /**
+     * Applies realistic slippage to simulated fills (±0.1%).
+     * - BUY orders: Fill at slightly higher price (+0.1% slippage)
+     * - SELL orders: Fill at slightly lower price (-0.1% slippage)
+     */
+    private fun applySlippage(price: BigDecimal, side: OrderSide): BigDecimal {
+        val slippagePercent = BigDecimal("0.001") // 0.1% slippage
+        return when (side) {
+            OrderSide.BUY -> price * (BigDecimal.ONE + slippagePercent) // Pay more
+            OrderSide.SELL -> price * (BigDecimal.ONE - slippagePercent) // Receive less
+        }
+    }
+
+    /**
+     * Cancels all orders in the same OCO group (e.g., TP and SL orders after entry fills).
+     */
+    private fun cancelOrderGroup(groupId: String) {
+        openOrders.removeAll { it.clientOrderId == groupId }
+        orderGroups.remove(groupId)
     }
 
     private fun clearOpenOrders() {
@@ -62,11 +91,14 @@ class SimulatedExchange(
         }
     }
 
-    private fun executeOrder(order: Order) {
-        val price = order.price ?: currentPrice
-        val cost = order.size * price
+    /**
+     * Executes an order at the specified fill price (with slippage already applied).
+     * Deducts fees and updates balances.
+     */
+    private fun executeOrder(order: Order, fillPrice: BigDecimal = order.price ?: currentPrice) {
+        val cost = order.size * fillPrice
         val fee = cost * feeRate
-        
+
         if (order.side == OrderSide.BUY) {
             usdBalance -= (cost + fee)
             btcBalance += order.size
@@ -110,13 +142,63 @@ class SimulatedExchange(
     }
 
     override suspend fun placeBracketOrder(productId: String, side: OrderSide, size: BigDecimal, entryPrice: BigDecimal, takeProfit: BigDecimal, stopLoss: BigDecimal): Result<Order> {
-        val order = Order(UUID.randomUUID().toString(), UUID.randomUUID().toString(), productId, side, OrderType.MARKET, OrderStatus.FILLED, size, entryPrice, size, entryPrice, Instant.now())
-        if (canExecute(order)) {
-            executeOrder(order)
-            // Place resting TP/SL orders
-            placeLimitOrder(productId, if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY, size, takeProfit, true)
-            placeLimitOrder(productId, if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY, size, stopLoss, true)
-            return Result.success(order)
+        // Apply slippage to entry (market order)
+        val entryFillPrice = applySlippage(entryPrice, side)
+
+        val entryOrder = Order(
+            UUID.randomUUID().toString(),
+            UUID.randomUUID().toString(),
+            productId,
+            side,
+            OrderType.MARKET,
+            OrderStatus.FILLED,
+            size,
+            entryFillPrice,
+            size,
+            entryFillPrice,
+            Instant.now()
+        )
+
+        if (canExecute(entryOrder)) {
+            executeOrder(entryOrder, entryFillPrice)
+
+            // Place OCO group: TP and SL orders with shared groupId
+            val groupId = UUID.randomUUID().toString()
+            val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
+
+            val tpOrder = Order(
+                UUID.randomUUID().toString(),
+                groupId, // Shared OCO group ID
+                productId,
+                exitSide,
+                OrderType.LIMIT,
+                OrderStatus.OPEN,
+                size,
+                takeProfit,
+                BigDecimal.ZERO,
+                null,
+                Instant.now()
+            )
+
+            val slOrder = Order(
+                UUID.randomUUID().toString(),
+                groupId, // Shared OCO group ID
+                productId,
+                exitSide,
+                OrderType.LIMIT,
+                OrderStatus.OPEN,
+                size,
+                stopLoss,
+                BigDecimal.ZERO,
+                null,
+                Instant.now()
+            )
+
+            openOrders.add(tpOrder)
+            openOrders.add(slOrder)
+            orderGroups.getOrPut(groupId) { mutableListOf() }.addAll(listOf(tpOrder, slOrder))
+
+            return Result.success(entryOrder)
         }
         return Result.failure(Exception("Insufficient funds"))
     }
@@ -129,9 +211,56 @@ class SimulatedExchange(
     }
 
     override suspend fun placeMarketOrder(productId: String, side: OrderSide, size: BigDecimal): Result<Order> {
-        executeOrder(Order("", "", productId, side, OrderType.MARKET, OrderStatus.FILLED, size, currentPrice, size, currentPrice, Instant.now()))
-        return Result.success(Order("", "", productId, side, OrderType.MARKET, OrderStatus.FILLED, size, currentPrice, size, currentPrice, Instant.now()))
+        // Apply slippage to market orders
+        val fillPrice = applySlippage(currentPrice, side)
+
+        val order = Order(
+            UUID.randomUUID().toString(),
+            UUID.randomUUID().toString(),
+            productId,
+            side,
+            OrderType.MARKET,
+            OrderStatus.FILLED,
+            size,
+            fillPrice,
+            size,
+            fillPrice,
+            Instant.now()
+        )
+
+        // CRITICAL: Check funds before executing (was missing - FIXED)
+        if (!canExecute(order)) {
+            return Result.failure(Exception("Insufficient funds for market order"))
+        }
+
+        executeOrder(order, fillPrice)
+        return Result.success(order)
     }
     override suspend fun cancelOrder(orderId: String): Result<Unit> = Result.success(Unit)
     override suspend fun getOrder(orderId: String): Result<Order> = TODO()
+
+    // Perpetual futures simulation (stub implementation for now)
+    override suspend fun getPerpetualPosition(productId: String): Result<PerpetualPosition?> {
+        // TODO: Implement full perpetual futures simulation
+        // For now, return null (no open position)
+        return Result.success(null)
+    }
+
+    override suspend fun closePerpetualPosition(productId: String): Result<Unit> {
+        // TODO: Implement full perpetual futures simulation
+        return Result.success(Unit)
+    }
+
+    override suspend fun getFundingRate(productId: String): Result<FundingRate> {
+        // TODO: Implement full perpetual futures simulation
+        // For now, return a typical low funding rate (0.01% per 8h)
+        return Result.success(
+            FundingRate(
+                productId = productId,
+                rate = BigDecimal("0.0001"), // 0.01% per 8h (typical)
+                nextFundingTime = Instant.now().plusSeconds(8 * 3600),
+                predictedRate = BigDecimal("0.0001")
+            )
+        )
+    }
 }
