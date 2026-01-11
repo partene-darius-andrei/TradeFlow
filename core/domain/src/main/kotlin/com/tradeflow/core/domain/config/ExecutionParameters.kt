@@ -47,11 +47,32 @@ import java.math.BigDecimal
  *           Exponential backoff is NOT implemented - this is a fixed delay.
  *           Default: 1000ms (1 second).
  *
+ * @property leverage Leverage multiplier for perpetual futures (1x-10x typically).
+ *           TradeFlow uses 2x leverage for moderate amplification:
+ *           - With $500 capital + 2x leverage = $1000 effective position size
+ *           - Profits and losses are multiplied by leverage factor
+ *           - Higher leverage increases both gains and risks
+ *           Default: 2.0 (2x leverage - moderate risk/reward).
+ *
+ * @property fundingRateIntervalHours How often funding is charged on perpetual futures (hours).
+ *           Perpetual futures charge funding every N hours to maintain price peg to spot.
+ *           - Positive funding: Longs pay shorts
+ *           - Negative funding: Shorts pay longs
+ *           Default: 8 hours (Coinbase/Binance standard).
+ *
+ * @property maxAcceptableFundingRate Maximum acceptable funding rate before closing position (decimal).
+ *           If funding rate exceeds this threshold, position becomes too expensive to hold.
+ *           Example: 0.0005 = 0.05% per 8 hours = ~0.15%/day = ~4.5%/month cost
+ *           Default: 0.0010 (0.1% per 8 hours = max acceptable cost).
+ *
  * @see TradingConfig for how execution parameters integrate with overall trading configuration
  */
 data class ExecutionParameters(
     val minBtcDustThreshold: BigDecimal = BigDecimal("0.00001"),
     val postOnlyOrders: Boolean = true,
     val maxRetries: Int = 3,
-    val retryDelayMs: Long = 1000
+    val retryDelayMs: Long = 1000,
+    val leverage: BigDecimal = BigDecimal("2.0"),
+    val fundingRateIntervalHours: Int = 8,
+    val maxAcceptableFundingRate: BigDecimal = BigDecimal("0.0010")
 )

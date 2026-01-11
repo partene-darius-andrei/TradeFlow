@@ -3,6 +3,34 @@ package com.tradeflow.core.domain.model
 import java.math.BigDecimal
 
 /**
+ * Type of financial product to trade.
+ *
+ * **SPOT:** Traditional spot trading where you buy/sell the actual asset.
+ * - Only LONG positions (buy to profit from uptrend)
+ * - Immediate settlement
+ * - No funding fees
+ *
+ * **PERPETUAL:** Perpetual futures contracts (derivatives).
+ * - Both LONG and SHORT positions (profit from up OR down)
+ * - No expiry date (unlike traditional futures)
+ * - Funding rate charged every 8 hours (~0.01%)
+ * - Supports leverage (1x-10x typically)
+ *
+ * **TradeFlow Strategy:**
+ * Uses PERPETUAL exclusively to enable shorting in bear markets.
+ * With perpetuals + 2x leverage, the strategy can profit in both directions:
+ * - Bull market (price > SMA200): LONG positions
+ * - Bear market (price < SMA200): SHORT positions
+ */
+enum class ProductType {
+    /** Traditional spot trading (long only) */
+    SPOT,
+
+    /** Perpetual futures (long and short, supports leverage) */
+    PERPETUAL
+}
+
+/**
  * Sealed class hierarchy representing trading decisions from MakeTradingDecisionUseCase.
  *
  * The decision engine analyzes market conditions (ADX, SMA, ATR) and outputs ONE of four
@@ -181,6 +209,10 @@ sealed class Decision {
      * }
      * ```
      *
+     * @property productType Type of product to trade (SPOT or PERPETUAL).
+     *           SPOT supports LONG only. PERPETUAL supports both LONG and SHORT.
+     *           TradeFlow uses PERPETUAL exclusively for bidirectional trading.
+     *
      * @property direction Order side (BUY for long, SELL for short).
      *           Determined by trend direction indicator (not explicitly stored in this decision).
      *
@@ -207,6 +239,7 @@ sealed class Decision {
      * @throws IllegalArgumentException if validation rules are violated (see init block)
      */
     data class Trend(
+        val productType: ProductType,
         val direction: OrderSide,
         val entryPrice: BigDecimal,
         val stopLoss: BigDecimal,
@@ -220,6 +253,11 @@ sealed class Decision {
             require(atr > BigDecimal.ZERO) { "ATR must be positive: $atr" }
             require(positionSizePercent > BigDecimal.ZERO && positionSizePercent <= BigDecimal.ONE) {
                 "Position size must be between 0 and 1: $positionSizePercent"
+            }
+
+            // Validate product type vs direction compatibility
+            if (productType == ProductType.SPOT && direction == OrderSide.SELL) {
+                throw IllegalArgumentException("SPOT trading only supports LONG (BUY) positions. Use PERPETUAL for SHORT (SELL).")
             }
 
             when (direction) {

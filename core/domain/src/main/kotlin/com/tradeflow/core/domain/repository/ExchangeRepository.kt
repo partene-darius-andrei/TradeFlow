@@ -382,4 +382,128 @@ interface ExchangeRepository {
         takeProfit: BigDecimal,
         stopLoss: BigDecimal
     ): Result<Order>
+
+    /**
+     * Fetches the current open position for a perpetual futures product.
+     *
+     * Perpetual futures maintain an open position state separate from spot balances.
+     * A position can be LONG (profit from price up) or SHORT (profit from price down).
+     *
+     * **Example Response (LONG position):**
+     * ```
+     * PerpetualPosition(
+     *   productId = "BTC-PERP",
+     *   side = OrderSide.BUY,  // LONG position
+     *   size = 0.01 BTC,
+     *   entryPrice = $95000,
+     *   currentPrice = $96000,
+     *   unrealizedPnl = +$10.00,  // (96k - 95k) × 0.01
+     *   leverage = 2.0x,
+     *   liquidationPrice = $47500  // 50% drop before liquidation at 2x leverage
+     * )
+     * ```
+     *
+     * **Example Response (SHORT position):**
+     * ```
+     * PerpetualPosition(
+     *   productId = "BTC-PERP",
+     *   side = OrderSide.SELL,  // SHORT position
+     *   size = 0.01 BTC,
+     *   entryPrice = $95000,
+     *   currentPrice = $94000,
+     *   unrealizedPnl = +$10.00,  // (95k - 94k) × 0.01
+     *   leverage = 2.0x,
+     *   liquidationPrice = $142500  // 50% rise before liquidation at 2x leverage
+     * )
+     * ```
+     *
+     * **When to Use:**
+     * - Check if already in a perpetual position before opening new one
+     * - Monitor unrealized PnL and liquidation risk
+     * - Calculate total portfolio exposure
+     *
+     * **Difference from Spot:**
+     * - Spot: `getBtcBalance()` shows BTC owned
+     * - Perpetual: This method shows open position (LONG or SHORT)
+     *
+     * @param productId Perpetual product ID (e.g., "BTC-PERP", "BTC-PERPETUAL-USD").
+     *
+     * @return Result<PerpetualPosition?> with position if open, null if no position, or ExchangeError on failure.
+     */
+    suspend fun getPerpetualPosition(productId: String): Result<PerpetualPosition?>
+
+    /**
+     * Closes an open perpetual futures position at market price.
+     *
+     * This is an emergency exit that liquidates the entire position immediately.
+     * Useful for circuit breaker or high funding rate scenarios.
+     *
+     * **Execution:**
+     * - LONG position (BUY): Closes with MARKET SELL
+     * - SHORT position (SELL): Closes with MARKET BUY
+     * - Settles immediately at current market price
+     *
+     * **Example (Closing LONG):**
+     * ```kotlin
+     * val position = repository.getPerpetualPosition("BTC-PERP").getOrThrow()
+     * if (position?.side == OrderSide.BUY) {
+     *     repository.closePerpetualPosition("BTC-PERP")  // Market SELL to close
+     * }
+     * ```
+     *
+     * **When to Use:**
+     * - Circuit breaker triggered (max drawdown exceeded)
+     * - Funding rate too high (position too expensive to hold)
+     * - Emergency liquidation needed
+     *
+     * **When NOT to Use:**
+     * - Normal exits (use limit orders with TP/SL instead for better price)
+     * - Large positions (may cause slippage)
+     *
+     * @param productId Perpetual product ID (e.g., "BTC-PERP").
+     *
+     * @return Result<Unit> on success, or ExchangeError on failure (e.g., no open position).
+     */
+    suspend fun closePerpetualPosition(productId: String): Result<Unit>
+
+    /**
+     * Fetches the current funding rate for a perpetual futures product.
+     *
+     * Funding rate is charged every N hours (typically 8h) to maintain price peg to spot:
+     * - **Positive funding**: Longs pay shorts (perpetual trading above spot)
+     * - **Negative funding**: Shorts pay longs (perpetual trading below spot)
+     *
+     * **Example Response:**
+     * ```
+     * FundingRate(
+     *   productId = "BTC-PERP",
+     *   rate = 0.0001,  // 0.01% per 8 hours
+     *   nextFundingTime = 2025-01-10T16:00:00Z,  // Next charge in 4 hours
+     *   predictedRate = 0.00008  // Estimated rate for next period
+     * )
+     * ```
+     *
+     * **Cost Calculation:**
+     * ```
+     * Position: 0.01 BTC at $95,000 = $950 notional
+     * Funding rate: 0.0001 (0.01%)
+     * Cost per 8h: $950 × 0.0001 = $0.095
+     * Cost per day: $0.095 × 3 = $0.285 (~0.03% daily)
+     * Cost per month: $0.285 × 30 = $8.55 (~0.9% monthly)
+     * ```
+     *
+     * **When to Use:**
+     * - Check if funding rate exceeds maxAcceptableFundingRate
+     * - Close expensive positions (e.g., funding > 0.1% per 8h)
+     * - Calculate holding costs for strategy evaluation
+     *
+     * **TradeFlow Strategy:**
+     * If funding rate > 0.1% (config.execution.maxAcceptableFundingRate),
+     * close position to avoid excessive costs.
+     *
+     * @param productId Perpetual product ID (e.g., "BTC-PERP").
+     *
+     * @return Result<FundingRate> with current and predicted rates, or ExchangeError on failure.
+     */
+    suspend fun getFundingRate(productId: String): Result<FundingRate>
 }

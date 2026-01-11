@@ -64,22 +64,20 @@ import java.math.BigDecimal
  * └─────────────────────────────────────────────────────────────┘
  * ```
  *
- * **Three-Tiered Mode Selection:**
+ * **Two-Mode Selection (Defense handled by orchestrator):**
  *
- * 1. **Defense Mode (Priority 1 - Overrides Everything):**
- *    - Trigger: currentPrice < SMA200
- *    - Action: Cancel all pending mode switches, return Defense decision
- *    - Rationale: Capital preservation trumps everything
- *
- * 2. **Trend Mode (ADX-based):**
+ * 1. **Trend Mode (ADX-based):**
  *    - Trigger: ADX >= adxTrendThreshold (default 20)
- *    - Action: Large directional position with wide stops
- *    - Rationale: Strong momentum, ride the trend
+ *    - Action: Directional position (LONG if price > SMA200, SHORT if price < SMA200)
+ *    - Rationale: Strong momentum, ride the trend in either direction
  *
- * 3. **Range Mode (ADX-based):**
+ * 2. **Range Mode (ADX-based):**
  *    - Trigger: ADX <= adxRangeThreshold (default 1)
  *    - Action: Grid trading with multiple small positions
  *    - Rationale: Choppy market, profit from oscillations
+ *
+ * **Note:** Defense mode (circuit breaker at 15% drawdown) is handled by
+ * ExecuteTradingCycleUseCase, not by this decision engine.
  *
  * **ADX Neutral Zone:**
  * If ADX is between adxRangeThreshold and adxTrendThreshold (e.g., ADX = 10 with thresholds
@@ -207,17 +205,12 @@ class MakeTradingDecisionUseCase(
      *    - Calculate SMA, ADX, ATR using taService
      *    - All three indicators calculated in a single pass
      *
-     * 3. **Defense Mode Check (Priority Override):**
-     *    - If currentPrice < SMA200, return Defense decision
-     *    - Resets all mode switching state (candidateMode = null, count = 0)
-     *    - Capital preservation trumps mode logic
-     *
-     * 4. **Desired Mode Determination:**
+     * 3. **Desired Mode Determination:**
      *    - ADX >= adxTrendThreshold → wants TREND
      *    - ADX <= adxRangeThreshold → wants RANGE
      *    - ADX in neutral zone (between thresholds) → wants currentMode (stay put)
      *
-     * 5. **Hysteresis Application:**
+     * 4. **Hysteresis Application:**
      *    - If desiredMode == lastMode: Return decision for current mode (no change)
      *    - If desiredMode != candidateMode: Start new confirmation (count = 1)
      *    - If desiredMode == candidateMode: Increment count
@@ -302,19 +295,7 @@ class MakeTradingDecisionUseCase(
 
         println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
 
-        // 1. Defense Mode Check (Price below SMA200 = Capital Preservation)
-        // This overrides ALL mode logic - capital preservation is priority #1
-        if (currentPrice < indicators.sma200) {
-            candidateMode = null
-            confirmationCount = 0
-            return Decision.Defense(
-                reason = "Price below SMA200 - capital preservation mode",
-                currentPrice = currentPrice,
-                sma200 = indicators.sma200
-            )
-        }
-
-        // 2. Determine desired mode based on Trend Strength (ADX)
+        // 1. Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
             indicators.adx >= config.strategy.adxTrendThreshold -> {
                 println("  [DECISION] ADX ${indicators.adx} >= ${config.strategy.adxTrendThreshold} → Wants TREND")
@@ -332,7 +313,7 @@ class MakeTradingDecisionUseCase(
             }
         }
 
-        // 3. Apply Hysteresis (require N consecutive confirmations before switching)
+        // 2. Apply Hysteresis (require N consecutive confirmations before switching)
         if (desiredMode == lastMode) {
             // Already in desired mode, reset any pending switch
             candidateMode = null
@@ -372,10 +353,12 @@ class MakeTradingDecisionUseCase(
      *
      * **Trend Decision Calculation:**
      * - Entry: currentPrice (market order or limit near market)
-     * - Stop Loss: entryPrice - (ATR × stopLossAtrMultiplier)
-     * - Take Profit: entryPrice + (ATR × takeProfitAtrMultiplier)
+     * - Direction: BUY (LONG) if price > SMA200, SELL (SHORT) if price < SMA200
+     * - LONG Stop Loss: entryPrice - (ATR × stopLossAtrMultiplier)
+     * - LONG Take Profit: entryPrice + (ATR × takeProfitAtrMultiplier)
+     * - SHORT Stop Loss: entryPrice + (ATR × stopLossAtrMultiplier)
+     * - SHORT Take Profit: entryPrice - (ATR × takeProfitAtrMultiplier)
      * - Position Size: trendPositionPercent of portfolio (e.g., 5%)
-     * - Direction: BUY (long only for now - shorts not implemented)
      *
      * **Range Decision Calculation:**
      * - Grid Spacing: max(ATR × minGridSpacingAtrMultiplier, minGridSpacingFloor)
@@ -426,14 +409,32 @@ class MakeTradingDecisionUseCase(
     private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: AnalyzeCandlesUseCase.Indicators): Decision {
         return when (mode) {
             Mode.TREND -> {
-                val sl = currentPrice - (indicators.atr * config.strategy.stopLossAtrMultiplier)
-                val tp = currentPrice + (indicators.atr * config.strategy.takeProfitAtrMultiplier)
-                println("  [DECISION] → Final: TREND ${config.strategy.trendPositionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
+                // Determine direction: LONG (BUY) if price > SMA200, SHORT (SELL) if price < SMA200
+                val isLong = currentPrice >= indicators.sma200
+                val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
+
+                // Calculate stop loss and take profit based on direction
+                val sl = if (isLong) {
+                    currentPrice - (indicators.atr * config.strategy.stopLossAtrMultiplier)
+                } else {
+                    currentPrice + (indicators.atr * config.strategy.stopLossAtrMultiplier)
+                }
+
+                val tp = if (isLong) {
+                    currentPrice + (indicators.atr * config.strategy.takeProfitAtrMultiplier)
+                } else {
+                    currentPrice - (indicators.atr * config.strategy.takeProfitAtrMultiplier)
+                }
+
+                val directionName = if (isLong) "LONG" else "SHORT"
+                println("  [DECISION] → Final: TREND $directionName ${config.strategy.trendPositionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
+
                 Decision.Trend(
-                    direction = OrderSide.BUY,
+                    productType = com.tradeflow.core.domain.model.ProductType.PERPETUAL,
+                    direction = direction,
                     entryPrice = currentPrice,
-                    stopLoss = currentPrice - (indicators.atr * config.strategy.stopLossAtrMultiplier),
-                    takeProfit = currentPrice + (indicators.atr * config.strategy.takeProfitAtrMultiplier),
+                    stopLoss = sl,
+                    takeProfit = tp,
                     positionSizePercent = config.strategy.trendPositionPercent,
                     adx = indicators.adx,
                     atr = indicators.atr
