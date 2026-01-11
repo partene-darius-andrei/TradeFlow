@@ -172,6 +172,9 @@ class StressTestSuite {
         var trades = 0
         var wins = 0
 
+        // Coinbase Advanced Trade fee: 0.4% taker
+        val feeRate = 0.004
+
         candles.forEachIndexed { index, candle ->
             if (index < 200) return@forEachIndexed
 
@@ -187,17 +190,20 @@ class StressTestSuite {
                 is Decision.Trend -> {
                     if (!inTrade && decision.direction == com.tradeflow.core.domain.model.OrderSide.BUY) {
                         val positionSize = currentEquity * 0.05
-                        btcHeld = positionSize / currentPrice
-                        capital -= positionSize
+                        val fee = positionSize * feeRate // Add fee deduction
+                        btcHeld = (positionSize - fee) / currentPrice // Fee reduces position size
+                        capital -= positionSize // Deduct full amount including fee
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
                     }
                 }
                 is Decision.Defense -> {
+                    // LEGACY: Defense decisions no longer generated
                     if (inTrade) {
                         val exitValue = btcHeld * currentPrice
-                        capital += exitValue
+                        val fee = exitValue * feeRate // Add fee deduction
+                        capital += (exitValue - fee) // Receive value minus fee
                         if (currentPrice > entryPrice) wins++
                         btcHeld = 0.0
                         inTrade = false
@@ -212,7 +218,8 @@ class StressTestSuite {
 
                 if (currentPrice <= slPrice || currentPrice >= tpPrice) {
                     val exitValue = btcHeld * currentPrice
-                    capital += exitValue
+                    val fee = exitValue * feeRate // Add fee deduction on SL/TP
+                    capital += (exitValue - fee) // Receive value minus fee
                     if (currentPrice > entryPrice) wins++
                     btcHeld = 0.0
                     inTrade = false

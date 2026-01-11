@@ -219,13 +219,20 @@ class OptimizationTest {
         var trades = 0
         var wins = 0
 
+        // Coinbase Advanced Trade fee: 0.4% taker
+        val feeRate = 0.004
+
+        // CRITICAL FIX: Reset state ONCE at start, not every candle
+        // resetState() every candle breaks 3-candle hysteresis logic
+        engine.resetState()
+
         candles.forEachIndexed { index, candle ->
             if (index < 200) return@forEachIndexed
 
             val history = candles.subList(index - 200, index)
             val currentPrice = candle.close.toDouble()
 
-            engine.resetState()
+            // REMOVED: engine.resetState() - was breaking hysteresis
             val decision = engine.execute(history, candle.close)
 
             val currentEquity = capital + btcHeld * currentPrice
@@ -233,19 +240,23 @@ class OptimizationTest {
 
             when (decision) {
                 is Decision.Trend -> {
+                    // Support both LONG (BUY) and SHORT (SELL) - NOTE: Simplified spot simulation, no real SHORT
                     if (!inTrade && decision.direction == com.tradeflow.core.domain.model.OrderSide.BUY) {
                         val positionSize = currentEquity * decision.positionSizePercent.toDouble()
-                        btcHeld = positionSize / currentPrice
-                        capital -= positionSize
+                        val fee = positionSize * feeRate // FIXED: Add fee deduction
+                        btcHeld = (positionSize - fee) / currentPrice // Fee reduces position size
+                        capital -= positionSize // Deduct full amount including fee
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
                     }
                 }
                 is Decision.Defense -> {
+                    // LEGACY: Defense decisions no longer generated, but handle if received
                     if (inTrade) {
                         val exitValue = btcHeld * currentPrice
-                        capital += exitValue
+                        val fee = exitValue * feeRate // FIXED: Add fee deduction
+                        capital += (exitValue - fee) // Receive value minus fee
                         if (currentPrice > entryPrice) wins++
                         btcHeld = 0.0
                         inTrade = false
@@ -260,7 +271,8 @@ class OptimizationTest {
 
                 if (currentPrice <= slPrice || currentPrice >= tpPrice) {
                     val exitValue = btcHeld * currentPrice
-                    capital += exitValue
+                    val fee = exitValue * feeRate // FIXED: Add fee deduction on SL/TP exits
+                    capital += (exitValue - fee) // Receive value minus fee
                     if (currentPrice > entryPrice) wins++
                     btcHeld = 0.0
                     inTrade = false
