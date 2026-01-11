@@ -3,9 +3,11 @@ package com.tradeflow.exchange.coinbase.repository
 import com.tradeflow.core.domain.model.Balance
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.CredentialStore
+import com.tradeflow.core.domain.model.FundingRate
 import com.tradeflow.core.domain.model.Granularity
 import com.tradeflow.core.domain.model.Order
 import com.tradeflow.core.domain.model.OrderSide
+import com.tradeflow.core.domain.model.PerpetualPosition
 import com.tradeflow.core.domain.model.Portfolio
 import com.tradeflow.core.domain.model.Ticker
 import com.tradeflow.core.domain.repository.ExchangeRepository
@@ -134,6 +136,18 @@ class CoinbaseRepository(
 
     override suspend fun getOpenOrders(productId: String): Result<List<Order>> {
         TODO("Implement in Ticket 13 - Full REST API Client")
+    }
+
+    override suspend fun closePerpetualPosition(productId: String): Result<Unit> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFundingRate(productId: String): Result<FundingRate> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPerpetualPosition(productId: String): Result<PerpetualPosition?> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun placeBracketOrder(
