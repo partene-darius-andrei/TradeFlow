@@ -1,6 +1,5 @@
 package com.tradeflow.core.domain.strategy
 
-import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase

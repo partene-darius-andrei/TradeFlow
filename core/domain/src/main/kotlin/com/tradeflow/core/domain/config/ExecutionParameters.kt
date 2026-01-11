@@ -47,13 +47,6 @@ import java.math.BigDecimal
  *           Exponential backoff is NOT implemented - this is a fixed delay.
  *           Default: 1000ms (1 second).
  *
- * @property leverage Leverage multiplier for perpetual futures (1x-10x typically).
- *           TradeFlow uses 2x leverage for moderate amplification:
- *           - With $500 capital + 2x leverage = $1000 effective position size
- *           - Profits and losses are multiplied by leverage factor
- *           - Higher leverage increases both gains and risks
- *           Default: 2.0 (2x leverage - moderate risk/reward).
- *
  * @property fundingRateIntervalHours How often funding is charged on perpetual futures (hours).
  *           Perpetual futures charge funding every N hours to maintain price peg to spot.
  *           - Positive funding: Longs pay shorts
@@ -72,7 +65,6 @@ data class ExecutionParameters(
     val postOnlyOrders: Boolean = true,
     val maxRetries: Int = 3,
     val retryDelayMs: Long = 1000,
-    val leverage: BigDecimal = BigDecimal("2.0"),
     val fundingRateIntervalHours: Int = 8,
     val maxAcceptableFundingRate: BigDecimal = BigDecimal("0.0010")
 )

@@ -101,6 +101,15 @@ import java.math.BigDecimal
  *           Ensures grid doesn't degenerate into a single level.
  *           Default: 1% (reasonable minimum for crypto markets).
  *
+ * @property leverage Position leverage multiplier for perpetual futures contracts.
+ *           Example: 2.0 = 2x leverage (position size × 2).
+ *           **Usage:** For a $1000 portfolio with 5% position size and 2x leverage:
+ *           - Base position: $50 (5% of $1000)
+ *           - Leveraged position: $100 (2x leverage)
+ *           **Rationale:** Amplifies returns (and losses) in perpetual futures trading.
+ *           **Risk:** Higher leverage = higher profit potential but also higher liquidation risk.
+ *           Default: 1.0 (no leverage, spot-equivalent risk).
+ *
  * @see MakeTradingDecisionUseCase for how these parameters drive mode detection and decision-making
  * @see RiskProfile for pre-configured strategy parameter sets optimized for different risk levels
  */
@@ -115,7 +124,8 @@ data class StrategyParameters(
     val gridPositionPercentPerLevel: BigDecimal = BigDecimal("0.08"),
     val gridLevels: Int = 3,
     val minGridSpacingAtrMultiplier: BigDecimal = BigDecimal("0.10"),
-    val minGridSpacingFloor: BigDecimal = BigDecimal("0.01")
+    val minGridSpacingFloor: BigDecimal = BigDecimal("0.01"),
+    val leverage: BigDecimal = BigDecimal("1.0")
 )
 
 /**

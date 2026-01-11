@@ -36,12 +36,9 @@ import java.math.BigDecimal
  *    - Stop loss: 15× ATR (very wide stops)
  *    - Drawdown limit: 10%
  *
- * **Usage with AdaptiveOptimizer:**
+ * **Usage:**
  * ```kotlin
- * // Automatically select profile based on balance
- * val config = AdaptiveOptimizer.selectProfile(portfolioBalance)
- *
- * // Or manually create a profile
+ * // Manually create a profile
  * val config = RiskProfile.BALANCED.createConfig()
  * ```
  *
@@ -51,7 +48,6 @@ import java.math.BigDecimal
  * - Each profile is internally consistent (all parameters work together)
  * - BALANCED profile is heavily optimized via genetic algorithm
  *
- * @see AdaptiveOptimizer for automatic profile selection based on balance
  * @see TradingConfig for the complete configuration object created by each profile
  */
 enum class RiskProfile {
@@ -63,8 +59,7 @@ enum class RiskProfile {
     /**
      * Returns the balance range (min/max) where this profile is optimal.
      *
-     * These ranges are used by [AdaptiveOptimizer] to automatically select the appropriate
-     * profile as the portfolio balance grows or shrinks.
+     * These ranges define the portfolio size where each profile is most suitable.
      *
      * **Balance Thresholds:**
      * - AGGRESSIVE: $100-500 (small account growth phase)
@@ -149,7 +144,8 @@ enum class RiskProfile {
                 trendPositionPercent = BigDecimal("0.08"),
                 gridPositionPercentPerLevel = BigDecimal("0.12"),
                 stopLossAtrMultiplier = BigDecimal("8.0"),
-                takeProfitAtrMultiplier = BigDecimal("25.0")
+                takeProfitAtrMultiplier = BigDecimal("25.0"),
+                leverage = BigDecimal("1.5")
             )
             BALANCED -> StrategyParameters(
                 confirmationCandles = 4,
@@ -158,19 +154,22 @@ enum class RiskProfile {
                 stopLossAtrMultiplier = BigDecimal("8.298988671516664"),
                 takeProfitAtrMultiplier = BigDecimal("22.53153609428897"),
                 trendPositionPercent = BigDecimal("0.0523"),
-                gridPositionPercentPerLevel = BigDecimal("0.0710")
+                gridPositionPercentPerLevel = BigDecimal("0.0710"),
+                leverage = BigDecimal("2.0")
             )
             CONSERVATIVE -> StrategyParameters(
                 trendPositionPercent = BigDecimal("0.03"),
                 gridPositionPercentPerLevel = BigDecimal("0.05"),
                 stopLossAtrMultiplier = BigDecimal("12.0"),
-                takeProfitAtrMultiplier = BigDecimal("15.0")
+                takeProfitAtrMultiplier = BigDecimal("15.0"),
+                leverage = BigDecimal("1.0")
             )
             ULTRA_CONSERVATIVE -> StrategyParameters(
                 trendPositionPercent = BigDecimal("0.02"),
                 gridPositionPercentPerLevel = BigDecimal("0.03"),
                 stopLossAtrMultiplier = BigDecimal("15.0"),
-                takeProfitAtrMultiplier = BigDecimal("12.0")
+                takeProfitAtrMultiplier = BigDecimal("12.0"),
+                leverage = BigDecimal("1.0")
             )
         }
     }

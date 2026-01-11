@@ -1,7 +1,5 @@
 package com.tradeflow.core.domain.usecase
 
-import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
-import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.repository.DependencyInjection
@@ -95,7 +93,7 @@ data class CycleResult(
  *
  * **State Management (Stateful):**
  * Unlike most domain components, ExecuteTradingCycleUseCase maintains internal state:
- * - `currentConfig`: Active trading configuration (strategy, risk, technical params)
+ * - `config`: Active trading configuration (strategy, risk, technical params)
  * - `currentProfile`: Active risk profile (AGGRESSIVE, BALANCED, etc.)
  *
  * This state persists across cycles to enable adaptive profile switching and
@@ -182,7 +180,7 @@ data class CycleResult(
  * - This ensures backtesting continues even if one cycle fails
  *
  * **Thread Safety:**
- * NOT thread-safe due to mutable state (currentConfig, currentProfile).
+ * NOT thread-safe due to mutable state (config, currentProfile).
  * In production, ensure only one cycle runs at a time (e.g., scheduled every 4 hours).
  * In backtesting, run cycles sequentially on single thread.
  *
@@ -224,22 +222,15 @@ data class CycleResult(
  * @property makeDecisionUseCase Strategy decision generator (MakeTradingDecisionUseCase).
  *           Creates instances automatically via default parameter.
  *
- * @property adaptiveOptimizer Detects when portfolio balance crosses risk profile thresholds.
- *           Creates instances automatically via default parameter.
- *           Automatically switches from AGGRESSIVE → BALANCED → CONSERVATIVE → ULTRA_CONSERVATIVE.
- *
  * @see MakeTradingDecisionUseCase for how decisions are generated
- * @see RiskProfile for the four risk profile tiers
  * @see Decision for the four decision types (Wait, Defense, Trend, Range)
  * @see CycleResult for the return type
  */
 class ExecuteTradingCycleUseCase(
     private val exchangeRepository: ExchangeRepository = DependencyInjection.exchangeRepository,
-    private val makeDecisionUseCase: MakeTradingDecisionUseCase = MakeTradingDecisionUseCase(),
-    private val adaptiveOptimizer: AdaptiveOptimizerUseCase = AdaptiveOptimizerUseCase()
+    private val makeDecisionUseCase: MakeTradingDecisionUseCase = MakeTradingDecisionUseCase()
 ) {
-    private var currentConfig: TradingConfig = TradingConfig.forProfile(RiskProfile.BALANCED)
-    private var currentProfile: RiskProfile = RiskProfile.BALANCED
+    private val config: TradingConfig = DependencyInjection.tradingConfig
 
     /**
      * Executes a single trading cycle: fetch data, check risk, make decision, execute orders.
@@ -394,18 +385,8 @@ class ExecuteTradingCycleUseCase(
         return try {
             val portfolio = exchangeRepository.getPortfolio().getOrThrow()
 
-            // Adaptive profile switching
-            val switchEvent = adaptiveOptimizer.detectProfileSwitch(currentProfile, portfolio.totalEquityUsd)
-            if (switchEvent != null) {
-                currentConfig = TradingConfig.forProfile(switchEvent.to)
-                currentProfile = switchEvent.to
-                println("  [ADAPTIVE] ${switchEvent.from} → ${switchEvent.to} | Balance: \$${switchEvent.balance.setScale(2, RoundingMode.HALF_UP)}")
-                // Reset decision use case state when profile changes
-                makeDecisionUseCase.resetState()
-            }
-
             val currentPrice = exchangeRepository.getCurrentPrice(productId).getOrThrow().price
-            val candles = exchangeRepository.getCandles(productId, currentConfig.technical.granularity).getOrThrow()
+            val candles = exchangeRepository.getCandles(productId, config.technical.granularity).getOrThrow()
             val openOrders = exchangeRepository.getOpenOrders(productId).getOrThrow()
 
             val currentHighWaterMark = if (portfolio.totalEquityUsd > highWaterMark) {
@@ -418,9 +399,9 @@ class ExecuteTradingCycleUseCase(
             println("  [RISK] Equity: \$${portfolio.totalEquityUsd.setScale(2, RoundingMode.HALF_UP)} | HWM: \$${currentHighWaterMark.setScale(2, RoundingMode.HALF_UP)}")
             if (currentHighWaterMark > BigDecimal.ZERO) {
                 val drawdown = (currentHighWaterMark - portfolio.totalEquityUsd)
-                    .divide(currentHighWaterMark, currentConfig.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
+                    .divide(currentHighWaterMark, config.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
                 println("  [RISK] Drawdown: ${drawdown.multiply(BigDecimal("100")).setScale(2, RoundingMode.HALF_UP)}%")
-                if (drawdown > BigDecimal.valueOf(currentConfig.risk.maxDrawdownPercent)) {
+                if (drawdown > BigDecimal.valueOf(config.risk.maxDrawdownPercent)) {
                     // EMERGENCY: Cancel all orders + close all positions
                     exchangeRepository.cancelOrders(openOrders.map { it.id })
 
@@ -433,12 +414,12 @@ class ExecuteTradingCycleUseCase(
 
                     // Also close any spot BTC holdings (legacy)
                     val btc = portfolio.getBtcBalance()
-                    if (btc > currentConfig.execution.minBtcDustThreshold) {
+                    if (btc > config.execution.minBtcDustThreshold) {
                         exchangeRepository.placeMarketOrder(productId, OrderSide.SELL, btc)
                     }
 
                     return CycleResult(
-                        ExecutionResult.Failed("EMERGENCY: ${currentConfig.risk.maxDrawdownPercent * 100}% Drawdown reached. Liquidated."),
+                        ExecutionResult.Failed("EMERGENCY: ${config.risk.maxDrawdownPercent * 100}% Drawdown reached. Liquidated."),
                         currentHighWaterMark
                     )
                 }
@@ -450,7 +431,7 @@ class ExecuteTradingCycleUseCase(
             val hasPerpetualPosition = perpetualPosition != null
 
             val btcBalance = portfolio.getBtcBalance()
-            val hasBtcBalance = btcBalance > currentConfig.execution.minBtcDustThreshold
+            val hasBtcBalance = btcBalance > config.execution.minBtcDustThreshold
             val hasOpenOrders = openOrders.isNotEmpty()
             val isInTrade = hasPerpetualPosition || hasBtcBalance || hasOpenOrders
 
@@ -496,12 +477,12 @@ class ExecuteTradingCycleUseCase(
                     if (!isInTrade) {
                         // 1. Check funding rate (skip if too expensive)
                         val fundingRate = exchangeRepository.getFundingRate(perpetualProductId).getOrNull()
-                        if (fundingRate != null && fundingRate.isTooExpensive(currentConfig.execution.maxAcceptableFundingRate)) {
+                        if (fundingRate != null && fundingRate.isTooExpensive(config.execution.maxAcceptableFundingRate)) {
                             println("  [EXEC] TREND: Skipped (funding rate too high: ${fundingRate.toPercentageString()})")
                             ExecutionResult.Skipped("Trend: Funding rate ${fundingRate.toPercentageString()} exceeds limit.")
                         } else {
                             // 2. Calculate position size with leverage
-                            val leverage = currentConfig.execution.leverage
+                            val leverage = config.strategy.leverage
                             val sizeUsd = portfolio.totalEquityUsd * decision.positionSizePercent * leverage
                             val btcSize = sizeUsd.divide(decision.entryPrice, 8, RoundingMode.HALF_UP)
                             val directionName = if (decision.direction == OrderSide.BUY) "LONG" else "SHORT"

@@ -1,6 +1,5 @@
 package com.tradeflow.core.domain.config
 
-import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
 import java.math.BigDecimal
 
 /**
@@ -32,10 +31,10 @@ import java.math.BigDecimal
  * // Uses pre-optimized parameters from RiskProfile enum
  * ```
  *
- * 3. **Adaptive Selection** (automatic profile selection):
+ * 3. **From Default (BALANCED):**
  * ```kotlin
- * val config = TradingConfig.adaptive(portfolioBalance = BigDecimal("750"))
- * // Automatically selects BALANCED profile for $750 balance
+ * val config = TradingConfig.forProfile(RiskProfile.BALANCED)
+ * // Use the optimized BALANCED profile
  * ```
  *
  * **Usage in Trading System:**
@@ -55,7 +54,7 @@ import java.math.BigDecimal
  * ```
  *
  * **Consistency Guarantee:**
- * When created via `forProfile()` or `adaptive()`, all parameters are guaranteed to be
+ * When created via `forProfile()`, all parameters are guaranteed to be
  * internally consistent. For example:
  * - risk.maxPositionPercent ≤ risk.maxTotalExposurePercent
  * - strategy.adxRangeThreshold < strategy.adxTrendThreshold
@@ -73,7 +72,6 @@ import java.math.BigDecimal
  * @property profile The risk profile this configuration represents (for logging/identification)
  *
  * @see RiskProfile for pre-configured profiles with optimized parameters
- * @see AdaptiveOptimizer for automatic profile selection based on balance
  */
 data class TradingConfig(
     val strategy: StrategyParameters,
@@ -106,36 +104,6 @@ data class TradingConfig(
          */
         fun forProfile(profile: RiskProfile): TradingConfig {
             return profile.createConfig()
-        }
-
-        /**
-         * Creates TradingConfig by automatically selecting the appropriate profile for current balance.
-         *
-         * This delegates to [AdaptiveOptimizer.selectProfile] which maps balance ranges to
-         * risk profiles. As the portfolio grows, this will automatically select more conservative
-         * profiles.
-         *
-         * **Balance → Profile Mapping:**
-         * - $100-500 → AGGRESSIVE
-         * - $500-1000 → BALANCED
-         * - $1000-2000 → CONSERVATIVE
-         * - $2000+ → ULTRA_CONSERVATIVE
-         *
-         * **Example:**
-         * ```kotlin
-         * val config = TradingConfig.adaptive(portfolioBalance = BigDecimal("750"))
-         * // Returns BALANCED profile config (since $750 is in $500-1000 range)
-         * ```
-         *
-         * **Use Case:**
-         * Use this in live trading where portfolio balance changes over time. The config
-         * will automatically become more conservative as you build wealth.
-         *
-         * @param portfolioBalance Current total portfolio value (cash + position value)
-         * @return TradingConfig with profile auto-selected based on balance
-         */
-        fun adaptive(portfolioBalance: BigDecimal): TradingConfig {
-            return AdaptiveOptimizerUseCase.selectProfile(portfolioBalance)
         }
     }
 }
