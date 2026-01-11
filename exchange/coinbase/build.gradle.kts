@@ -11,9 +11,6 @@ dependencies {
     // Modules - ONLY depends on :core:domain
     implementation(project(":core:domain"))
 
-    // Dependency Injection (annotations only, no Android deps)
-    implementation(libs.javax.inject)
-
     // Ktor (HTTP/WebSocket client)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)

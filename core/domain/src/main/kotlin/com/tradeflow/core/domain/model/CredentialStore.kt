@@ -30,7 +30,7 @@ package com.tradeflow.core.domain.model
  * ```
  * CredentialStore.getApiKey() + getSecret()
  *   ↓
- * AuthTokenProvider (CoinbaseJwtGenerator)
+ * AuthTokenProvider (JwtRepository)
  *   ↓
  * Signed JWT Token
  *   ↓

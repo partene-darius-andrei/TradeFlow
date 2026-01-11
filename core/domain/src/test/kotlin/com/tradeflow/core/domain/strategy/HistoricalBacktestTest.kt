@@ -17,12 +17,12 @@ import kotlin.test.assertTrue
  */
 class HistoricalBacktestTest {
 
-    private val taService = AnalyzeCandlesUseCase()
-    private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-    private val engine = MakeTradingDecisionUseCase(taService, config)
-
     @Test
     fun `monte carlo strategy behavior analysis`() {
+        val config = TradingConfig.forProfile(RiskProfile.BALANCED)
+        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
+
+        val engine = MakeTradingDecisionUseCase()
         // 1. Fetch 1000 daily candles (~2.7 years of history)
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(
             symbol = "BTCUSDT",

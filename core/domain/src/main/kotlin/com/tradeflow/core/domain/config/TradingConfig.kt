@@ -1,5 +1,6 @@
 package com.tradeflow.core.domain.config
 
+import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
 import java.math.BigDecimal
 
 /**
@@ -134,7 +135,7 @@ data class TradingConfig(
          * @return TradingConfig with profile auto-selected based on balance
          */
         fun adaptive(portfolioBalance: BigDecimal): TradingConfig {
-            return AdaptiveOptimizer.selectProfile(portfolioBalance)
+            return AdaptiveOptimizerUseCase.selectProfile(portfolioBalance)
         }
     }
 }

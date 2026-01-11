@@ -68,8 +68,8 @@ class QuickMultiRegimeTest {
                 (0 until 3).forEach { seed ->
                     val candles = generator.generate(nSteps = 400, seed = seed.toLong(), noiseLevel = 0.15)
 
-                    val taService = AnalyzeCandlesUseCase()
-                    val engine = MakeTradingDecisionUseCase(taService, customConfig)
+                    com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
+                    val engine = MakeTradingDecisionUseCase()
 
                     val metrics = simulateStrategy(candles, engine)
 

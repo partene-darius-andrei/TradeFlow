@@ -1,15 +1,13 @@
 package com.tradeflow.core.domain.usecase
 
-import com.tradeflow.core.domain.config.AdaptiveOptimizer
+import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.*
-import com.tradeflow.core.domain.repository.BracketOrderRepository
+import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.repository.ExchangeRepository
-import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import java.math.BigDecimal
 import java.math.RoundingMode
-import javax.inject.Inject
 
 /**
  * Result of a single trading cycle execution.
@@ -186,18 +184,16 @@ data class CycleResult(
  * In backtesting, run cycles sequentially on single thread.
  *
  * **Dependencies:**
- * - **ExchangeRepository:** Fetches market data, places/cancels orders
- * - **BracketOrderRepository:** Places complex bracket orders (entry + stop + target)
- * - **DecisionEngine:** Generates trading decisions (injected as MakeTradingDecisionUseCase)
- * - **AdaptiveOptimizer:** Detects when to switch risk profiles
+ * - **ExchangeRepository:** Fetches market data, places orders (including bracket orders)
+ * - **MakeTradingDecisionUseCase:** Generates trading decisions based on market regime
+ * - **AdaptiveOptimizerUseCase:** Detects when to switch risk profiles
  *
  * **Usage in Backtesting:**
  * ```kotlin
  * val orchestrator = ExecuteTradingCycleUseCase(
  *     exchangeRepository = SimulatedExchange(...),
- *     bracketOrderRepository = SimulatedBracketOrders(...),
- *     decisionEngine = MakeTradingDecisionUseCase(...),
- *     adaptiveOptimizer = AdaptiveOptimizer()
+ *     makeDecisionUseCase = MakeTradingDecisionUseCase(...),
+ *     adaptiveOptimizer = AdaptiveOptimizerUseCase()
  * )
  *
  * var hwm = BigDecimal.ZERO
@@ -219,16 +215,14 @@ data class CycleResult(
  * }
  * ```
  *
- * @property exchangeRepository Repository for market data and order placement.
+ * @property exchangeRepository Repository for market data and order placement (including bracket orders).
  *           In backtesting, this is SimulatedExchange. In production, CoinbaseRepository.
  *
- * @property bracketOrderRepository Repository for placing bracket orders (entry + stop + target).
- *           Simplifies complex order placement logic.
- *
- * @property decisionEngine Strategy decision generator (typically MakeTradingDecisionUseCase).
- *           Injected as DecisionEngine interface for testability.
+ * @property makeDecisionUseCase Strategy decision generator (MakeTradingDecisionUseCase).
+ *           Creates instances automatically via default parameter.
  *
  * @property adaptiveOptimizer Detects when portfolio balance crosses risk profile thresholds.
+ *           Creates instances automatically via default parameter.
  *           Automatically switches from AGGRESSIVE → BALANCED → CONSERVATIVE → ULTRA_CONSERVATIVE.
  *
  * @see MakeTradingDecisionUseCase for how decisions are generated
@@ -236,11 +230,10 @@ data class CycleResult(
  * @see Decision for the four decision types (Wait, Defense, Trend, Range)
  * @see CycleResult for the return type
  */
-class ExecuteTradingCycleUseCase @Inject constructor(
-    private val exchangeRepository: ExchangeRepository,
-    private val bracketOrderRepository: BracketOrderRepository,
-    private val makeDecisionUseCase: MakeTradingDecisionUseCase,
-    private val adaptiveOptimizer: AdaptiveOptimizer
+class ExecuteTradingCycleUseCase(
+    private val exchangeRepository: ExchangeRepository = DependencyInjection.exchangeRepository,
+    private val makeDecisionUseCase: MakeTradingDecisionUseCase = MakeTradingDecisionUseCase(),
+    private val adaptiveOptimizer: AdaptiveOptimizerUseCase = AdaptiveOptimizerUseCase()
 ) {
     private var currentConfig: TradingConfig = TradingConfig.forProfile(RiskProfile.BALANCED)
     private var currentProfile: RiskProfile = RiskProfile.BALANCED
@@ -463,7 +456,7 @@ class ExecuteTradingCycleUseCase @Inject constructor(
                         val btcSize = sizeUsd.divide(decision.entryPrice, 8, RoundingMode.HALF_UP)
                         println("  [EXEC] TREND: Size \$${sizeUsd.setScale(2, RoundingMode.HALF_UP)} = ${btcSize.setScale(8, RoundingMode.HALF_UP)} BTC")
 
-                        bracketOrderRepository.placeBracketOrder(
+                        exchangeRepository.placeBracketOrder(
                             productId, decision.direction, btcSize,
                             decision.entryPrice, decision.takeProfit, decision.stopLoss
                         ).getOrThrow()

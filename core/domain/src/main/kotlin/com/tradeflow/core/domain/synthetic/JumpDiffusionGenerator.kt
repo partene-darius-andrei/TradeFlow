@@ -11,12 +11,45 @@ import kotlin.math.ln as naturalLog
 import kotlin.math.cos
 import kotlin.random.Random
 
+/**
+ * Box-Muller transform for generating Gaussian random numbers.
+ * Converts uniform random variables to standard normal distribution.
+ */
 fun Random.nextGaussian(): Double {
     val u1 = this.nextDouble()
     val u2 = this.nextDouble()
     return sqrt(-2.0 * naturalLog(u1)) * cos(2.0 * kotlin.math.PI * u2)
 }
 
+/**
+ * Synthetic market data generator using Jump Diffusion process with stochastic volatility.
+ *
+ * Simulates realistic price movements combining:
+ * - Continuous diffusion (Geometric Brownian Motion)
+ * - Discrete jumps (sudden price shocks)
+ * - Stochastic volatility (time-varying volatility)
+ *
+ * The model follows:
+ * ```
+ * dS/S = μdt + σ(t)dW + JdN
+ * dσ = ν·σ·dV
+ * ```
+ * Where:
+ * - S = price
+ * - μ = drift
+ * - σ(t) = time-varying volatility
+ * - dW = Brownian motion (continuous randomness)
+ * - J = jump size (mean + stdDev·Z)
+ * - dN = Poisson process (λdt probability of jump)
+ * - ν = volatility of volatility
+ * - dV = second Brownian motion (volatility randomness)
+ *
+ * @property config Base generation parameters (start price, time, drift, volatility)
+ * @property jumpIntensity Lambda (λ) - annualized jump frequency (0.05 = 5% chance per year)
+ * @property jumpMean Expected jump size (negative = downward jumps, e.g., -0.02 = -2%)
+ * @property jumpStdDev Jump size variability (0.03 = 3% standard deviation)
+ * @property volatilityOfVolatility Controls how much volatility changes over time (0.3 = 30%)
+ */
 class JumpDiffusionGenerator(
     private val config: GenerationConfig = GenerationConfig(),
     private val jumpIntensity: Double = 0.05,
@@ -27,6 +60,23 @@ class JumpDiffusionGenerator(
 
     override fun getName(): String = "JumpDiffusion"
 
+    /**
+     * Generates synthetic candlestick data using jump diffusion with stochastic volatility.
+     *
+     * Algorithm:
+     * 1. Initialize price, time, volatility
+     * 2. For each step:
+     *    - Check for jump event (Poisson process)
+     *    - Calculate continuous diffusion component
+     *    - Update volatility stochastically
+     *    - Generate OHLC from current price ± intrabar noise
+     * 3. Return chronological candle list
+     *
+     * @param nSteps Number of candles to generate
+     * @param seed Random seed for reproducibility
+     * @param noiseLevel Noise multiplier (0.0 = clean, 1.0 = high noise). Increases jump frequency.
+     * @return List of synthetic candles with realistic price movements
+     */
     override fun generate(nSteps: Int, seed: Long, noiseLevel: Double): List<Candle> {
         val random = Random(seed)
         val candles = mutableListOf<Candle>()

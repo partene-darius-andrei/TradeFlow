@@ -8,7 +8,6 @@ import com.tradeflow.core.domain.risk.model.PlaceOrderRequest
 import com.tradeflow.core.domain.risk.model.RiskCheck
 import java.math.BigDecimal
 import java.math.RoundingMode
-import javax.inject.Inject
 
 /**
  * Risk management service that validates orders and monitors portfolio drawdown.
@@ -174,7 +173,7 @@ import javax.inject.Inject
  * @see PlaceOrderRequest for the order validation input type
  * @see TradingConfig.risk for risk parameter configuration
  */
-class RiskManager @Inject constructor(
+class RiskManager constructor(
     private val config: TradingConfig
 ) {
 

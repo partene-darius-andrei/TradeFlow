@@ -1,6 +1,6 @@
 package com.tradeflow.core.domain.strategy
 
-import com.tradeflow.core.domain.config.AdaptiveOptimizer
+import com.tradeflow.core.domain.usecase.AdaptiveOptimizerUseCase
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
@@ -25,13 +25,17 @@ class RealTradeSimulationTest {
 
     @Test
     fun `analyze PnL and equity curve over 30 days of real data`() = runBlocking {
-        val taService = AnalyzeCandlesUseCase()
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-        val engine = MakeTradingDecisionUseCase(taService, config)
         val initialCapital = BigDecimal("500.00")
         val exchange = SimulatedExchange(initialCapital)
-        val adaptiveOptimizer = AdaptiveOptimizer()
-        val orchestrator = ExecuteTradingCycleUseCase(exchange, exchange, engine, adaptiveOptimizer)
+
+        com.tradeflow.core.domain.repository.DependencyInjection
+            .setRepository(exchange)
+            .setTradingConfig(config)
+            
+
+        val engine = MakeTradingDecisionUseCase()
+        val orchestrator = ExecuteTradingCycleUseCase()
 
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 400)
         val primeHistory = allCandles.take(200)

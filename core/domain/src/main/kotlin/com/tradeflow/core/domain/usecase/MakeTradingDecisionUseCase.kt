@@ -2,12 +2,12 @@ package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.config.DecisionMode
 import com.tradeflow.core.domain.config.TradingConfig
+import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.OrderSide
 import java.math.BigDecimal
-import javax.inject.Inject
 
 /**
  * STATEFUL trading decision engine with 3-candle hysteresis to prevent whipsaw mode switching.
@@ -110,9 +110,9 @@ import javax.inject.Inject
  * @see Decision for the output decision types
  * @see StrategyParameters for hysteresis configuration (confirmationCandles, ADX thresholds)
  */
-class MakeTradingDecisionUseCase @Inject constructor(
-    private val taService: AnalyzeCandlesUseCase,
-    private val config: TradingConfig
+class MakeTradingDecisionUseCase(
+    private val taService: AnalyzeCandlesUseCase = AnalyzeCandlesUseCase(),
+    private val config: TradingConfig = DependencyInjection.tradingConfig
 ) {
 
     /**

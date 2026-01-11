@@ -6,9 +6,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import javax.inject.Inject
 
-class CoinbaseApiClient @Inject constructor(
+class CoinbaseApiClient constructor(
     private val httpClient: HttpClient,
     private val authProvider: AuthTokenProvider
 ) {

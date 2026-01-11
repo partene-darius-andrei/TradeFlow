@@ -14,9 +14,8 @@ import kotlinx.coroutines.withContext
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.Date
-import javax.inject.Inject
 
-class CoinbaseJwtGenerator @Inject constructor(
+class JwtRepository(
     private val credentialStore: CredentialStore
 ) : AuthTokenProvider {
 
@@ -30,19 +29,6 @@ class CoinbaseJwtGenerator @Inject constructor(
             apiKey = apiKey,
             secret = secret,
             uri = "$method api.coinbase.com$path"
-        )
-    }
-
-    override suspend fun getWebSocketToken(): String {
-        val apiKey = credentialStore.getApiKey()
-            ?: throw ExchangeError.AuthenticationFailed("No API key stored")
-        val secret = credentialStore.getSecret()
-            ?: throw ExchangeError.AuthenticationFailed("No secret key stored")
-
-        return generateJwt(
-            apiKey = apiKey,
-            secret = secret,
-            uri = null
         )
     }
 

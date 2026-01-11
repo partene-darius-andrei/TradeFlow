@@ -1,7 +1,9 @@
-package com.tradeflow.core.domain.config
+package com.tradeflow.core.domain.usecase
+
+import com.tradeflow.core.domain.config.RiskProfile
+import com.tradeflow.core.domain.config.TradingConfig
 
 import java.math.BigDecimal
-import javax.inject.Inject
 
 /**
  * Adaptive risk profile optimizer that automatically adjusts trading risk based on portfolio balance.
@@ -19,8 +21,8 @@ import javax.inject.Inject
  *
  * **Usage in Backtesting:**
  * ```kotlin
- * val config = AdaptiveOptimizer.selectProfile(portfolioBalance)
- * val optimizer = AdaptiveOptimizer()
+ * val config = AdaptiveOptimizerUseCase.selectProfile(portfolioBalance)
+ * val optimizer = AdaptiveOptimizerUseCase()
  * val switchEvent = optimizer.detectProfileSwitch(currentProfile, newBalance)
  * if (switchEvent != null) {
  *     // Profile change detected, log and adjust strategy
@@ -36,7 +38,7 @@ import javax.inject.Inject
  * @see RiskProfile for risk profile definitions and parameters
  * @see TradingConfig for how profiles translate to trading parameters
  */
-class AdaptiveOptimizer @Inject constructor() {
+class AdaptiveOptimizerUseCase constructor() {
 
     companion object {
         /**
@@ -55,7 +57,7 @@ class AdaptiveOptimizer @Inject constructor() {
          *
          * **Example:**
          * ```kotlin
-         * val config = AdaptiveOptimizer.selectProfile(BigDecimal("750"))
+         * val config = AdaptiveOptimizerUseCase.selectProfile(BigDecimal("750"))
          * // Returns BALANCED profile config
          * ```
          *
@@ -105,7 +107,7 @@ class AdaptiveOptimizer @Inject constructor() {
         currentProfile: RiskProfile,
         newBalance: BigDecimal
     ): ProfileSwitchEvent? {
-        val newConfig = AdaptiveOptimizer.selectProfile(newBalance)
+        val newConfig = AdaptiveOptimizerUseCase.selectProfile(newBalance)
         return if (newConfig.profile != currentProfile) {
             ProfileSwitchEvent(
                 from = currentProfile,
@@ -120,7 +122,7 @@ class AdaptiveOptimizer @Inject constructor() {
 /**
  * Event object representing a risk profile change triggered by balance threshold crossing.
  *
- * This is emitted by [AdaptiveOptimizer.detectProfileSwitch] when the portfolio balance
+ * This is emitted by [AdaptiveOptimizerUseCase.detectProfileSwitch] when the portfolio balance
  * moves across a risk profile threshold boundary.
  *
  * **Usage in Logging:**

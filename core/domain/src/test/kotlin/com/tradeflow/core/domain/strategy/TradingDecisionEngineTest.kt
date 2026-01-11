@@ -17,13 +17,13 @@ import kotlin.test.assertTrue
 
 class MakeTradingDecisionUseCaseTest {
 
-    private val taService = AnalyzeCandlesUseCase()
     private val config = TradingConfig.forProfile(RiskProfile.BALANCED)
     private lateinit var engine: MakeTradingDecisionUseCase
 
     @Before
     fun setup() {
-        engine = MakeTradingDecisionUseCase(taService, config)
+        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
+        engine = MakeTradingDecisionUseCase()
         engine.resetState()
     }
 
@@ -62,10 +62,11 @@ class MakeTradingDecisionUseCaseTest {
         val candles = createTrendCandles()
         val currentPrice = candles.last().close
 
-        // Engine requires 3 confirmations to switch to TREND mode due to hysteresis
+        // BALANCED profile requires 4 confirmations (confirmationCandles=4 from optimization)
         engine.execute(candles, currentPrice) // Confirmation 1
         engine.execute(candles, currentPrice) // Confirmation 2
-        val decision = engine.execute(candles, currentPrice) // Confirmation 3 -> switches to TREND
+        engine.execute(candles, currentPrice) // Confirmation 3
+        val decision = engine.execute(candles, currentPrice) // Confirmation 4 -> switches to TREND
 
         assertTrue(decision is Decision.Trend)
         assertEquals(OrderSide.BUY, (decision as Decision.Trend).direction)

@@ -1,7 +1,7 @@
 package com.tradeflow.core.domain.simulator
 
 import com.tradeflow.core.domain.model.*
-import com.tradeflow.core.domain.repository.BracketOrderRepository
+import com.tradeflow.core.domain.repository.ExchangeRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -10,7 +10,7 @@ import java.util.UUID
 class SimulatedExchange(
     initialUsd: BigDecimal,
     private val productId: String = "BTC-USD"
-) : BracketOrderRepository {
+) : ExchangeRepository {
 
     var usdBalance = initialUsd
     var btcBalance = BigDecimal.ZERO

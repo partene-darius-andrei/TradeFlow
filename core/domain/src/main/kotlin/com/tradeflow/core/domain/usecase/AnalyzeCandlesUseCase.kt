@@ -10,7 +10,6 @@ import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.num.DecimalNum
 import java.math.BigDecimal
 import java.time.Duration
-import javax.inject.Inject
 
 /**
  * Service for calculating technical analysis indicators using the ta4j library.
@@ -52,7 +51,7 @@ import javax.inject.Inject
  *
  * @see Indicators for the result object containing all calculated indicator values
  */
-class AnalyzeCandlesUseCase @Inject constructor() {
+class AnalyzeCandlesUseCase constructor() {
 
     /**
      * Result object containing all calculated technical indicators.

@@ -54,8 +54,8 @@ class OptimizationTest {
                     profile = RiskProfile.BALANCED
                 )
 
-                val taService = AnalyzeCandlesUseCase()
-                val engine = MakeTradingDecisionUseCase(taService, customConfig)
+                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
+                val engine = MakeTradingDecisionUseCase()
 
                 val metrics = simulateStrategy(syntheticCandles, engine)
 
@@ -91,8 +91,8 @@ class OptimizationTest {
             profile = RiskProfile.BALANCED
         )
 
-        val taService = AnalyzeCandlesUseCase()
-        val optimizedEngine = MakeTradingDecisionUseCase(taService, optimizedConfig)
+        com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = optimizedConfig
+        val optimizedEngine = MakeTradingDecisionUseCase()
 
         val oosMetrics = simulateStrategy(outOfSampleData, optimizedEngine)
 
@@ -172,8 +172,8 @@ class OptimizationTest {
                 (0 until 10).forEach { seed ->
                     val candles = generator.generate(nSteps = 400, seed = seed.toLong(), noiseLevel = 0.15)
 
-                    val taService = AnalyzeCandlesUseCase()
-                    val engine = MakeTradingDecisionUseCase(taService, customConfig)
+                    com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
+                    val engine = MakeTradingDecisionUseCase()
 
                     val metrics = simulateStrategy(candles, engine)
 

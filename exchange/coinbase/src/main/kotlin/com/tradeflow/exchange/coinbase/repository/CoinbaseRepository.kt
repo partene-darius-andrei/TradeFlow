@@ -2,20 +2,82 @@ package com.tradeflow.exchange.coinbase.repository
 
 import com.tradeflow.core.domain.model.Balance
 import com.tradeflow.core.domain.model.Candle
+import com.tradeflow.core.domain.model.CredentialStore
 import com.tradeflow.core.domain.model.Granularity
 import com.tradeflow.core.domain.model.Order
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.model.Portfolio
 import com.tradeflow.core.domain.model.Ticker
-import com.tradeflow.core.domain.repository.BracketOrderRepository
+import com.tradeflow.core.domain.repository.ExchangeRepository
 import com.tradeflow.exchange.coinbase.api.CoinbaseApiClient
+import com.tradeflow.exchange.coinbase.auth.JwtRepository
 import com.tradeflow.exchange.coinbase.mapper.toDomain
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
+import java.io.File
 import java.math.BigDecimal
-import javax.inject.Inject
+import java.util.Properties
 
-class CoinbaseRepository @Inject constructor(
-    private val apiClient: CoinbaseApiClient
-) : BracketOrderRepository {
+class CoinbaseRepository(
+    private val apiClient: CoinbaseApiClient,
+    private val httpClient: HttpClient? = null
+) : ExchangeRepository {
+
+    companion object {
+        fun create(): CoinbaseRepository {
+            val localPropertiesFile = File("local.properties")
+            val props = Properties()
+            if (localPropertiesFile.exists()) {
+                props.load(localPropertiesFile.inputStream())
+            }
+
+            val apiKey = System.getenv("COINBASE_API_KEY")
+                ?: props.getProperty("coinbase.api.key")
+                ?: error("COINBASE_API_KEY not found")
+
+            val secret = System.getenv("COINBASE_API_SECRET")
+                ?: props.getProperty("coinbase.api.secret")
+                ?: error("COINBASE_API_SECRET not found")
+
+            val httpClient = HttpClient(OkHttp) {
+                install(ContentNegotiation) {
+                    json(Json {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                        prettyPrint = true
+                    })
+                }
+                install(Logging) {
+                    logger = object : Logger {
+                        override fun log(message: String) {
+                            println("[HTTP] $message")
+                        }
+                    }
+                    level = LogLevel.HEADERS
+                }
+            }
+
+            val credentialStore = object : CredentialStore {
+                override suspend fun getApiKey(): String = apiKey
+                override suspend fun getSecret(): String = secret
+            }
+
+            val authProvider = JwtRepository(credentialStore)
+            val apiClient = CoinbaseApiClient(httpClient, authProvider)
+
+            return CoinbaseRepository(apiClient, httpClient)
+        }
+    }
+
+    fun close() {
+        httpClient?.close()
+    }
 
     override suspend fun getBalances(): Result<List<Balance>> = runCatching {
         val response = apiClient.getAccounts().getOrThrow()

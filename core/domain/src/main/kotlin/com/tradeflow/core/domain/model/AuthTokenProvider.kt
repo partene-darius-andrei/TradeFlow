@@ -17,7 +17,7 @@ package com.tradeflow.core.domain.model
  * 2. **WebSocket Tokens:** Long-lived tokens for real-time feed connection
  *
  * **Implementation:**
- * Implemented by `CoinbaseJwtGenerator` in the exchange:coinbase module.
+ * Implemented by `JwtRepository` in the exchange:coinbase module.
  * Uses ES256 (ECDSA with SHA-256) algorithm per Coinbase CDP specification.
  *
  * **Token Generation Process (REST):**
@@ -53,7 +53,7 @@ package com.tradeflow.core.domain.model
  * }
  * ```
  *
- * @see CoinbaseJwtGenerator for the Coinbase-specific implementation
+ * @see JwtRepository for the Coinbase-specific implementation
  * @see CredentialStore for how API keys and secrets are retrieved
  */
 interface AuthTokenProvider {
@@ -89,36 +89,4 @@ interface AuthTokenProvider {
      * @throws Exception if token generation fails (crypto error, etc.)
      */
     suspend fun getToken(method: String, path: String): String
-
-    /**
-     * Generates a JWT authentication token for WebSocket connection.
-     *
-     * Creates a long-lived token for real-time market data WebSocket feeds.
-     * Unlike REST tokens, this doesn't include method/path (WebSocket has no HTTP method).
-     *
-     * **Token Claims:**
-     * - `sub`: API key (subject)
-     * - `iss`: "coinbase-cloud" (issuer)
-     * - `nbf`: Current timestamp (not before)
-     * - `exp`: Current timestamp + longer validity period
-     *
-     * **Usage:**
-     * ```kotlin
-     * val wsToken = getWebSocketToken()
-     * webSocket.send("""
-     *     {
-     *         "type": "subscribe",
-     *         "product_ids": ["BTC-USD"],
-     *         "channel": "ticker",
-     *         "jwt": "$wsToken"
-     *     }
-     * """)
-     * ```
-     *
-     * @return Signed JWT token string for WebSocket authentication.
-     *
-     * @throws IllegalStateException if API credentials are not configured
-     * @throws Exception if token generation fails
-     */
-    suspend fun getWebSocketToken(): String
 }

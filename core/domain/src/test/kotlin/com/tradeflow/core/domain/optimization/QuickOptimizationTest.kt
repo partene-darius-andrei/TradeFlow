@@ -51,8 +51,8 @@ class QuickOptimizationTest {
                     profile = RiskProfile.BALANCED
                 )
 
-                val taService = AnalyzeCandlesUseCase()
-                val engine = MakeTradingDecisionUseCase(taService, customConfig)
+                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
+                val engine = MakeTradingDecisionUseCase()
 
                 val metrics = simulateStrategy(syntheticCandles, engine)
 
@@ -88,8 +88,8 @@ class QuickOptimizationTest {
             profile = RiskProfile.BALANCED
         )
 
-        val taService = AnalyzeCandlesUseCase()
-        val optimizedEngine = MakeTradingDecisionUseCase(taService, optimizedConfig)
+        com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = optimizedConfig
+        val optimizedEngine = MakeTradingDecisionUseCase()
 
         val oosMetrics = simulateStrategy(outOfSampleData, optimizedEngine)
 

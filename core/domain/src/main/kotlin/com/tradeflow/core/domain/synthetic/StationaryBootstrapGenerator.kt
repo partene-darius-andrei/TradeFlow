@@ -9,6 +9,27 @@ import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.random.Random
 
+/**
+ * Synthetic market data generator using Stationary Bootstrap resampling.
+ *
+ * Preserves statistical properties of historical data while generating new scenarios.
+ * Unlike Jump Diffusion (which models price process), this resamples actual historical returns.
+ *
+ * Algorithm (Politis & Romano, 1994):
+ * 1. Calculate log returns from historical candles
+ * 2. Randomly select a starting return
+ * 3. With probability p, jump to random new return (break block)
+ * 4. Otherwise, continue to next sequential return (continue block)
+ * 5. Reconstruct prices from resampled returns
+ *
+ * This preserves:
+ * - Return distribution (fat tails, skewness)
+ * - Autocorrelation structure
+ * - Volatility clustering
+ *
+ * @property historicalData Real market data to resample from
+ * @property config Generation parameters (start price, time, interval)
+ */
 class StationaryBootstrapGenerator(
     private val historicalData: List<Candle>,
     private val config: GenerationConfig = GenerationConfig()
@@ -16,6 +37,19 @@ class StationaryBootstrapGenerator(
 
     override fun getName(): String = "StationaryBootstrap"
 
+    /**
+     * Generates synthetic data by resampling historical returns with block structure.
+     *
+     * The noiseLevel parameter controls expected block size:
+     * - Low noise (0.0): Large blocks (10 returns) = more autocorrelation
+     * - High noise (1.0): Small blocks (2 returns) = more randomness
+     *
+     * @param nSteps Number of candles to generate
+     * @param seed Random seed for reproducibility
+     * @param noiseLevel Block size control (0.0 = large blocks, 1.0 = small blocks)
+     * @return List of synthetic candles preserving historical return characteristics
+     * @throws IllegalArgumentException if historical data has fewer than 2 candles
+     */
     override fun generate(nSteps: Int, seed: Long, noiseLevel: Double): List<Candle> {
         val random = Random(seed)
         val returns = calculateLogReturns(historicalData)
@@ -43,12 +77,20 @@ class StationaryBootstrapGenerator(
         return reconstructCandles(syntheticReturns, config, seed)
     }
 
+    /**
+     * Calculates log returns from consecutive candles.
+     * Log return = ln(price_t / price_{t-1})
+     */
     private fun calculateLogReturns(candles: List<Candle>): List<Double> {
         return candles.zipWithNext { prev, curr ->
             ln(curr.close.toDouble() / prev.close.toDouble())
         }
     }
 
+    /**
+     * Reconstructs OHLCV candles from log returns.
+     * Generates realistic intrabar price action (high/low/open/close) around the close price.
+     */
     private fun reconstructCandles(
         returns: List<Double>,
         config: GenerationConfig,

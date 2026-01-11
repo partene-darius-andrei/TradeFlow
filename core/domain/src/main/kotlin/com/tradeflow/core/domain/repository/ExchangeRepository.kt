@@ -361,4 +361,25 @@ interface ExchangeRepository {
      * @return Result<Order> with current status, or ExchangeError on failure.
      */
     suspend fun getOrder(orderId: String): Result<Order>
+
+    /**
+     * Places a bracket order: entry + take-profit + stop-loss in one operation.
+     *
+     * @param productId Trading pair (e.g., "BTC-USD")
+     * @param side Order side (BUY for long, SELL for short)
+     * @param size Position size in base currency
+     * @param entryPrice Limit price for entry order
+     * @param takeProfit Price target for profit taking
+     * @param stopLoss Price level for stop loss
+     *
+     * @return Result<Order> entry order on success, or ExchangeError on failure
+     */
+    suspend fun placeBracketOrder(
+        productId: String,
+        side: OrderSide,
+        size: BigDecimal,
+        entryPrice: BigDecimal,
+        takeProfit: BigDecimal,
+        stopLoss: BigDecimal
+    ): Result<Order>
 }

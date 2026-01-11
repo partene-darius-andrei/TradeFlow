@@ -10,10 +10,7 @@ dependencies {
     // Core Kotlin only
     implementation(libs.kotlinx.coroutines.core)
 
-    // Dependency Injection (annotations only, no Android deps)
-    implementation(libs.javax.inject)
-
-    // Technical Analysis (for DecisionEngine)
+    // Technical Analysis
     implementation(libs.ta4j.core)
 
     // Testing
