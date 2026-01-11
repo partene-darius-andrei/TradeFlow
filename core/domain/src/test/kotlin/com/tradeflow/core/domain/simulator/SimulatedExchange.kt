@@ -9,19 +9,14 @@ import java.util.UUID
 
 class SimulatedExchange(
     initialUsd: BigDecimal,
-    private val productId: String = "BTC-USD"
+    private val feeRate: BigDecimal = BigDecimal("0.004") // Coinbase Advanced Trade: 0.4% taker
 ) : ExchangeRepository {
 
     var usdBalance = initialUsd
     var btcBalance = BigDecimal.ZERO
     private val openOrders = mutableListOf<Order>()
-    private val orderGroups = mutableMapOf<String, MutableList<Order>>() // Track OCO groups
     var currentPrice = BigDecimal.ZERO
     private var history = mutableListOf<Candle>()
-
-    // Coinbase Advanced Trade fees (Tier 1): 0.4% taker, 0.25% maker
-    // Using taker fee for conservative simulation (worst case)
-    private val feeRate = BigDecimal("0.004") // 0.4% (was 0.6% - FIXED)
 
     fun advanceTime(newCandle: Candle) {
         this.currentPrice = newCandle.close
@@ -73,11 +68,6 @@ class SimulatedExchange(
      */
     private fun cancelOrderGroup(groupId: String) {
         openOrders.removeAll { it.clientOrderId == groupId }
-        orderGroups.remove(groupId)
-    }
-
-    private fun clearOpenOrders() {
-        openOrders.clear()
     }
 
     private fun canExecute(order: Order): Boolean {
@@ -196,7 +186,6 @@ class SimulatedExchange(
 
             openOrders.add(tpOrder)
             openOrders.add(slOrder)
-            orderGroups.getOrPut(groupId) { mutableListOf() }.addAll(listOf(tpOrder, slOrder))
 
             return Result.success(entryOrder)
         }

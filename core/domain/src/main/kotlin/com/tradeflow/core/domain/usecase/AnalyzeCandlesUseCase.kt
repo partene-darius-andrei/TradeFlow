@@ -196,15 +196,22 @@ class AnalyzeCandlesUseCase constructor() {
     fun calculateAll(candles: List<Candle>, smaPeriod: Int = 200, adxPeriod: Int = 14, atrPeriod: Int = 14): Indicators {
         require(candles.isNotEmpty()) { "Candle list cannot be empty" }
 
+        // Calculate candle duration from timestamps (auto-detect timeframe)
+        val candleDuration = if (candles.size >= 2) {
+            Duration.between(candles[0].timestamp, candles[1].timestamp)
+        } else {
+            Duration.ofHours(4) // Default to 4H if only one candle
+        }
+
         val series = BaseBarSeriesBuilder().withName("TradeFlow-Series").build()
 
         candles.forEach { candle ->
             validateCandle(candle)
 
             val bar = BaseBar(
-                Duration.ofMinutes(240), // H4 candle duration (4 hours = 240 minutes)
+                candleDuration, // Auto-detected from candle spacing
                 candle.timestamp,
-                candle.timestamp.plus(Duration.ofHours(4)),
+                candle.timestamp.plus(candleDuration),
                 DecimalNum.valueOf(candle.open),
                 DecimalNum.valueOf(candle.high),
                 DecimalNum.valueOf(candle.low),
