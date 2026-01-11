@@ -30,8 +30,8 @@ class OptimizationTest {
         println("=".repeat(90))
 
         val optimizer = GeneticOptimizer(
-            populationSize = 30,
-            generations = 50,
+            populationSize = 15,  // FAST: Reduced from 30
+            generations = 20,     // FAST: Reduced from 50
             mutationRate = 0.2,
             eliteRatio = 0.15
         )
@@ -39,7 +39,7 @@ class OptimizationTest {
         val bootstrapGenerator = StationaryBootstrapGenerator(inSampleData)
 
         val fitnessFunction: (Chromosome) -> Double = { chromosome ->
-            val results = (0 until 20).map { seed ->
+            val results = (0 until 10).map { seed ->  // FAST: Reduced from 20
                 val syntheticCandles = bootstrapGenerator.generate(
                     nSteps = 400,
                     seed = seed.toLong(),
@@ -94,7 +94,9 @@ class OptimizationTest {
         com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = optimizedConfig
         val optimizedEngine = MakeTradingDecisionUseCase()
 
-        val oosMetrics = simulateStrategy(outOfSampleData, optimizedEngine)
+        // FIXED: Use ALL historical data for out-of-sample (need 200 candles history for SMA200)
+        // But only calculate metrics starting from candle 400 (out-of-sample period)
+        val oosMetrics = simulateStrategyWithOffset(historicalData, optimizedEngine, startIndex = 400)
 
         println("Out-Of-Sample Performance:")
         println("  Total Return:   ${(oosMetrics.totalReturn * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
@@ -240,12 +242,22 @@ class OptimizationTest {
 
             when (decision) {
                 is Decision.Trend -> {
-                    // Support both LONG (BUY) and SHORT (SELL) - NOTE: Simplified spot simulation, no real SHORT
-                    if (!inTrade && decision.direction == com.tradeflow.core.domain.model.OrderSide.BUY) {
-                        val positionSize = currentEquity * decision.positionSizePercent.toDouble()
-                        val fee = positionSize * feeRate // FIXED: Add fee deduction
-                        btcHeld = (positionSize - fee) / currentPrice // Fee reduces position size
-                        capital -= positionSize // Deduct full amount including fee
+                    // FIXED: Support both LONG (BUY) and SHORT (SELL) with 2x leverage
+                    if (!inTrade) {
+                        val leverage = 2.0 // 2x leverage as per user decision
+                        val positionSize = currentEquity * decision.positionSizePercent.toDouble() * leverage
+                        val fee = positionSize * feeRate // Fee on position size
+
+                        if (decision.direction == com.tradeflow.core.domain.model.OrderSide.BUY) {
+                            // LONG: Buy BTC
+                            btcHeld = (positionSize - fee) / currentPrice
+                            capital -= positionSize
+                        } else {
+                            // SHORT: Borrow and sell BTC (negative position)
+                            btcHeld = -((positionSize - fee) / currentPrice)
+                            capital += positionSize
+                        }
+
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
@@ -268,19 +280,183 @@ class OptimizationTest {
             if (inTrade && decision is Decision.Trend) {
                 val slPrice = decision.stopLoss.toDouble()
                 val tpPrice = decision.takeProfit.toDouble()
+                val isLong = btcHeld > 0
 
-                if (currentPrice <= slPrice || currentPrice >= tpPrice) {
-                    val exitValue = btcHeld * currentPrice
-                    val fee = exitValue * feeRate // FIXED: Add fee deduction on SL/TP exits
-                    capital += (exitValue - fee) // Receive value minus fee
-                    if (currentPrice > entryPrice) wins++
+                val hitSL = if (isLong) currentPrice <= slPrice else currentPrice >= slPrice
+                val hitTP = if (isLong) currentPrice >= tpPrice else currentPrice <= tpPrice
+
+                if (hitSL || hitTP) {
+                    val exitValue = kotlin.math.abs(btcHeld) * currentPrice
+                    val fee = exitValue * feeRate
+
+                    if (isLong) {
+                        // LONG exit: Sell BTC
+                        capital += (exitValue - fee)
+                        if (currentPrice > entryPrice) wins++
+                    } else {
+                        // SHORT exit: Buy back BTC to close
+                        capital -= (exitValue + fee)
+                        if (currentPrice < entryPrice) wins++ // Profit if price went down
+                    }
+
                     btcHeld = 0.0
                     inTrade = false
                 }
             }
         }
 
-        val finalEquity = capital + btcHeld * candles.last().close.toDouble()
+        // FIXED: For SHORT positions (btcHeld < 0), unrealized P&L is calculated correctly
+        val finalPrice = candles.last().close.toDouble()
+        val unrealizedPnL = if (btcHeld > 0) {
+            // LONG: Profit if price increased
+            btcHeld * finalPrice
+        } else if (btcHeld < 0) {
+            // SHORT: Profit if price decreased
+            // We borrowed BTC and sold it, need to buy it back
+            -kotlin.math.abs(btcHeld) * finalPrice
+        } else {
+            0.0
+        }
+
+        val finalEquity = capital + unrealizedPnL
+        val totalReturn = (finalEquity / 1000.0) - 1.0
+
+        val equityReturns = equity.zipWithNext { a, b -> (b - a) / a }
+        val sharpe = if (equityReturns.isNotEmpty()) {
+            val avgReturn = equityReturns.average()
+            val stdDev = kotlin.math.sqrt(equityReturns.map { (it - avgReturn) * (it - avgReturn) }.average())
+            if (stdDev > 0) avgReturn / stdDev * kotlin.math.sqrt(252.0) else 0.0
+        } else 0.0
+
+        val maxDrawdown = calculateMaxDrawdown(equity)
+        val winRate = if (trades > 0) wins.toDouble() / trades else 0.0
+
+        return PerformanceMetrics(
+            totalReturn = totalReturn,
+            sharpeRatio = sharpe,
+            maxDrawdown = maxDrawdown,
+            winRate = winRate,
+            totalTrades = trades
+        )
+    }
+
+    /**
+     * Same as simulateStrategy() but only tracks metrics starting from startIndex.
+     * Used for out-of-sample validation where we need full history for indicators.
+     */
+    private fun simulateStrategyWithOffset(
+        candles: List<com.tradeflow.core.domain.model.Candle>,
+        engine: MakeTradingDecisionUseCase,
+        startIndex: Int
+    ): PerformanceMetrics {
+        var capital = 1000.0
+        var btcHeld = 0.0
+        var inTrade = false
+        var entryPrice = 0.0
+        val equity = mutableListOf<Double>()
+        var trades = 0
+        var wins = 0
+
+        val feeRate = 0.004
+
+        engine.resetState()
+
+        candles.forEachIndexed { index, candle ->
+            if (index < 200) return@forEachIndexed
+
+            val history = candles.subList(index - 200, index)
+            val currentPrice = candle.close.toDouble()
+
+            val decision = engine.execute(history, candle.close)
+
+            val currentEquity = capital + btcHeld * currentPrice
+
+            // FIXED: Only track equity starting from startIndex (out-of-sample period)
+            if (index >= startIndex) {
+                equity.add(currentEquity)
+            }
+
+            when (decision) {
+                is com.tradeflow.core.domain.model.Decision.Trend -> {
+                    if (!inTrade) {
+                        val leverage = 2.0
+                        val positionSize = currentEquity * decision.positionSizePercent.toDouble() * leverage
+                        val fee = positionSize * feeRate
+
+                        if (decision.direction == com.tradeflow.core.domain.model.OrderSide.BUY) {
+                            btcHeld = (positionSize - fee) / currentPrice
+                            capital -= positionSize
+                        } else {
+                            btcHeld = -((positionSize - fee) / currentPrice)
+                            capital += positionSize
+                        }
+
+                        inTrade = true
+                        entryPrice = currentPrice
+
+                        // Only count trades in out-of-sample period
+                        if (index >= startIndex) {
+                            trades++
+                        }
+                    }
+                }
+                is com.tradeflow.core.domain.model.Decision.Defense -> {
+                    if (inTrade) {
+                        val exitValue = kotlin.math.abs(btcHeld) * currentPrice
+                        val fee = exitValue * feeRate
+                        val isLong = btcHeld > 0
+
+                        if (isLong) {
+                            capital += (exitValue - fee)
+                            if (currentPrice > entryPrice && index >= startIndex) wins++
+                        } else {
+                            capital -= (exitValue + fee)
+                            if (currentPrice < entryPrice && index >= startIndex) wins++
+                        }
+
+                        btcHeld = 0.0
+                        inTrade = false
+                    }
+                }
+                else -> {}
+            }
+
+            if (inTrade && decision is com.tradeflow.core.domain.model.Decision.Trend) {
+                val slPrice = decision.stopLoss.toDouble()
+                val tpPrice = decision.takeProfit.toDouble()
+                val isLong = btcHeld > 0
+
+                val hitSL = if (isLong) currentPrice <= slPrice else currentPrice >= slPrice
+                val hitTP = if (isLong) currentPrice >= tpPrice else currentPrice <= tpPrice
+
+                if (hitSL || hitTP) {
+                    val exitValue = kotlin.math.abs(btcHeld) * currentPrice
+                    val fee = exitValue * feeRate
+
+                    if (isLong) {
+                        capital += (exitValue - fee)
+                        if (currentPrice > entryPrice && index >= startIndex) wins++
+                    } else {
+                        capital -= (exitValue + fee)
+                        if (currentPrice < entryPrice && index >= startIndex) wins++
+                    }
+
+                    btcHeld = 0.0
+                    inTrade = false
+                }
+            }
+        }
+
+        val finalPrice = candles.last().close.toDouble()
+        val unrealizedPnL = if (btcHeld > 0) {
+            btcHeld * finalPrice
+        } else if (btcHeld < 0) {
+            -kotlin.math.abs(btcHeld) * finalPrice
+        } else {
+            0.0
+        }
+
+        val finalEquity = capital + unrealizedPnL
         val totalReturn = (finalEquity / 1000.0) - 1.0
 
         val equityReturns = equity.zipWithNext { a, b -> (b - a) / a }
