@@ -1,5 +1,6 @@
 package com.tradeflow.core.domain.simulator
 
+import com.tradeflow.core.domain.config.ExchangeSimulationParameters
 import com.tradeflow.core.domain.model.*
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import java.math.BigDecimal
@@ -9,9 +10,7 @@ import java.util.UUID
 
 class SimulatedExchange(
     initialUsd: BigDecimal,
-    private val feeRate: BigDecimal = BigDecimal("0.004"), // Coinbase Advanced Trade: 0.4% taker
-    private val fundingRatePerInterval: BigDecimal = BigDecimal("0.0001"), // 0.01% per 8H
-    private val fundingIntervalHours: Int = 8
+    private val parameters: ExchangeSimulationParameters = ExchangeSimulationParameters()
 ) : ExchangeRepository {
 
     var usdBalance = initialUsd
@@ -73,10 +72,9 @@ class SimulatedExchange(
      * - SELL orders: Fill at slightly lower price (-0.1% slippage)
      */
     private fun applySlippage(price: BigDecimal, side: OrderSide): BigDecimal {
-        val slippagePercent = BigDecimal("0.001") // 0.1% slippage
         return when (side) {
-            OrderSide.BUY -> price * (BigDecimal.ONE + slippagePercent) // Pay more
-            OrderSide.SELL -> price * (BigDecimal.ONE - slippagePercent) // Receive less
+            OrderSide.BUY -> price * (BigDecimal.ONE + parameters.slippagePercent) // Pay more
+            OrderSide.SELL -> price * (BigDecimal.ONE - parameters.slippagePercent) // Receive less
         }
     }
 
@@ -242,7 +240,7 @@ class SimulatedExchange(
 
         // Realize PnL by closing position
         val exitValue = position.size * currentPrice
-        val fee = exitValue * feeRate
+        val fee = exitValue * parameters.takerFeeRate
 
         when (position.side) {
             OrderSide.BUY -> {
@@ -260,15 +258,15 @@ class SimulatedExchange(
     }
 
     override suspend fun getFundingRate(productId: String): Result<FundingRate> {
-        val nextFunding = lastFundingTime?.plusSeconds(fundingIntervalHours * 3600L)
-            ?: Instant.now().plusSeconds(fundingIntervalHours * 3600L)
+        val nextFunding = lastFundingTime?.plusSeconds(parameters.fundingIntervalHours * 3600L)
+            ?: Instant.now().plusSeconds(parameters.fundingIntervalHours * 3600L)
 
         return Result.success(
             FundingRate(
                 productId = productId,
-                rate = fundingRatePerInterval,
+                rate = parameters.fundingRatePerInterval,
                 nextFundingTime = nextFunding,
-                predictedRate = fundingRatePerInterval
+                predictedRate = parameters.fundingRatePerInterval
             )
         )
     }
@@ -286,7 +284,7 @@ class SimulatedExchange(
     ) {
         val notionalValue = size * entryPrice
         val margin = notionalValue / leverage
-        val fee = notionalValue * feeRate
+        val fee = notionalValue * parameters.takerFeeRate
 
         // Deduct margin + fees from balance
         if (usdBalance < (margin + fee)) {
@@ -343,10 +341,10 @@ class SimulatedExchange(
 
         val hoursSinceLastFunding = java.time.Duration.between(lastFunding, currentTime).toHours()
 
-        if (hoursSinceLastFunding >= fundingIntervalHours) {
-            val fundingCost = position.size * position.currentPrice * fundingRatePerInterval
+        if (hoursSinceLastFunding >= parameters.fundingIntervalHours) {
+            val fundingCost = position.size * position.currentPrice * parameters.fundingRatePerInterval
 
-            // Deduct funding from margin (reduces available margin)
+            // Deduct funding from both margin and USD balance
             val newMargin = position.margin - fundingCost
 
             if (newMargin <= BigDecimal.ZERO) {
@@ -355,6 +353,7 @@ class SimulatedExchange(
                 lastFundingTime = null
             } else {
                 perpetualPosition = position.copy(margin = newMargin)
+                usdBalance -= fundingCost  // Funding cost reduces total equity
                 lastFundingTime = currentTime
             }
         }

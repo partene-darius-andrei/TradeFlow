@@ -251,8 +251,8 @@ sealed class Decision {
         init {
             require(entryPrice > BigDecimal.ZERO) { "Entry price must be positive: $entryPrice" }
             require(atr > BigDecimal.ZERO) { "ATR must be positive: $atr" }
-            require(positionSizePercent > BigDecimal.ZERO && positionSizePercent <= BigDecimal.ONE) {
-                "Position size must be between 0 and 1: $positionSizePercent"
+            require(positionSizePercent > BigDecimal.ZERO && positionSizePercent <= BigDecimal("0.20")) {
+                "Position size must be between 0 and 0.20 (20%) for safety: $positionSizePercent"
             }
 
             // Validate product type vs direction compatibility
@@ -379,8 +379,8 @@ sealed class Decision {
         init {
             require(gridSpacing > BigDecimal.ZERO) { "Grid spacing must be positive: $gridSpacing" }
             require(levels > 0) { "Levels must be positive: $levels" }
-            require(positionSizePercentPerLevel > BigDecimal.ZERO && positionSizePercentPerLevel <= BigDecimal.ONE) {
-                "Position size per level must be between 0 and 1: $positionSizePercentPerLevel"
+            require(positionSizePercentPerLevel > BigDecimal.ZERO && positionSizePercentPerLevel <= BigDecimal("0.20")) {
+                "Position size per level must be between 0 and 0.20 (20%) for safety: $positionSizePercentPerLevel"
             }
             require(atr > BigDecimal.ZERO) { "ATR must be positive: $atr" }
         }

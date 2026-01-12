@@ -44,11 +44,10 @@ data class CycleResult(
  * Main trading cycle orchestrator that coordinates all strategy components.
  *
  * **Responsibility:** THE BRAIN of the trading system. Orchestrates the complete trading loop:
- * 1. **Adaptive Risk:** Automatically switches risk profiles based on portfolio balance
- * 2. **Risk Management:** Monitors drawdown circuit breaker, liquidates on breach
- * 3. **State Tracking:** Tracks current positions and open orders
- * 4. **Decision Making:** Delegates to MakeTradingDecisionUseCase for strategy decisions
- * 5. **Order Execution:** Places/cancels orders based on decisions
+ * 1. **Risk Management:** Monitors drawdown circuit breaker, liquidates on breach
+ * 2. **State Tracking:** Tracks current positions and open orders
+ * 3. **Decision Making:** Delegates to MakeTradingDecisionUseCase for strategy decisions
+ * 4. **Order Execution:** Places/cancels orders based on decisions
  *
  * **Trading Cycle Flow:**
  * ```
@@ -56,48 +55,37 @@ data class CycleResult(
  *   ↓
  * 1. Fetch Portfolio State (balances, equity, positions)
  *   ↓
- * 2. Adaptive Profile Check (auto-switch AGGRESSIVE → BALANCED → CONSERVATIVE → ULTRA_CONSERVATIVE)
+ * 2. Fetch Market Data (current price, candles, open orders)
  *   ↓
- * 3. Fetch Market Data (current price, candles, open orders)
+ * 3. Update High-Water Mark (for drawdown calculation)
  *   ↓
- * 4. Update High-Water Mark (for drawdown calculation)
- *   ↓
- * 5. RISK CHECK: Drawdown Circuit Breaker
+ * 4. RISK CHECK: Drawdown Circuit Breaker
  *   └─ If breached: EMERGENCY LIQUIDATE ALL + return Failed
  *   └─ Otherwise: continue
  *   ↓
- * 6. State Analysis (am I already in a trade?)
+ * 5. State Analysis (am I already in a trade?)
  *   ↓
- * 7. Get Decision from MakeTradingDecisionUseCase (Wait, Defense, Trend, or Range)
+ * 6. Get Decision from MakeTradingDecisionUseCase (Wait, Defense, Trend, or Range)
  *   ↓
- * 8. Execute Decision:
+ * 7. Execute Decision:
  *   ├─ Wait: Do nothing, log reason
  *   ├─ Defense: Cancel buy orders, sell all BTC (price below SMA)
  *   ├─ Trend: Place bracket order (entry + stop + target) if not in trade
  *   └─ Range: Place grid orders if not in trade, or take-profit if grid filled
  *   ↓
- * 9. Return CycleResult (outcome + updated HWM)
+ * 8. Return CycleResult (outcome + updated HWM)
  * ```
  *
- * **Adaptive Risk Profile Switching:**
- * The orchestrator automatically adjusts risk parameters as your portfolio grows:
- * - **$0-500:** AGGRESSIVE (5.23% position size, high risk for growth)
- * - **$500-1000:** BALANCED (balanced risk/reward)
- * - **$1000-2000:** CONSERVATIVE (capital preservation focus)
- * - **$2000+:** ULTRA_CONSERVATIVE (minimal risk, protect gains)
+ * **Risk Profile Configuration:**
+ * The orchestrator uses a fixed risk profile (default: BALANCED) throughout execution.
+ * Different profiles can be selected when creating the orchestrator:
+ * - **AGGRESSIVE:** For small accounts ($100-500), higher risk tolerance
+ * - **BALANCED:** For mid-size accounts ($500-1000), moderate risk (default)
+ * - **CONSERVATIVE:** For meaningful accounts ($1000-2000), capital preservation
+ * - **ULTRA_CONSERVATIVE:** For large accounts ($2000+), maximum protection
  *
- * When a profile switch occurs:
- * 1. New TradingConfig is loaded with appropriate parameters
- * 2. MakeTradingDecisionUseCase state is RESET (clears hysteresis)
- * 3. Console logs the switch: "[ADAPTIVE] BALANCED → CONSERVATIVE | Balance: $1250.00"
- *
- * **State Management (Stateful):**
- * Unlike most domain components, ExecuteTradingCycleUseCase maintains internal state:
- * - `config`: Active trading configuration (strategy, risk, technical params)
- * - `currentProfile`: Active risk profile (AGGRESSIVE, BALANCED, etc.)
- *
- * This state persists across cycles to enable adaptive profile switching and
- * consistent configuration between cycles.
+ * Profile is set at initialization and remains constant throughout the session.
+ * To change profiles, create a new orchestrator instance with the desired profile.
  *
  * **Drawdown Circuit Breaker (CRITICAL SAFETY):**
  * Before every decision execution, the orchestrator checks if drawdown exceeded the limit:
@@ -164,12 +152,12 @@ data class CycleResult(
  *
  * **Console Output (for monitoring):**
  * ```
- * [ADAPTIVE] BALANCED → CONSERVATIVE | Balance: $1250.00
  * [RISK] Equity: $1250.00 | HWM: $1300.00
  * [RISK] Drawdown: 3.85%
- * [STATE] BTC: 0.01234567 | Open Orders: 2 | In Trade: true
- * [EXEC] RANGE: $100.00 per level × 3 levels | Spacing: $1425.00
- * [EXEC] Grid level 1: BUY 0.00105263 BTC @ $95000.00
+ * [STATE] Perpetual: LONG 0.01234567 BTC @ $95000 | PnL: $150.00
+ * [STATE] Open Orders: 2 | In Trade: true
+ * [EXEC] TREND LONG: Size $50.00 (2.0x) = 0.00052632 BTC
+ * [EXEC] Funding Rate: 0.01% (acceptable)
  * ```
  *
  * **Error Handling:**
@@ -180,21 +168,19 @@ data class CycleResult(
  * - This ensures backtesting continues even if one cycle fails
  *
  * **Thread Safety:**
- * NOT thread-safe due to mutable state (config, currentProfile).
- * In production, ensure only one cycle runs at a time (e.g., scheduled every 4 hours).
- * In backtesting, run cycles sequentially on single thread.
+ * Stateless (config is immutable). Safe to call from multiple threads.
+ * However, in production, ensure only one cycle runs at a time to prevent race conditions
+ * in exchange API calls (e.g., scheduled every 4 hours).
  *
  * **Dependencies:**
  * - **ExchangeRepository:** Fetches market data, places orders (including bracket orders)
  * - **MakeTradingDecisionUseCase:** Generates trading decisions based on market regime
- * - **AdaptiveOptimizerUseCase:** Detects when to switch risk profiles
  *
  * **Usage in Backtesting:**
  * ```kotlin
  * val orchestrator = ExecuteTradingCycleUseCase(
  *     exchangeRepository = SimulatedExchange(...),
- *     makeDecisionUseCase = MakeTradingDecisionUseCase(...),
- *     adaptiveOptimizer = AdaptiveOptimizerUseCase()
+ *     makeDecisionUseCase = MakeTradingDecisionUseCase(...)
  * )
  *
  * var hwm = BigDecimal.ZERO
@@ -240,26 +226,14 @@ class ExecuteTradingCycleUseCase(
      *
      * **Complete Cycle Workflow:**
      * 1. Fetch current portfolio state from exchange
-     * 2. Check for adaptive risk profile switch (balance-based)
-     * 3. Fetch market data (current price, candles, open orders)
-     * 4. Update high-water mark (if equity increased)
-     * 5. **CRITICAL:** Check drawdown circuit breaker
+     * 2. Fetch market data (current price, candles, open orders)
+     * 3. Update high-water mark (if equity increased)
+     * 4. **CRITICAL:** Check drawdown circuit breaker
      *    - If breached: EMERGENCY liquidate all positions + return Failed
-     * 6. Analyze current state (am I in a trade? any open orders?)
-     * 7. Call DecisionEngine to get trading decision
-     * 8. Execute the decision (place/cancel orders as needed)
-     * 9. Return result + updated high-water mark
-     *
-     * **Adaptive Profile Switching:**
-     * If portfolio balance crosses a threshold, the orchestrator automatically switches profiles:
-     * - $500 threshold: AGGRESSIVE → BALANCED
-     * - $1000 threshold: BALANCED → CONSERVATIVE
-     * - $2000 threshold: CONSERVATIVE → ULTRA_CONSERVATIVE
-     *
-     * When switching:
-     * - New config loaded with different risk parameters
-     * - DecisionEngine state RESET (clears hysteresis)
-     * - Logged to console for monitoring
+     * 5. Analyze current state (am I in a trade? any open orders?)
+     * 6. Call DecisionEngine to get trading decision
+     * 7. Execute the decision (place/cancel orders as needed)
+     * 8. Return result + updated high-water mark
      *
      * **Drawdown Circuit Breaker (SAFETY CRITICAL):**
      * Before executing any decision, the orchestrator calculates:
@@ -325,12 +299,12 @@ class ExecuteTradingCycleUseCase(
      * **Console Logging:**
      * Each cycle logs key information for monitoring:
      * ```
-     * [ADAPTIVE] BALANCED → CONSERVATIVE | Balance: $1250.00  (if profile switched)
      * [RISK] Equity: $1250.00 | HWM: $1300.00
      * [RISK] Drawdown: 3.85%
-     * [STATE] BTC: 0.01234567 | Open Orders: 2 | In Trade: true
-     * [EXEC] TREND: Size $50.00 = 0.00052632 BTC  (or RANGE with grid details)
-     * [EXEC] Grid level 1: BUY 0.00105263 BTC @ $95000.00
+     * [STATE] Perpetual: LONG 0.01234567 BTC @ $95000 | PnL: $150.00
+     * [STATE] Open Orders: 2 | In Trade: true
+     * [EXEC] TREND LONG: Size $50.00 (2.0x) = 0.00052632 BTC
+     * [EXEC] Funding Rate: 0.01% (acceptable)
      * [EXEC] TREND: Skipped (already in trade)
      * ```
      *
@@ -493,9 +467,20 @@ class ExecuteTradingCycleUseCase(
                     }
                 }
                 is Decision.Range -> {
-                    // REMOVED: Range/Grid trading not applicable for perpetual futures
-                    // Grid strategy was designed for spot markets with mean reversion
-                    // Perpetual futures use TREND strategy only (LONG/SHORT directional)
+                    // INTENTIONAL: Range/Grid trading not supported for perpetual futures
+                    //
+                    // WHY: Grid strategy was designed for spot markets (buy dips, sell rallies).
+                    // Perpetual futures have different mechanics:
+                    // - Funding costs accumulate over time (0.01% every 8H)
+                    // - Holding multiple grid positions incurs multiple funding charges
+                    // - Liquidation risk with leverage makes grid dangerous
+                    //
+                    // ALTERNATIVE: For low-ADX (ranging) markets, the system waits for
+                    // breakout confirmation before entering TREND mode (LONG/SHORT).
+                    // This is safer than grid for perpetual futures.
+                    //
+                    // FUTURE: Could implement "range strategy" as rapid LONG/SHORT flips
+                    // on mean reversion signals, but requires careful risk management.
                     println("  [EXEC] RANGE: Skipped (not supported for perpetual futures)")
                     ExecutionResult.Skipped("Range: Not supported for perpetual futures (use Trend only).")
                 }
