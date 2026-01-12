@@ -9,7 +9,9 @@ import java.util.UUID
 
 class SimulatedExchange(
     initialUsd: BigDecimal,
-    private val feeRate: BigDecimal = BigDecimal("0.004") // Coinbase Advanced Trade: 0.4% taker
+    private val feeRate: BigDecimal = BigDecimal("0.004"), // Coinbase Advanced Trade: 0.4% taker
+    private val fundingRatePerInterval: BigDecimal = BigDecimal("0.0001"), // 0.01% per 8H
+    private val fundingIntervalHours: Int = 8
 ) : ExchangeRepository {
 
     var usdBalance = initialUsd
@@ -18,9 +20,19 @@ class SimulatedExchange(
     var currentPrice = BigDecimal.ZERO
     private var history = mutableListOf<Candle>()
 
+    // Perpetual futures state
+    private var perpetualPosition: PerpetualPosition? = null
+    private var lastFundingTime: Instant? = null
+
     fun advanceTime(newCandle: Candle) {
         this.currentPrice = newCandle.close
         this.history.add(newCandle)
+
+        // Deduct funding rate from perpetual position (every 8 hours)
+        deductFundingRate(newCandle.timestamp)
+
+        // Update perpetual position unrealized PnL
+        updatePerpetualPositionPnL()
 
         val iterator = openOrders.iterator()
         while (iterator.hasNext()) {
@@ -34,13 +46,27 @@ class SimulatedExchange(
             }
 
             if (hit) {
-                if (canExecute(order)) {
-                    // Apply slippage: ±0.1% (BUY pays slightly more, SELL gets slightly less)
+                // Check if this order is closing a perpetual position
+                val isPerpetual = order.productId.contains("PERP", ignoreCase = true)
+                val isClosingPerpetual = isPerpetual && perpetualPosition != null
+
+                if (isClosingPerpetual) {
+                    // Close perpetual position when TP/SL triggers
+                    val fillPrice = applySlippage(limitPrice, order.side)
+                    realizePerpetualPosition() // Internal non-suspend version
+
+                    // OCO Logic: Cancel other orders in same group
+                    val groupId = order.clientOrderId
+                    if (groupId.isNotEmpty()) {
+                        cancelOrderGroup(groupId)
+                    }
+                } else if (canExecute(order)) {
+                    // Regular spot order execution
                     val fillPrice = applySlippage(limitPrice, order.side)
                     executeOrder(order, fillPrice)
 
                     // OCO Logic: If order filled, cancel other orders in same group
-                    val groupId = order.clientOrderId // Use clientOrderId as group ID for bracket orders
+                    val groupId = order.clientOrderId
                     if (groupId.isNotEmpty()) {
                         cancelOrderGroup(groupId)
                     }
@@ -149,47 +175,99 @@ class SimulatedExchange(
             Instant.now()
         )
 
-        if (canExecute(entryOrder)) {
-            executeOrder(entryOrder, entryFillPrice)
+        // Determine if this is a perpetual futures product
+        val isPerpetual = productId.contains("PERP", ignoreCase = true)
 
-            // Place OCO group: TP and SL orders with shared groupId
-            val groupId = UUID.randomUUID().toString()
-            val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
+        return try {
+            if (isPerpetual) {
+                // Open perpetual futures position with leverage from config
+                val leverage = com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig.strategy.leverage
+                openPerpetualPosition(productId, side, size, entryFillPrice, leverage)
 
-            val tpOrder = Order(
-                UUID.randomUUID().toString(),
-                groupId, // Shared OCO group ID
-                productId,
-                exitSide,
-                OrderType.LIMIT,
-                OrderStatus.OPEN,
-                size,
-                takeProfit,
-                BigDecimal.ZERO,
-                null,
-                Instant.now()
-            )
+                // Place TP/SL orders to close perpetual position
+                val groupId = UUID.randomUUID().toString()
+                val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
 
-            val slOrder = Order(
-                UUID.randomUUID().toString(),
-                groupId, // Shared OCO group ID
-                productId,
-                exitSide,
-                OrderType.LIMIT,
-                OrderStatus.OPEN,
-                size,
-                stopLoss,
-                BigDecimal.ZERO,
-                null,
-                Instant.now()
-            )
+                val tpOrder = Order(
+                    UUID.randomUUID().toString(),
+                    groupId,
+                    productId,
+                    exitSide,
+                    OrderType.LIMIT,
+                    OrderStatus.OPEN,
+                    size,
+                    takeProfit,
+                    BigDecimal.ZERO,
+                    null,
+                    Instant.now()
+                )
 
-            openOrders.add(tpOrder)
-            openOrders.add(slOrder)
+                val slOrder = Order(
+                    UUID.randomUUID().toString(),
+                    groupId,
+                    productId,
+                    exitSide,
+                    OrderType.LIMIT,
+                    OrderStatus.OPEN,
+                    size,
+                    stopLoss,
+                    BigDecimal.ZERO,
+                    null,
+                    Instant.now()
+                )
 
-            return Result.success(entryOrder)
+                openOrders.add(tpOrder)
+                openOrders.add(slOrder)
+
+                Result.success(entryOrder)
+            } else {
+                // Spot trading (original logic)
+                if (canExecute(entryOrder)) {
+                    executeOrder(entryOrder, entryFillPrice)
+
+                    // Place OCO group: TP and SL orders with shared groupId
+                    val groupId = UUID.randomUUID().toString()
+                    val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
+
+                    val tpOrder = Order(
+                        UUID.randomUUID().toString(),
+                        groupId,
+                        productId,
+                        exitSide,
+                        OrderType.LIMIT,
+                        OrderStatus.OPEN,
+                        size,
+                        takeProfit,
+                        BigDecimal.ZERO,
+                        null,
+                        Instant.now()
+                    )
+
+                    val slOrder = Order(
+                        UUID.randomUUID().toString(),
+                        groupId,
+                        productId,
+                        exitSide,
+                        OrderType.LIMIT,
+                        OrderStatus.OPEN,
+                        size,
+                        stopLoss,
+                        BigDecimal.ZERO,
+                        null,
+                        Instant.now()
+                    )
+
+                    openOrders.add(tpOrder)
+                    openOrders.add(slOrder)
+
+                    Result.success(entryOrder)
+                } else {
+                    Result.failure(Exception("Insufficient funds"))
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return Result.failure(Exception("Insufficient funds"))
     }
 
     override suspend fun getOpenOrders(productId: String): Result<List<Order>> = Result.success(openOrders)
@@ -226,30 +304,143 @@ class SimulatedExchange(
         return Result.success(order)
     }
     override suspend fun cancelOrder(orderId: String): Result<Unit> = Result.success(Unit)
-    override suspend fun getOrder(orderId: String): Result<Order> = TODO()
+    override suspend fun getOrder(orderId: String): Result<Order> =
+        Result.failure(Exception("getOrder not implemented in SimulatedExchange"))
 
-    // Perpetual futures simulation (stub implementation for now)
+    // Perpetual futures simulation
     override suspend fun getPerpetualPosition(productId: String): Result<PerpetualPosition?> {
-        // TODO: Implement full perpetual futures simulation
-        // For now, return null (no open position)
-        return Result.success(null)
+        return Result.success(perpetualPosition)
     }
 
     override suspend fun closePerpetualPosition(productId: String): Result<Unit> {
-        // TODO: Implement full perpetual futures simulation
+        realizePerpetualPosition()
         return Result.success(Unit)
     }
 
+    /**
+     * Internal non-suspend function to close perpetual position and realize PnL.
+     * Used by both closePerpetualPosition (suspend) and advanceTime (non-suspend).
+     */
+    private fun realizePerpetualPosition() {
+        val position = perpetualPosition ?: return
+
+        // Realize PnL by closing position
+        val exitValue = position.size * currentPrice
+        val fee = exitValue * feeRate
+
+        when (position.side) {
+            OrderSide.BUY -> {
+                // LONG: Sell BTC to close (PnL already in unrealizedPnl)
+                usdBalance += (position.unrealizedPnl + position.margin - fee)
+            }
+            OrderSide.SELL -> {
+                // SHORT: Buy BTC to close (PnL already in unrealizedPnl)
+                usdBalance += (position.unrealizedPnl + position.margin - fee)
+            }
+        }
+
+        perpetualPosition = null
+        lastFundingTime = null
+    }
+
     override suspend fun getFundingRate(productId: String): Result<FundingRate> {
-        // TODO: Implement full perpetual futures simulation
-        // For now, return a typical low funding rate (0.01% per 8h)
+        val nextFunding = lastFundingTime?.plusSeconds(fundingIntervalHours * 3600L)
+            ?: Instant.now().plusSeconds(fundingIntervalHours * 3600L)
+
         return Result.success(
             FundingRate(
                 productId = productId,
-                rate = BigDecimal("0.0001"), // 0.01% per 8h (typical)
-                nextFundingTime = Instant.now().plusSeconds(8 * 3600),
-                predictedRate = BigDecimal("0.0001")
+                rate = fundingRatePerInterval,
+                nextFundingTime = nextFunding,
+                predictedRate = fundingRatePerInterval
             )
         )
+    }
+
+    /**
+     * Opens a perpetual futures position with leverage.
+     * This is called internally by placeBracketOrder when using perpetual futures.
+     */
+    private fun openPerpetualPosition(
+        productId: String,
+        side: OrderSide,
+        size: BigDecimal,
+        entryPrice: BigDecimal,
+        leverage: BigDecimal
+    ) {
+        val notionalValue = size * entryPrice
+        val margin = notionalValue / leverage
+        val fee = notionalValue * feeRate
+
+        // Deduct margin + fees from balance
+        if (usdBalance < (margin + fee)) {
+            throw Exception("Insufficient funds for perpetual position")
+        }
+        usdBalance -= (margin + fee)
+
+        // Calculate liquidation price
+        val liquidationPrice = when (side) {
+            OrderSide.BUY -> entryPrice * (BigDecimal.ONE - (BigDecimal.ONE / leverage))
+            OrderSide.SELL -> entryPrice * (BigDecimal.ONE + (BigDecimal.ONE / leverage))
+        }
+
+        perpetualPosition = PerpetualPosition(
+            productId = productId,
+            side = side,
+            size = size,
+            entryPrice = entryPrice,
+            currentPrice = currentPrice,
+            unrealizedPnl = BigDecimal.ZERO,
+            leverage = leverage,
+            margin = margin,
+            liquidationPrice = liquidationPrice,
+            timestamp = Instant.now()
+        )
+
+        lastFundingTime = Instant.now()
+    }
+
+    /**
+     * Updates unrealized PnL for open perpetual position based on current price.
+     */
+    private fun updatePerpetualPositionPnL() {
+        val position = perpetualPosition ?: return
+
+        val pnl = when (position.side) {
+            OrderSide.BUY -> (currentPrice - position.entryPrice) * position.size
+            OrderSide.SELL -> (position.entryPrice - currentPrice) * position.size
+        }
+
+        perpetualPosition = position.copy(
+            currentPrice = currentPrice,
+            unrealizedPnl = pnl
+        )
+    }
+
+    /**
+     * Deducts funding rate from margin every funding interval (default 8 hours).
+     * Funding rate is charged to the position holder to maintain perpetual futures price peg.
+     */
+    private fun deductFundingRate(currentTime: Instant) {
+        val position = perpetualPosition ?: return
+        val lastFunding = lastFundingTime ?: return
+
+        val hoursSinceLastFunding = java.time.Duration.between(lastFunding, currentTime).toHours()
+
+        if (hoursSinceLastFunding >= fundingIntervalHours) {
+            val fundingCost = position.size * position.currentPrice * fundingRatePerInterval
+
+            // Deduct funding from margin (reduces available margin)
+            val newMargin = position.margin - fundingCost
+
+            if (newMargin <= BigDecimal.ZERO) {
+                // Margin exhausted - liquidate position
+                perpetualPosition = null
+                lastFundingTime = null
+            } else {
+                perpetualPosition = position.copy(margin = newMargin)
+                lastFundingTime = currentTime
+            }
+        }
     }
 }
