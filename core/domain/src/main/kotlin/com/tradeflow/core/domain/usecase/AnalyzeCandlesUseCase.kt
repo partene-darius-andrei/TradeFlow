@@ -56,7 +56,7 @@ class AnalyzeCandlesUseCase constructor() {
     /**
      * Result object containing all calculated technical indicators.
      *
-     * This data class bundles the three core indicators (SMA, ADX, ATR) plus historical
+     * This data class bundles the core indicators (SMA, ADX, ATR, RSI, Volume) plus historical
      * SMA data for trend direction analysis.
      *
      * **Indicator Interpretation:**
@@ -82,6 +82,26 @@ class AnalyzeCandlesUseCase constructor() {
      * - Low ATR = quiet market → can use tighter stops
      * - Multiplied by a constant for stop distance (e.g., 10× ATR)
      *
+     * **RSI (Relative Strength Index):**
+     * - Measures momentum strength (0-100 scale)
+     * - RSI > 50: Bullish momentum (use for LONG confirmation)
+     * - RSI < 50: Bearish momentum (use for SHORT confirmation)
+     * - RSI > 70: Overbought (traditional interpretation, not used in trend-following)
+     * - RSI < 30: Oversold (traditional interpretation, not used in trend-following)
+     * - **TradeFlow uses RSI as MOMENTUM FILTER, not mean-reversion**
+     *
+     * **Volume Indicators:**
+     * - **volumeRatio:** Current volume / 20-period average volume
+     *   - Ratio > 1.5: High volume (confirms breakout)
+     *   - Ratio < 1.0: Below average volume (weak signal)
+     * - **OBV (On-Balance Volume):** Cumulative volume indicator
+     *   - Rising OBV + rising price = strong uptrend
+     *   - Falling OBV + rising price = divergence (bearish)
+     * - **CMF (Chaikin Money Flow):** Volume-weighted indicator (-1 to +1)
+     *   - CMF > 0.05: Money flowing into asset (bullish)
+     *   - CMF < -0.05: Money flowing out of asset (bearish)
+     *   - CMF near 0: Neutral flow
+     *
      * **Example:**
      * ```kotlin
      * val indicators = service.calculateAll(candles)
@@ -89,9 +109,11 @@ class AnalyzeCandlesUseCase constructor() {
      * println("SMA200: ${indicators.sma200}")
      * println("ADX: ${indicators.adx}")
      * println("ATR: ${indicators.atr}")
+     * println("RSI: ${indicators.rsi}")
+     * println("Volume: ${indicators.volumeRatio}x average")
      *
-     * if (indicators.isSmaRising()) {
-     *     println("Uptrend strengthening")
+     * if (indicators.isSmaRising() && indicators.rsi > 50.0) {
+     *     println("Strong bullish momentum")
      * }
      * ```
      *
@@ -109,12 +131,44 @@ class AnalyzeCandlesUseCase constructor() {
      * @property atr Current Average True Range value.
      *           Unit: Same as price (e.g., dollars for BTC/USD).
      *           **Critical for stop placement:** Multiplied by stopLossAtrMultiplier.
+     *
+     * @property rsi Current Relative Strength Index value.
+     *           Unit: Dimensionless (0-100 scale).
+     *           **Critical for momentum confirmation:** RSI > 50 confirms LONG, RSI < 50 confirms SHORT.
+     *           Research shows RSI as momentum filter achieves 60-65% win rate on BTC.
+     *
+     * @property volumeSma 20-period simple moving average of volume.
+     *           Used as baseline to calculate volumeRatio.
+     *           Unit: Same as volume (e.g., BTC for BTC/USD).
+     *
+     * @property currentVolume Current candle's volume.
+     *           Unit: Same as volume (e.g., BTC for BTC/USD).
+     *
+     * @property volumeRatio Current volume divided by 20-period average volume.
+     *           Unit: Dimensionless ratio (1.0 = average, 1.5 = 50% above average).
+     *           **Critical for breakout confirmation:** Ratio > 1.5 validates breakout.
+     *           Research shows volume > 1.5x improves breakout success from 39% to 65%.
+     *
+     * @property obv Current On-Balance Volume value.
+     *           Unit: Cumulative volume (dimensionless).
+     *           Used for trend confirmation via divergence analysis.
+     *
+     * @property cmf Current Chaikin Money Flow value.
+     *           Unit: Dimensionless (-1 to +1 scale).
+     *           CMF > 0.05 confirms money flowing in (bullish).
+     *           CMF < -0.05 confirms money flowing out (bearish).
      */
     data class Indicators(
         val sma200: BigDecimal,
         val sma200Previous: BigDecimal,
         val adx: Double,
-        val atr: BigDecimal
+        val atr: BigDecimal,
+        val rsi: Double,
+        val volumeSma: BigDecimal,
+        val currentVolume: BigDecimal,
+        val volumeRatio: Double,
+        val obv: BigDecimal,
+        val cmf: Double
     ) {
         /**
          * Returns true if the SMA is rising (uptrend strengthening).
@@ -138,9 +192,9 @@ class AnalyzeCandlesUseCase constructor() {
     }
 
     /**
-     * Calculates all technical indicators (SMA, ADX, ATR) in a single pass.
+     * Calculates all technical indicators (SMA, ADX, ATR, RSI, Volume) in a single pass.
      *
-     * This method converts the candle list to a ta4j BarSeries and calculates all three
+     * This method converts the candle list to a ta4j BarSeries and calculates all
      * indicators efficiently. The ta4j library handles the complex math internally.
      *
      * **Single-Pass Optimization:**
@@ -148,14 +202,18 @@ class AnalyzeCandlesUseCase constructor() {
      * This is significantly faster than calling separate methods for each indicator.
      *
      * **Candle Requirements:**
-     * - Minimum candles: max(smaPeriod, adxPeriod, atrPeriod) for stable results
+     * - Minimum candles: max(smaPeriod, adxPeriod, atrPeriod, rsiPeriod, volumeSmaPeriod) for stable results
      * - Typically need 200+ candles (for 200-period SMA)
      * - ADX needs extra candles for internal smoothing (~2× adxPeriod)
+     * - RSI needs 150-250 bars for stable warmup (check ta4j isStable())
      *
      * **ta4j Internals:**
      * - **SMAIndicator:** Simple average of closing prices over last N candles
      * - **ADXIndicator:** Complex calculation involving +DI, -DI, and smoothed DX
      * - **ATRIndicator:** Exponentially smoothed average of true ranges
+     * - **RSIIndicator:** Relative Strength Index using Wilder's smoothing
+     * - **OBVIndicator:** On-Balance Volume (cumulative volume indicator)
+     * - **ChaikinMoneyFlowIndicator:** Volume-weighted accumulation/distribution
      *
      * **Edge Cases:**
      * - Insufficient candles: Results will be unstable (check candle count before calling)
@@ -169,7 +227,10 @@ class AnalyzeCandlesUseCase constructor() {
      *     candles = candles.getOrThrow(),
      *     smaPeriod = 200,
      *     adxPeriod = 14,
-     *     atrPeriod = 14
+     *     atrPeriod = 14,
+     *     rsiPeriod = 14,
+     *     volumeSmaPeriod = 20,
+     *     cmfPeriod = 21
      * )
      * ```
      *
@@ -187,13 +248,32 @@ class AnalyzeCandlesUseCase constructor() {
      * @param atrPeriod Number of candles to use for ATR calculation.
      *                  Default: 14 (standard Wilder specification).
      *
-     * @return Indicators object containing SMA, ADX, and ATR values
+     * @param rsiPeriod Number of candles to use for RSI calculation.
+     *                  Default: 14 (standard Wilder specification).
+     *                  **Note:** RSI needs 150-250 bars for stable warmup.
+     *
+     * @param volumeSmaPeriod Number of candles to use for volume SMA calculation.
+     *                        Default: 20 (provides 80-hour lookback for 4H candles).
+     *                        Used to calculate volumeRatio for breakout confirmation.
+     *
+     * @param cmfPeriod Number of candles to use for Chaikin Money Flow calculation.
+     *                  Default: 21 (standard CMF period).
+     *
+     * @return Indicators object containing all calculated indicator values
      *
      * @throws IllegalArgumentException if candles list is empty or contains invalid OHLCV data
      *
      * @see validateCandle for OHLCV validation rules
      */
-    fun calculateAll(candles: List<Candle>, smaPeriod: Int = 200, adxPeriod: Int = 14, atrPeriod: Int = 14): Indicators {
+    fun calculateAll(
+        candles: List<Candle>,
+        smaPeriod: Int = 200,
+        adxPeriod: Int = 14,
+        atrPeriod: Int = 14,
+        rsiPeriod: Int = 14,
+        volumeSmaPeriod: Int = 20,
+        cmfPeriod: Int = 21
+    ): Indicators {
         require(candles.isNotEmpty()) { "Candle list cannot be empty" }
 
         // Calculate candle duration from timestamps (auto-detect timeframe)
@@ -233,11 +313,37 @@ class AnalyzeCandlesUseCase constructor() {
         val adxValue = ADXIndicator(series, adxPeriod).getValue(series.endIndex).doubleValue()
         val atrValue = ATRIndicator(series, atrPeriod).getValue(series.endIndex).doubleValue()
 
+        // RSI calculation (momentum filter)
+        val rsiIndicator = org.ta4j.core.indicators.RSIIndicator(closePrice, rsiPeriod)
+        val rsiValue = rsiIndicator.getValue(series.endIndex).doubleValue()
+
+        // Volume indicators
+        val volumeIndicator = org.ta4j.core.indicators.helpers.VolumeIndicator(series)
+        val volumeSmaIndicator = SMAIndicator(volumeIndicator, volumeSmaPeriod)
+
+        val currentVolumeValue = volumeIndicator.getValue(series.endIndex).doubleValue()
+        val volumeSmaValue = volumeSmaIndicator.getValue(series.endIndex).doubleValue()
+        val volumeRatio = if (volumeSmaValue > 0) currentVolumeValue / volumeSmaValue else 1.0
+
+        // OBV (On-Balance Volume)
+        val obvIndicator = org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator(series)
+        val obvValue = obvIndicator.getValue(series.endIndex).doubleValue()
+
+        // CMF (Chaikin Money Flow)
+        val cmfIndicator = org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator(series, cmfPeriod)
+        val cmfValue = cmfIndicator.getValue(series.endIndex).doubleValue()
+
         return Indicators(
             sma200 = BigDecimal.valueOf(smaValue),
             sma200Previous = BigDecimal.valueOf(smaPreviousValue),
             adx = adxValue,
-            atr = BigDecimal.valueOf(atrValue)
+            atr = BigDecimal.valueOf(atrValue),
+            rsi = rsiValue,
+            volumeSma = BigDecimal.valueOf(volumeSmaValue),
+            currentVolume = BigDecimal.valueOf(currentVolumeValue),
+            volumeRatio = volumeRatio,
+            obv = BigDecimal.valueOf(obvValue),
+            cmf = cmfValue
         )
     }
 

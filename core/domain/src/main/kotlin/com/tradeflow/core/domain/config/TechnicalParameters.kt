@@ -55,6 +55,37 @@ import com.tradeflow.core.domain.model.Granularity
  *           - 20: Smoother volatility estimate
  *           Default: 14 (standard Wilder specification).
  *
+ * @property rsiPeriod Number of candles used to calculate Relative Strength Index.
+ *           Example: 14 = RSI calculated over last 14 candles.
+ *           **Technical Note:** RSI uses Wilder's smoothing (similar to EMA).
+ *           **Common Values:**
+ *           - 14: Standard period (Wilder's specification)
+ *           - 7-10: More responsive, noisier
+ *           - 21: Smoother, less responsive
+ *           **Warmup Requirement:** RSI needs 150-250 bars for stable readings.
+ *           Default: 14 (standard Wilder specification).
+ *
+ * @property volumeSmaPeriod Number of candles used to calculate volume moving average.
+ *           Example: 20 = average volume over last 20 candles (80 hours for 4H timeframe).
+ *           **Usage:** Baseline for calculating volumeRatio (current volume / average volume).
+ *           **Rationale:** 20-period provides responsive measurement without excessive noise.
+ *           Default: 20 candles (balanced lookback period).
+ *
+ * @property cmfPeriod Number of candles used to calculate Chaikin Money Flow.
+ *           Example: 21 = CMF calculated over last 21 candles.
+ *           **Technical Note:** CMF measures volume-weighted buying/selling pressure.
+ *           **Common Values:**
+ *           - 21: Standard period (recommended)
+ *           - 10-15: More responsive
+ *           - 30-40: Smoother
+ *           Default: 21 (standard specification).
+ *
+ * @property minVolumeRatio Minimum volume ratio required for trade entry confirmation.
+ *           Example: 1.5 = current volume must be 50% above 20-period average.
+ *           **Rationale:** High volume confirms breakout validity.
+ *           **Research:** Volume > 1.5x improves breakout success from 39% to 65%.
+ *           Default: 1.5 (50% above average).
+ *
  * @property smaLookbackCandles NOT CURRENTLY USED in the codebase.
  *           Legacy parameter, may be removed in future cleanup.
  *           Default: 10.
@@ -95,6 +126,10 @@ data class TechnicalParameters(
     val smaPeriod: Int = 200,
     val adxPeriod: Int = 14,
     val atrPeriod: Int = 14,
+    val rsiPeriod: Int = 14,
+    val volumeSmaPeriod: Int = 20,
+    val cmfPeriod: Int = 21,
+    val minVolumeRatio: Double = 1.5,
     val smaLookbackCandles: Int = 10,
     val minCandlesRequired: Int = 200,
     val barDurationMinutes: Int = 240,

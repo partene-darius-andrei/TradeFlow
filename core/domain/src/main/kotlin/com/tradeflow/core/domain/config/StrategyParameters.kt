@@ -110,7 +110,37 @@ import java.math.BigDecimal
  *           **Risk:** Higher leverage = higher profit potential but also higher liquidation risk.
  *           Default: 1.0 (no leverage, spot-equivalent risk).
  *
+ * @property useTrailingStop Whether to use ATR-based trailing stops instead of fixed stops.
+ *           **Research:** Trailing stops provide +15% performance and -32% drawdown vs fixed stops.
+ *           Default: true (enable trailing stops).
+ *
+ * @property trailingStopActivationAtrMultiplier ATR multiplier for trailing stop activation threshold.
+ *           Example: 1.5 = trailing activates after 1.5× ATR profit from entry.
+ *           **Rationale:** Ensures position is profitable before locking in gains with trailing.
+ *           **Too low:** Premature activation, stop out during normal volatility.
+ *           **Too high:** Late activation, miss profit protection.
+ *           Default: 1.5× ATR (balanced activation point).
+ *
+ * @property trailingStopAtrMultiplier ATR multiplier for normal trailing stop distance.
+ *           Example: 2.5 = stop trails 2.5× ATR below high water mark.
+ *           **Rationale:** Wide enough to avoid whipsaws, tight enough to protect profits.
+ *           **Research:** 2-3× ATR optimal for crypto (vs 1.5-2× for traditional markets).
+ *           Default: 2.5× ATR (balanced trail distance).
+ *
+ * @property trailingStopTightenThreshold ATR multiplier for pullback threshold to trigger tightening.
+ *           Example: 1.5 = if price pulls back > 1.5× ATR from high, tighten trail.
+ *           **Rationale:** Detects potential trend exhaustion or reversal.
+ *           **Caution state:** Indicates weakening trend momentum.
+ *           Default: 1.5× ATR (early warning of reversal).
+ *
+ * @property trailingStopTightenAtrMultiplier ATR multiplier for tightened trailing stop distance.
+ *           Example: 2.0 = stop tightens to 2.0× ATR in caution state.
+ *           **Rationale:** Tighter protection when trend shows weakness.
+ *           **Must be < trailingStopAtrMultiplier** (tighter than normal trail).
+ *           Default: 2.0× ATR (tightened protection).
+ *
  * @see MakeTradingDecisionUseCase for how these parameters drive mode detection and decision-making
+ * @see TrailingStopManager for trailing stop implementation
  * @see RiskProfile for pre-configured strategy parameter sets optimized for different risk levels
  */
 data class StrategyParameters(
@@ -125,7 +155,12 @@ data class StrategyParameters(
     val gridLevels: Int = 3,
     val minGridSpacingAtrMultiplier: BigDecimal = BigDecimal("0.10"),
     val minGridSpacingFloor: BigDecimal = BigDecimal("0.01"),
-    val leverage: BigDecimal = BigDecimal("1.0")
+    val leverage: BigDecimal = BigDecimal("1.0"),
+    val useTrailingStop: Boolean = true,
+    val trailingStopActivationAtrMultiplier: BigDecimal = BigDecimal("1.5"),
+    val trailingStopAtrMultiplier: BigDecimal = BigDecimal("2.5"),
+    val trailingStopTightenThreshold: BigDecimal = BigDecimal("1.5"),
+    val trailingStopTightenAtrMultiplier: BigDecimal = BigDecimal("2.0")
 )
 
 /**

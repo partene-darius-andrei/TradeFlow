@@ -291,9 +291,18 @@ class MakeTradingDecisionUseCase(
             return Decision.Wait("Not enough candles: ${candles.size}/${config.technical.minCandlesRequired}")
         }
 
-        val indicators = taService.calculateAll(candles, config.technical.smaPeriod, config.technical.adxPeriod, config.technical.atrPeriod)
+        val indicators = taService.calculateAll(
+            candles,
+            config.technical.smaPeriod,
+            config.technical.adxPeriod,
+            config.technical.atrPeriod,
+            config.technical.rsiPeriod,
+            config.technical.volumeSmaPeriod,
+            config.technical.cmfPeriod
+        )
 
         println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
+        println("  [DECISION] RSI: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | Volume: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x avg | CMF: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)}")
 
         // 1. Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
@@ -413,6 +422,32 @@ class MakeTradingDecisionUseCase(
                 val isLong = currentPrice >= indicators.sma200
                 val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
 
+                // RSI Momentum Filter: RSI must confirm direction
+                // Research: RSI as momentum filter (not mean-reversion) achieves 60-65% win rate on BTC
+                // LONG requires RSI > 50 (bullish momentum)
+                // SHORT requires RSI < 50 (bearish momentum)
+                val rsiConfirmsDirection = if (isLong) indicators.rsi > 50.0 else indicators.rsi < 50.0
+                if (!rsiConfirmsDirection) {
+                    val requiredRsi = if (isLong) ">50" else "<50"
+                    println("  [DECISION] ❌ RSI filter: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} does not confirm ${if (isLong) "LONG" else "SHORT"} (requires $requiredRsi)")
+                    return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} does not confirm ${if (isLong) "LONG" else "SHORT"} direction (requires $requiredRsi)")
+                }
+
+                // Volume Confirmation Filter: Volume must be significantly above average
+                // Research: Volume > 1.5x improves breakout success from 39% to 65% (+26 percentage points)
+                if (indicators.volumeRatio < config.technical.minVolumeRatio) {
+                    println("  [DECISION] ❌ Volume filter: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x below required ${config.technical.minVolumeRatio}x threshold")
+                    return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x below required ${config.technical.minVolumeRatio}x threshold")
+                }
+
+                // CMF Confirmation (optional, adds additional confidence layer)
+                // CMF > 0.05 for LONG = money flowing in (bullish)
+                // CMF < -0.05 for SHORT = money flowing out (bearish)
+                val cmfConfirmsDirection = if (isLong) indicators.cmf > 0.05 else indicators.cmf < -0.05
+                if (!cmfConfirmsDirection) {
+                    println("  [DECISION] ⚠️  CMF weak: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)} weakly supports ${if (isLong) "LONG" else "SHORT"} (not blocking, but lower confidence)")
+                }
+
                 // Calculate stop loss and take profit based on direction
                 val sl = if (isLong) {
                     currentPrice - (indicators.atr * config.strategy.stopLossAtrMultiplier)
@@ -426,7 +461,22 @@ class MakeTradingDecisionUseCase(
                     currentPrice - (indicators.atr * config.strategy.takeProfitAtrMultiplier)
                 }
 
+                // Calculate trailing stop parameters
+                val trailingStopActivationPrice = if (isLong) {
+                    currentPrice + (indicators.atr * config.strategy.trailingStopActivationAtrMultiplier)
+                } else {
+                    currentPrice - (indicators.atr * config.strategy.trailingStopActivationAtrMultiplier)
+                }
+
+                val trailingStopDistance = indicators.atr * config.strategy.trailingStopAtrMultiplier
+
                 val directionName = if (isLong) "LONG" else "SHORT"
+                println("  [DECISION] ✅ All filters passed: RSI=${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} Vol=${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x CMF=${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)}")
+
+                if (config.strategy.useTrailingStop) {
+                    println("  [DECISION] → Trailing Stop: Activates at $trailingStopActivationPrice | Trail distance: $trailingStopDistance")
+                }
+
                 println("  [DECISION] → Final: TREND $directionName ${config.strategy.trendPositionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
 
                 Decision.Trend(
@@ -437,7 +487,10 @@ class MakeTradingDecisionUseCase(
                     takeProfit = tp,
                     positionSizePercent = config.strategy.trendPositionPercent,
                     adx = indicators.adx,
-                    atr = indicators.atr
+                    atr = indicators.atr,
+                    useTrailingStop = config.strategy.useTrailingStop,
+                    trailingStopActivationPrice = trailingStopActivationPrice,
+                    trailingStopDistance = trailingStopDistance
                 )
             }
             Mode.RANGE -> {

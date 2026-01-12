@@ -236,6 +236,21 @@ sealed class Decision {
      * @property atr Current ATR value used to calculate stop/target distances.
      *           Unit: Same as price (e.g., dollars for BTC-USD).
      *
+     * @property useTrailingStop Whether this position should use trailing stop logic.
+     *           If true, the initial stopLoss will transition to a trailing stop
+     *           after the position reaches trailingStopActivationPrice.
+     *           Default from StrategyParameters.useTrailingStop.
+     *
+     * @property trailingStopActivationPrice Price at which trailing stop activates.
+     *           For LONG: entryPrice + (activationAtrMultiplier × ATR)
+     *           For SHORT: entryPrice - (activationAtrMultiplier × ATR)
+     *           Only relevant if useTrailingStop = true.
+     *
+     * @property trailingStopDistance Initial trail distance when trailing activates.
+     *           Calculated as: trailingStopAtrMultiplier × ATR
+     *           Used by execution system to track trailing stop position.
+     *           Only relevant if useTrailingStop = true.
+     *
      * @throws IllegalArgumentException if validation rules are violated (see init block)
      */
     data class Trend(
@@ -246,7 +261,10 @@ sealed class Decision {
         val takeProfit: BigDecimal,
         val positionSizePercent: BigDecimal,
         val adx: Double,
-        val atr: BigDecimal
+        val atr: BigDecimal,
+        val useTrailingStop: Boolean,
+        val trailingStopActivationPrice: BigDecimal,
+        val trailingStopDistance: BigDecimal
     ) : Decision() {
         init {
             require(entryPrice > BigDecimal.ZERO) { "Entry price must be positive: $entryPrice" }
