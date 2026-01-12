@@ -414,25 +414,9 @@ class ExecuteTradingCycleUseCase(
             val executionResult = when (decision) {
                 is Decision.Wait -> ExecutionResult.Skipped("Wait: ${decision.reason}")
                 is Decision.Defense -> {
-                    // LEGACY: Defense decisions should never be generated anymore
-                    // This case exists for backwards compatibility only
-                    println("  [EXEC] DEFENSE (LEGACY): Closing all positions")
-
-                    // Cancel all open orders
-                    if (openOrders.isNotEmpty()) {
-                        exchangeRepository.cancelOrders(openOrders.map { it.id })
-                    }
-
-                    // Close perpetual position if exists (PERPETUAL FUTURES ONLY)
-                    if (hasPerpetualPosition) {
-                        exchangeRepository.closePerpetualPosition(perpetualProductId)
-                    }
-
-                    if (hasPerpetualPosition) {
-                        ExecutionResult.Success("Defense (Legacy): Closed perpetual position.")
-                    } else {
-                        ExecutionResult.Skipped("Defense (Legacy): No position to close.")
-                    }
+                    // Defense mode removed in v3.0 (perpetual futures only)
+                    // Previously triggered when price < SMA200, now replaced with SHORT positions in TREND mode
+                    ExecutionResult.Skipped("Defense mode no longer supported (v3.0)")
                 }
                 is Decision.Trend -> {
                     if (!isInTrade) {
@@ -467,22 +451,85 @@ class ExecuteTradingCycleUseCase(
                     }
                 }
                 is Decision.Range -> {
-                    // INTENTIONAL: Range/Grid trading not supported for perpetual futures
-                    //
-                    // WHY: Grid strategy was designed for spot markets (buy dips, sell rallies).
-                    // Perpetual futures have different mechanics:
-                    // - Funding costs accumulate over time (0.01% every 8H)
-                    // - Holding multiple grid positions incurs multiple funding charges
-                    // - Liquidation risk with leverage makes grid dangerous
-                    //
-                    // ALTERNATIVE: For low-ADX (ranging) markets, the system waits for
-                    // breakout confirmation before entering TREND mode (LONG/SHORT).
-                    // This is safer than grid for perpetual futures.
-                    //
-                    // FUTURE: Could implement "range strategy" as rapid LONG/SHORT flips
-                    // on mean reversion signals, but requires careful risk management.
-                    println("  [EXEC] RANGE: Skipped (not supported for perpetual futures)")
-                    ExecutionResult.Skipped("Range: Not supported for perpetual futures (use Trend only).")
+                    if (!isInTrade) {
+                        // RANGE STRATEGY: Mean-reversion for perpetual futures
+                        // In ranging markets (low ADX), price tends to revert to the mean (SMA200).
+                        // We trade against extremes and target reversion to the mean.
+
+                        // Calculate SMA200 for mean-reversion baseline
+                        val taService = AnalyzeCandlesUseCase()
+                        val indicators = taService.calculateAll(candles, config.technical.smaPeriod, config.technical.adxPeriod, config.technical.atrPeriod)
+                        val sma = indicators.sma200
+                        val atr = decision.atr
+
+                        // Entry threshold: Price must be at least 0.5x ATR away from SMA to enter
+                        val entryThreshold = atr * BigDecimal("0.5")
+                        val distanceFromSma = (currentPrice - sma).abs()
+
+                        if (distanceFromSma >= entryThreshold) {
+                            // Determine direction: LONG if below SMA (expect reversion up), SHORT if above SMA (expect reversion down)
+                            val isLong = currentPrice < sma
+                            val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
+
+                            // Entry: Current price
+                            val entryPrice = currentPrice
+
+                            // Take Profit: SMA (mean reversion target)
+                            val takeProfit = sma
+
+                            // Stop Loss: If price continues away from SMA (2x ATR beyond entry)
+                            val stopLoss = if (isLong) {
+                                entryPrice - (atr * BigDecimal("2.0"))
+                            } else {
+                                entryPrice + (atr * BigDecimal("2.0"))
+                            }
+
+                            // Validate stop/target placement
+                            val stopTargetValid = if (isLong) {
+                                stopLoss < entryPrice && takeProfit > entryPrice
+                            } else {
+                                stopLoss > entryPrice && takeProfit < entryPrice
+                            }
+
+                            if (stopTargetValid) {
+                                // Check funding rate
+                                val fundingRate = exchangeRepository.getFundingRate(perpetualProductId).getOrNull()
+                                if (fundingRate != null && fundingRate.isTooExpensive(config.execution.maxAcceptableFundingRate)) {
+                                    println("  [EXEC] RANGE: Skipped (funding rate too high: ${fundingRate.toPercentageString()})")
+                                    ExecutionResult.Skipped("Range: Funding rate ${fundingRate.toPercentageString()} exceeds limit.")
+                                } else {
+                                    // Calculate position size (smaller than trend: use gridPositionPercentPerLevel)
+                                    val leverage = config.strategy.leverage
+                                    val sizeUsd = portfolio.totalEquityUsd * decision.positionSizePercentPerLevel * leverage
+                                    val btcSize = sizeUsd.divide(entryPrice, 8, RoundingMode.HALF_UP)
+                                    val directionName = if (isLong) "LONG" else "SHORT"
+
+                                    println("  [EXEC] RANGE $directionName: Size \$${sizeUsd.setScale(2, RoundingMode.HALF_UP)} (${leverage}x) = ${btcSize.setScale(8, RoundingMode.HALF_UP)} BTC")
+                                    println("  [EXEC] Mean Reversion: Entry \$${entryPrice.setScale(0, RoundingMode.HALF_UP)} → Target (SMA) \$${takeProfit.setScale(0, RoundingMode.HALF_UP)} | Stop \$${stopLoss.setScale(0, RoundingMode.HALF_UP)}")
+                                    if (fundingRate != null) {
+                                        println("  [EXEC] Funding Rate: ${fundingRate.toPercentageString()} (acceptable)")
+                                    }
+
+                                    // Place bracket order
+                                    exchangeRepository.placeBracketOrder(
+                                        perpetualProductId, direction, btcSize,
+                                        entryPrice, takeProfit, stopLoss
+                                    ).getOrThrow()
+
+                                    ExecutionResult.Success("Range $directionName: Opened ${btcSize.setScale(4, RoundingMode.HALF_UP)} BTC mean-reversion position.")
+                                }
+                            } else {
+                                println("  [EXEC] RANGE: Skipped (invalid stop/target placement)")
+                                ExecutionResult.Skipped("Range: Invalid stop/target placement for mean reversion.")
+                            }
+                        } else {
+                            println("  [EXEC] RANGE: Skipped (price too close to SMA: \$${distanceFromSma.setScale(0, RoundingMode.HALF_UP)} < \$${entryThreshold.setScale(0, RoundingMode.HALF_UP)})")
+                            ExecutionResult.Skipped("Range: Price too close to SMA for mean reversion entry.")
+                        }
+                    } else {
+                        println("  [EXEC] RANGE: Skipped (already in trade)")
+                        ExecutionResult.Skipped("Range: Already in trade.")
+                    }
                 }
             }
 

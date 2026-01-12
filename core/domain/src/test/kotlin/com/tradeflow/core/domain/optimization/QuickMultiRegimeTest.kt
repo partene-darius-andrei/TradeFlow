@@ -66,12 +66,14 @@ class QuickMultiRegimeTest {
                 "SIDEWAYS" to sidewaysGenerator
             ).forEach { (regime, generator) ->
                 (0 until 3).forEach { seed ->
-                    val candles = generator.generate(nSteps = 400, seed = seed.toLong(), noiseLevel = 0.15)
+                    // Generate 500 candles total: 400 in-sample + 100 out-of-sample
+                    val allCandles = generator.generate(nSteps = 500, seed = seed.toLong(), noiseLevel = 0.15)
+                    val inSampleCandles = allCandles.take(400)  // 80% for optimization
 
                     com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
                     val engine = MakeTradingDecisionUseCase()
 
-                    val metrics = simulateStrategy(candles, engine)
+                    val metrics = simulateStrategy(inSampleCandles, engine)
 
                     val fitness = when (regime) {
                         "BULL" -> 0.6 * metrics.totalReturn + 0.4 * (1.0 - metrics.maxDrawdown)
@@ -106,9 +108,60 @@ class QuickMultiRegimeTest {
         println("  Grid Position %:           ${(result.champion.gridPositionPercentPerLevel * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
         println("  Confirmation Candles:      ${result.champion.confirmationCandles}")
 
+        // OUT-OF-SAMPLE VALIDATION
+        println("\n📊 OUT-OF-SAMPLE VALIDATION")
+        println("=".repeat(90))
+
+        val championConfig = TradingConfig(
+            strategy = result.champion.toStrategyParameters(),
+            risk = TradingConfig.forProfile(RiskProfile.BALANCED).risk,
+            technical = TradingConfig.forProfile(RiskProfile.BALANCED).technical,
+            execution = TradingConfig.forProfile(RiskProfile.BALANCED).execution,
+            profile = RiskProfile.BALANCED
+        )
+
+        val oosResults = mutableListOf<PerformanceMetrics>()
+
+        listOf(
+            "BULL" to bullMarketGenerator,
+            "BEAR" to bearMarketGenerator,
+            "SIDEWAYS" to sidewaysGenerator
+        ).forEach { (regime, generator) ->
+            (0 until 3).forEach { seed ->
+                // Use the OUT-OF-SAMPLE data (last 100 candles)
+                val allCandles = generator.generate(nSteps = 500, seed = seed.toLong(), noiseLevel = 0.15)
+                val oosCandles = allCandles.drop(400)  // 20% reserved for OOS testing
+
+                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = championConfig
+                val engine = MakeTradingDecisionUseCase()
+
+                val metrics = simulateStrategy(oosCandles, engine)
+                oosResults.add(metrics)
+
+                println("  $regime (seed $seed): Return ${(metrics.totalReturn * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}% | " +
+                        "Sharpe ${metrics.sharpeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)} | " +
+                        "Drawdown ${(metrics.maxDrawdown * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
+            }
+        }
+
+        val avgOosReturn = oosResults.map { it.totalReturn }.average()
+        val avgOosSharpe = oosResults.map { it.sharpeRatio }.average()
+        val avgOosDrawdown = oosResults.map { it.maxDrawdown }.average()
+
+        println("\nOOS Average Performance:")
+        println("  Return: ${(avgOosReturn * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
+        println("  Sharpe: ${avgOosSharpe.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}")
+        println("  Drawdown: ${(avgOosDrawdown * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%")
+        println("=".repeat(90))
+
         assertTrue(
             result.fitness > 0.3,
             "Multi-regime fitness must be > 0.3 (got ${result.fitness.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)})"
+        )
+
+        assertTrue(
+            avgOosReturn > -0.20,
+            "OOS return must be > -20% (got ${(avgOosReturn * 100).toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}%)"
         )
     }
 

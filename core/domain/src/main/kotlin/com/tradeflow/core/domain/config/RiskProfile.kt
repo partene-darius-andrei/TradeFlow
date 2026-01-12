@@ -149,10 +149,10 @@ enum class RiskProfile {
             )
             BALANCED -> StrategyParameters(
                 confirmationCandles = 4,
-                adxTrendThreshold = 15.69036802888202,
-                adxRangeThreshold = 1.3818857881651878,
-                stopLossAtrMultiplier = BigDecimal("8.298988671516664"),
-                takeProfitAtrMultiplier = BigDecimal("22.53153609428897"),
+                adxTrendThreshold = 15.69,
+                adxRangeThreshold = 1.38,
+                stopLossAtrMultiplier = BigDecimal("8.30"),
+                takeProfitAtrMultiplier = BigDecimal("22.53"),
                 trendPositionPercent = BigDecimal("0.0523"),
                 gridPositionPercentPerLevel = BigDecimal("0.0710"),
                 leverage = BigDecimal("2.0")

@@ -2,9 +2,11 @@ package com.tradeflow.core.domain.simulator
 
 import com.tradeflow.core.domain.config.ExchangeSimulationParameters
 import com.tradeflow.core.domain.model.*
+import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -15,7 +17,7 @@ class SimulatedExchange(
 
     var usdBalance = initialUsd
     private val openOrders = mutableListOf<Order>()
-    var currentPrice = BigDecimal.ZERO
+    var currentPrice: BigDecimal = BigDecimal.ZERO
     private var history = mutableListOf<Candle>()
 
     // Perpetual futures state
@@ -32,15 +34,55 @@ class SimulatedExchange(
         // Update perpetual position unrealized PnL
         updatePerpetualPositionPnL()
 
+        // Collect group IDs to cancel (OCO logic)
+        val groupIdsToCancel = mutableSetOf<String>()
+
         val iterator = openOrders.iterator()
         while (iterator.hasNext()) {
             val order = iterator.next()
 
             // Check if limit price was touched
             val limitPrice = order.price ?: currentPrice
-            val hit = when(order.side) {
-                OrderSide.BUY -> newCandle.low <= limitPrice
-                OrderSide.SELL -> newCandle.high >= limitPrice
+
+            // Determine if this is a stop-loss or take-profit based on position direction
+            val position = perpetualPosition
+            val hit = if (position != null && order.side != position.side) {
+                // This is an exit order (TP or SL)
+                // For LONG position (closed with SELL order):
+                //   - TP: SELL above entry → triggers when price goes up (high >= TP)
+                //   - SL: SELL below entry → triggers when price goes down (low <= SL)
+                // For SHORT position (closed with BUY order):
+                //   - TP: BUY below entry → triggers when price goes down (low <= TP)
+                //   - SL: BUY above entry → triggers when price goes up (high >= SL)
+
+                when (position.side) {
+                    OrderSide.BUY -> {
+                        // LONG position, exit with SELL
+                        if (limitPrice > position.entryPrice) {
+                            // Take profit: SELL above entry
+                            newCandle.high >= limitPrice
+                        } else {
+                            // Stop loss: SELL below entry
+                            newCandle.low <= limitPrice
+                        }
+                    }
+                    OrderSide.SELL -> {
+                        // SHORT position, exit with BUY
+                        if (limitPrice < position.entryPrice) {
+                            // Take profit: BUY below entry
+                            newCandle.low <= limitPrice
+                        } else {
+                            // Stop loss: BUY above entry
+                            newCandle.high >= limitPrice
+                        }
+                    }
+                }
+            } else {
+                // Standard order matching (entry orders)
+                when(order.side) {
+                    OrderSide.BUY -> newCandle.low <= limitPrice
+                    OrderSide.SELL -> newCandle.high >= limitPrice
+                }
             }
 
             if (hit) {
@@ -53,16 +95,21 @@ class SimulatedExchange(
                     val fillPrice = applySlippage(limitPrice, order.side)
                     realizePerpetualPosition() // Internal non-suspend version
 
-                    // OCO Logic: Cancel other orders in same group
+                    // OCO Logic: Mark group for cancellation (cancel after iteration)
                     val groupId = order.clientOrderId
                     if (groupId.isNotEmpty()) {
-                        cancelOrderGroup(groupId)
+                        groupIdsToCancel.add(groupId)
                     }
 
                     iterator.remove()
                 }
                 // NOTE: Spot order execution removed - perpetual futures only
             }
+        }
+
+        // Cancel all orders in marked groups (after iteration completes)
+        groupIdsToCancel.forEach { groupId ->
+            cancelOrderGroup(groupId)
         }
     }
 
@@ -141,7 +188,7 @@ class SimulatedExchange(
         return try {
             // PERPETUAL FUTURES ONLY (all products are perpetual now)
             // Open perpetual futures position with leverage from config
-            val leverage = com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig.strategy.leverage
+            val leverage = DependencyInjection.tradingConfig.strategy.leverage
             openPerpetualPosition(productId, side, size, entryFillPrice, leverage)
 
             // Place TP/SL orders to close perpetual position
@@ -339,7 +386,7 @@ class SimulatedExchange(
         val position = perpetualPosition ?: return
         val lastFunding = lastFundingTime ?: return
 
-        val hoursSinceLastFunding = java.time.Duration.between(lastFunding, currentTime).toHours()
+        val hoursSinceLastFunding = Duration.between(lastFunding, currentTime).toHours()
 
         if (hoursSinceLastFunding >= parameters.fundingIntervalHours) {
             val fundingCost = position.size * position.currentPrice * parameters.fundingRatePerInterval
