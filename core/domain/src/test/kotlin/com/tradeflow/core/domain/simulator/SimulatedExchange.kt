@@ -28,6 +28,9 @@ class SimulatedExchange(
         this.currentPrice = newCandle.close
         this.history.add(newCandle)
 
+        // Check liquidation BEFORE processing orders
+        checkLiquidation(newCandle)
+
         // Deduct funding rate from perpetual position (every 8 hours)
         deductFundingRate(newCandle.timestamp)
 
@@ -91,9 +94,26 @@ class SimulatedExchange(
                 val isClosingPerpetual = isPerpetual && perpetualPosition != null
 
                 if (isClosingPerpetual) {
-                    // Close perpetual position when TP/SL triggers
-                    val fillPrice = applySlippage(limitPrice, order.side)
-                    realizePerpetualPosition() // Internal non-suspend version
+                    // Determine if this is TP or SL based on position
+                    val position = perpetualPosition!!
+                    val isTakeProfit = when (position.side) {
+                        OrderSide.BUY -> order.side == OrderSide.SELL && limitPrice > position.entryPrice
+                        OrderSide.SELL -> order.side == OrderSide.BUY && limitPrice < position.entryPrice
+                    }
+
+                    // Apply realistic micro-slippage when limit triggers
+                    val fillPrice = if (isTakeProfit) {
+                        limitPrice * BigDecimal("0.9995")  // TP: -0.05% (slightly worse than limit)
+                    } else {
+                        limitPrice * BigDecimal("1.0005")  // SL: +0.05% (slightly worse than limit)
+                    }
+
+                    // Update current price to fillPrice for PnL calculation
+                    val previousPrice = currentPrice
+                    currentPrice = fillPrice
+                    updatePerpetualPositionPnL()
+                    realizePerpetualPosition()
+                    currentPrice = previousPrice  // Restore actual price
 
                     // OCO Logic: Mark group for cancellation (cancel after iteration)
                     val groupId = order.clientOrderId
@@ -130,6 +150,26 @@ class SimulatedExchange(
      */
     private fun cancelOrderGroup(groupId: String) {
         openOrders.removeAll { it.clientOrderId == groupId }
+    }
+
+    private fun checkLiquidation(candle: Candle) {
+        val position = perpetualPosition ?: return
+
+        val liquidationTriggered = when (position.side) {
+            OrderSide.BUY -> candle.low <= position.liquidationPrice
+            OrderSide.SELL -> candle.high >= position.liquidationPrice
+        }
+
+        if (liquidationTriggered) {
+            val liquidationFee = position.margin * BigDecimal("0.05")
+            val remainingMargin = position.margin - liquidationFee
+
+            usdBalance += remainingMargin.coerceAtLeast(BigDecimal.ZERO)
+            perpetualPosition = null
+            lastFundingTime = null
+
+            println("⚠️ LIQUIDATED ${position.side} position at ${position.liquidationPrice}")
+        }
     }
 
     fun setHistory(candles: List<Candle>) {
@@ -287,7 +327,8 @@ class SimulatedExchange(
 
         // Realize PnL by closing position
         val exitValue = position.size * currentPrice
-        val fee = exitValue * parameters.takerFeeRate
+        // Use maker fee for limit order exits (TP/SL)
+        val fee = exitValue * parameters.makerFeeRate
 
         when (position.side) {
             OrderSide.BUY -> {
@@ -391,16 +432,16 @@ class SimulatedExchange(
         if (hoursSinceLastFunding >= parameters.fundingIntervalHours) {
             val fundingCost = position.size * position.currentPrice * parameters.fundingRatePerInterval
 
-            // Deduct funding from both margin and USD balance
+            // Deduct funding from margin only (returned to balance when position closes)
             val newMargin = position.margin - fundingCost
 
             if (newMargin <= BigDecimal.ZERO) {
                 // Margin exhausted - liquidate position
                 perpetualPosition = null
                 lastFundingTime = null
+                println("⚠️ LIQUIDATED due to funding exhaustion")
             } else {
                 perpetualPosition = position.copy(margin = newMargin)
-                usdBalance -= fundingCost  // Funding cost reduces total equity
                 lastFundingTime = currentTime
             }
         }

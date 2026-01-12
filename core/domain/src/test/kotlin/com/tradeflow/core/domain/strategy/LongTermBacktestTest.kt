@@ -199,11 +199,18 @@ class LongTermBacktestTest {
         val finalEquity = capital + unrealizedPnL
         val totalReturn = (finalEquity / 1000.0) - 1.0
 
-        val equityReturns = equity.zipWithNext { a, b -> (b - a) / a }
-        val sharpe = if (equityReturns.isNotEmpty()) {
+        // Filter out zero/negative equity before calculating returns
+        val validEquity = equity.filter { it > 0.01 }
+        val sharpe = if (validEquity.size >= 2) {
+            val equityReturns = validEquity.zipWithNext { a, b -> (b - a) / a }
             val avgReturn = equityReturns.average()
-            val stdDev = kotlin.math.sqrt(equityReturns.map { (it - avgReturn) * (it - avgReturn) }.average())
-            if (stdDev > 0) avgReturn / stdDev * kotlin.math.sqrt(252.0) else 0.0
+
+            // Use sample standard deviation (n-1) instead of population stddev
+            val variance = equityReturns.map { (it - avgReturn) * (it - avgReturn) }.sum() / (equityReturns.size - 1)
+            val stdDev = kotlin.math.sqrt(variance)
+
+            // Annualize by actual candles per year (365 days for daily candles)
+            if (stdDev > 0) avgReturn / stdDev * kotlin.math.sqrt(365.0) else 0.0
         } else 0.0
 
         val maxDrawdown = calculateMaxDrawdown(equity)
