@@ -286,18 +286,13 @@ class RiskManager constructor(
             )
         }
 
-        if (request.side == OrderSide.BUY) {
-            val currentBtcValue = portfolio.getBtcBalance() * currentPrice
-            val currentExposure = currentBtcValue
-                .divide(portfolio.totalEquityUsd, config.risk.percentDecimalPlaces, RoundingMode.HALF_UP)
-            val newExposure = currentExposure + positionPercent
-
-            if (newExposure > config.risk.maxTotalExposurePercent) {
-                return RiskCheck.Rejected(
-                    "Total exposure ${formatPercent(newExposure)} would exceed limit ${formatPercent(config.risk.maxTotalExposurePercent)}"
-                )
-            }
-        }
+        // NOTE: Total exposure checks removed for perpetual futures
+        // Perpetual positions use margin-based risk management
+        // Exposure is limited by:
+        // 1. Margin requirements (notionalValue / leverage)
+        // 2. Per-position size limits (above)
+        // 3. Liquidation price monitoring
+        // No need to check BTC balance exposure since we don't hold BTC
 
         return RiskCheck.Approved
     }

@@ -1,8 +1,12 @@
 # TradeFlow - Core Trading Logic (Standalone v3.0)
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-12
 **Project Status:** Phase 3 - Standalone JVM Architecture
 **Current Build:** SUCCESS
+
+**⚠️ CRITICAL ARCHITECTURE CHANGE:**
+**TradeFlow now uses PERPETUAL FUTURES ONLY.**
+All spot trading logic has been removed. The system trades BTC-PERP with leverage (LONG/SHORT positions) instead of spot BTC/USD.
 
 ## 🎯 Architecture (Standalone JVM)
 

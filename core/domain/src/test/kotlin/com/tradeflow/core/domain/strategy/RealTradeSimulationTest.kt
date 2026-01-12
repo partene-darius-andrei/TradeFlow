@@ -81,7 +81,6 @@ class RealTradeSimulationTest {
         println("--------------------------------------------------------------------------------")
         println("STARTING BALANCE: $initialCapital USD")
         println("FINAL BALANCE:    ${finalEquity.setScale(2, RoundingMode.HALF_UP)} USD")
-        println("TOTAL BTC HELD:   ${exchange.btcBalance} BTC")
         println("NET PROFIT/LOSS:  ${if (totalPnL >= BigDecimal.ZERO) "+" else ""}${totalPnL.setScale(2, RoundingMode.HALF_UP)} USD")
         println("PERCENTAGE GAIN:  ${if (totalPnL >= BigDecimal.ZERO) "+" else ""}${totalPnLPct.setScale(2, RoundingMode.HALF_UP)}%")
         println("--------------------------------------------------------------------------------")

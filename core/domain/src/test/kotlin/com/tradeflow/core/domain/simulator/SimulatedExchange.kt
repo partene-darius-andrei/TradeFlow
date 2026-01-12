@@ -15,7 +15,6 @@ class SimulatedExchange(
 ) : ExchangeRepository {
 
     var usdBalance = initialUsd
-    var btcBalance = BigDecimal.ZERO
     private val openOrders = mutableListOf<Order>()
     var currentPrice = BigDecimal.ZERO
     private var history = mutableListOf<Candle>()
@@ -60,18 +59,10 @@ class SimulatedExchange(
                     if (groupId.isNotEmpty()) {
                         cancelOrderGroup(groupId)
                     }
-                } else if (canExecute(order)) {
-                    // Regular spot order execution
-                    val fillPrice = applySlippage(limitPrice, order.side)
-                    executeOrder(order, fillPrice)
 
-                    // OCO Logic: If order filled, cancel other orders in same group
-                    val groupId = order.clientOrderId
-                    if (groupId.isNotEmpty()) {
-                        cancelOrderGroup(groupId)
-                    }
+                    iterator.remove()
                 }
-                iterator.remove()
+                // NOTE: Spot order execution removed - perpetual futures only
             }
         }
     }
@@ -96,50 +87,24 @@ class SimulatedExchange(
         openOrders.removeAll { it.clientOrderId == groupId }
     }
 
-    private fun canExecute(order: Order): Boolean {
-        val price = order.price ?: currentPrice
-        val cost = order.size * price
-        val fee = cost * feeRate
-        return if (order.side == OrderSide.BUY) {
-            usdBalance >= (cost + fee)
-        } else {
-            btcBalance >= order.size
-        }
-    }
-
-    /**
-     * Executes an order at the specified fill price (with slippage already applied).
-     * Deducts fees and updates balances.
-     */
-    private fun executeOrder(order: Order, fillPrice: BigDecimal = order.price ?: currentPrice) {
-        val cost = order.size * fillPrice
-        val fee = cost * feeRate
-
-        if (order.side == OrderSide.BUY) {
-            usdBalance -= (cost + fee)
-            btcBalance += order.size
-        } else {
-            usdBalance += (cost - fee)
-            btcBalance -= order.size
-        }
-    }
-
     fun setHistory(candles: List<Candle>) {
         this.history = candles.toMutableList()
         this.currentPrice = candles.last().close
     }
 
-    fun getTotalEquity(): BigDecimal = usdBalance + (btcBalance * currentPrice)
+    fun getTotalEquity(): BigDecimal {
+        // Perpetual futures: equity = usdBalance (margin) + unrealized PnL
+        val unrealizedPnl = perpetualPosition?.unrealizedPnl ?: BigDecimal.ZERO
+        return usdBalance + unrealizedPnl
+    }
 
     override suspend fun getBalances(): Result<List<Balance>> = Result.success(listOf(
-        Balance("USD", usdBalance, BigDecimal.ZERO),
-        Balance("BTC", btcBalance, BigDecimal.ZERO)
+        Balance("USD", usdBalance, BigDecimal.ZERO)
     ))
 
     override suspend fun getPortfolio(): Result<Portfolio> = Result.success(Portfolio(
         balances = listOf(
-            Balance("USD", usdBalance, BigDecimal.ZERO),
-            Balance("BTC", btcBalance, BigDecimal.ZERO)
+            Balance("USD", usdBalance, BigDecimal.ZERO)
         ),
         totalEquityUsd = getTotalEquity(),
         timestamp = Instant.now()
@@ -175,96 +140,48 @@ class SimulatedExchange(
             Instant.now()
         )
 
-        // Determine if this is a perpetual futures product
-        val isPerpetual = productId.contains("PERP", ignoreCase = true)
-
         return try {
-            if (isPerpetual) {
-                // Open perpetual futures position with leverage from config
-                val leverage = com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig.strategy.leverage
-                openPerpetualPosition(productId, side, size, entryFillPrice, leverage)
+            // PERPETUAL FUTURES ONLY (all products are perpetual now)
+            // Open perpetual futures position with leverage from config
+            val leverage = com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig.strategy.leverage
+            openPerpetualPosition(productId, side, size, entryFillPrice, leverage)
 
-                // Place TP/SL orders to close perpetual position
-                val groupId = UUID.randomUUID().toString()
-                val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
+            // Place TP/SL orders to close perpetual position
+            val groupId = UUID.randomUUID().toString()
+            val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
 
-                val tpOrder = Order(
-                    UUID.randomUUID().toString(),
-                    groupId,
-                    productId,
-                    exitSide,
-                    OrderType.LIMIT,
-                    OrderStatus.OPEN,
-                    size,
-                    takeProfit,
-                    BigDecimal.ZERO,
-                    null,
-                    Instant.now()
-                )
+            val tpOrder = Order(
+                UUID.randomUUID().toString(),
+                groupId,
+                productId,
+                exitSide,
+                OrderType.LIMIT,
+                OrderStatus.OPEN,
+                size,
+                takeProfit,
+                BigDecimal.ZERO,
+                null,
+                Instant.now()
+            )
 
-                val slOrder = Order(
-                    UUID.randomUUID().toString(),
-                    groupId,
-                    productId,
-                    exitSide,
-                    OrderType.LIMIT,
-                    OrderStatus.OPEN,
-                    size,
-                    stopLoss,
-                    BigDecimal.ZERO,
-                    null,
-                    Instant.now()
-                )
+            val slOrder = Order(
+                UUID.randomUUID().toString(),
+                groupId,
+                productId,
+                exitSide,
+                OrderType.LIMIT,
+                OrderStatus.OPEN,
+                size,
+                stopLoss,
+                BigDecimal.ZERO,
+                null,
+                Instant.now()
+            )
 
-                openOrders.add(tpOrder)
-                openOrders.add(slOrder)
+            openOrders.add(tpOrder)
+            openOrders.add(slOrder)
 
-                Result.success(entryOrder)
-            } else {
-                // Spot trading (original logic)
-                if (canExecute(entryOrder)) {
-                    executeOrder(entryOrder, entryFillPrice)
-
-                    // Place OCO group: TP and SL orders with shared groupId
-                    val groupId = UUID.randomUUID().toString()
-                    val exitSide = if (side == OrderSide.BUY) OrderSide.SELL else OrderSide.BUY
-
-                    val tpOrder = Order(
-                        UUID.randomUUID().toString(),
-                        groupId,
-                        productId,
-                        exitSide,
-                        OrderType.LIMIT,
-                        OrderStatus.OPEN,
-                        size,
-                        takeProfit,
-                        BigDecimal.ZERO,
-                        null,
-                        Instant.now()
-                    )
-
-                    val slOrder = Order(
-                        UUID.randomUUID().toString(),
-                        groupId,
-                        productId,
-                        exitSide,
-                        OrderType.LIMIT,
-                        OrderStatus.OPEN,
-                        size,
-                        stopLoss,
-                        BigDecimal.ZERO,
-                        null,
-                        Instant.now()
-                    )
-
-                    openOrders.add(tpOrder)
-                    openOrders.add(slOrder)
-
-                    Result.success(entryOrder)
-                } else {
-                    Result.failure(Exception("Insufficient funds"))
-                }
-            }
+            Result.success(entryOrder)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -278,7 +195,10 @@ class SimulatedExchange(
     }
 
     override suspend fun placeMarketOrder(productId: String, side: OrderSide, size: BigDecimal): Result<Order> {
-        // Apply slippage to market orders
+        // PERPETUAL FUTURES ONLY
+        // Market orders are used only for emergency exits (close perpetual position)
+        // This should not be called directly - use closePerpetualPosition() instead
+
         val fillPrice = applySlippage(currentPrice, side)
 
         val order = Order(
@@ -295,12 +215,8 @@ class SimulatedExchange(
             Instant.now()
         )
 
-        // CRITICAL: Check funds before executing (was missing - FIXED)
-        if (!canExecute(order)) {
-            return Result.failure(Exception("Insufficient funds for market order"))
-        }
-
-        executeOrder(order, fillPrice)
+        // Note: Actual perpetual position closing handled via closePerpetualPosition()
+        // This method kept for interface compatibility only
         return Result.success(order)
     }
     override suspend fun cancelOrder(orderId: String): Result<Unit> = Result.success(Unit)

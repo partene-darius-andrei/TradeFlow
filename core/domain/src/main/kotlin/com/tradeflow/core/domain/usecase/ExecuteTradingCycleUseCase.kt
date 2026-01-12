@@ -405,17 +405,11 @@ class ExecuteTradingCycleUseCase(
                     // EMERGENCY: Cancel all orders + close all positions
                     exchangeRepository.cancelOrders(openOrders.map { it.id })
 
-                    // Close perpetual position if exists
+                    // Close perpetual position if exists (PERPETUAL FUTURES ONLY)
                     val perpetualProductId = "${productId.substringBefore("-")}-PERP"
                     val position = exchangeRepository.getPerpetualPosition(perpetualProductId).getOrNull()
                     if (position != null) {
                         exchangeRepository.closePerpetualPosition(perpetualProductId)
-                    }
-
-                    // Also close any spot BTC holdings (legacy)
-                    val btc = portfolio.getBtcBalance()
-                    if (btc > config.execution.minBtcDustThreshold) {
-                        exchangeRepository.placeMarketOrder(productId, OrderSide.SELL, btc)
                     }
 
                     return CycleResult(
@@ -425,22 +419,20 @@ class ExecuteTradingCycleUseCase(
                 }
             }
 
-            // 2. State Check (Perpetual + Spot)
+            // 2. State Check (PERPETUAL FUTURES ONLY)
             val perpetualProductId = "${productId.substringBefore("-")}-PERP"
             val perpetualPosition = exchangeRepository.getPerpetualPosition(perpetualProductId).getOrNull()
             val hasPerpetualPosition = perpetualPosition != null
 
-            val btcBalance = portfolio.getBtcBalance()
-            val hasBtcBalance = btcBalance > config.execution.minBtcDustThreshold
             val hasOpenOrders = openOrders.isNotEmpty()
-            val isInTrade = hasPerpetualPosition || hasBtcBalance || hasOpenOrders
+            val isInTrade = hasPerpetualPosition || hasOpenOrders
 
             if (hasPerpetualPosition) {
                 val pos = perpetualPosition!!
                 val directionName = if (pos.isLong) "LONG" else "SHORT"
                 println("  [STATE] Perpetual: $directionName ${pos.size} BTC @ \$${pos.entryPrice.setScale(0, RoundingMode.HALF_UP)} | PnL: \$${pos.unrealizedPnl.setScale(2, RoundingMode.HALF_UP)}")
             }
-            println("  [STATE] Spot BTC: $btcBalance | Open Orders: ${openOrders.size} | In Trade: $isInTrade")
+            println("  [STATE] Open Orders: ${openOrders.size} | In Trade: $isInTrade")
 
             val decision = makeDecisionUseCase.execute(candles, currentPrice)
 
@@ -457,20 +449,15 @@ class ExecuteTradingCycleUseCase(
                         exchangeRepository.cancelOrders(openOrders.map { it.id })
                     }
 
-                    // Close perpetual position if exists
+                    // Close perpetual position if exists (PERPETUAL FUTURES ONLY)
                     if (hasPerpetualPosition) {
                         exchangeRepository.closePerpetualPosition(perpetualProductId)
                     }
 
-                    // Close spot BTC if exists
-                    if (hasBtcBalance) {
-                        exchangeRepository.placeMarketOrder(productId, OrderSide.SELL, btcBalance).getOrThrow()
-                    }
-
-                    if (hasPerpetualPosition || hasBtcBalance) {
-                        ExecutionResult.Success("Defense (Legacy): Liquidated all positions.")
+                    if (hasPerpetualPosition) {
+                        ExecutionResult.Success("Defense (Legacy): Closed perpetual position.")
                     } else {
-                        ExecutionResult.Skipped("Defense (Legacy): Clean.")
+                        ExecutionResult.Skipped("Defense (Legacy): No position to close.")
                     }
                 }
                 is Decision.Trend -> {
@@ -506,32 +493,11 @@ class ExecuteTradingCycleUseCase(
                     }
                 }
                 is Decision.Range -> {
-                    if (!isInTrade) {
-                        val sizeUsd = portfolio.totalEquityUsd * decision.positionSizePercentPerLevel
-                        var ordersPlaced = 0
-                        println("  [EXEC] RANGE: \$${sizeUsd.setScale(2, RoundingMode.HALF_UP)} per level × ${decision.levels} levels | Spacing: \$${decision.gridSpacing.setScale(2, RoundingMode.HALF_UP)}")
-
-                        for (level in 1..decision.levels) {
-                            val levelPrice = currentPrice - (decision.gridSpacing * BigDecimal(level))
-                            val btcSize = sizeUsd.divide(levelPrice, 8, RoundingMode.HALF_UP)
-
-                            if (level == 1) {
-                                println("  [EXEC] Grid level 1: BUY ${btcSize.setScale(8, RoundingMode.HALF_UP)} BTC @ \$${levelPrice.setScale(2, RoundingMode.HALF_UP)}")
-                            }
-
-                            exchangeRepository.placeLimitOrder(
-                                productId, OrderSide.BUY, btcSize, levelPrice, true
-                            ).onSuccess { ordersPlaced++ }
-                        }
-
-                        ExecutionResult.Success("Range: Placed $ordersPlaced/${decision.levels} grid orders.")
-                    } else if (hasBtcBalance && openOrders.none { it.side == OrderSide.SELL }) {
-                        val targetProfitPrice = currentPrice + decision.gridSpacing
-                        exchangeRepository.placeLimitOrder(productId, OrderSide.SELL, btcBalance, targetProfitPrice, true).getOrThrow()
-                        ExecutionResult.Success("Range: Placed take-profit for grid fill.")
-                    } else {
-                        ExecutionResult.Skipped("Range: Active.")
-                    }
+                    // REMOVED: Range/Grid trading not applicable for perpetual futures
+                    // Grid strategy was designed for spot markets with mean reversion
+                    // Perpetual futures use TREND strategy only (LONG/SHORT directional)
+                    println("  [EXEC] RANGE: Skipped (not supported for perpetual futures)")
+                    ExecutionResult.Skipped("Range: Not supported for perpetual futures (use Trend only).")
                 }
             }
 
