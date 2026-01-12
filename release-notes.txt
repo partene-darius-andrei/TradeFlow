@@ -1,7 +1,0 @@
-Version 1.10.1
-
-- Fixed critical division by zero error in risk management when portfolio equity is zero
-- Improved portfolio calculation accuracy by including funds locked in pending orders
-- Enhanced thread safety in trading decision engine to prevent race conditions
-- Fixed dependency injection issues for bracket order functionality
-- Strengthened system stability and reliability through code audit fixes

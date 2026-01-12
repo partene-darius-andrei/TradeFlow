@@ -124,13 +124,15 @@ class QuickMultiRegimeTest {
         var trades = 0
         var wins = 0
 
+        // Reset hysteresis state once before simulation (not on every candle)
+        engine.resetState()
+
         candles.forEachIndexed { index, candle ->
             if (index < 200) return@forEachIndexed
 
             val history = candles.subList(index - 200, index)
             val currentPrice = candle.close.toDouble()
 
-            engine.resetState()
             val decision = engine.execute(history, candle.close)
 
             val currentEquity = capital + btcHeld * currentPrice
