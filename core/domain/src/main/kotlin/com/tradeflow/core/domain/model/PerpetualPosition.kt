@@ -86,6 +86,11 @@ import java.time.Instant
  *           - SHORT: Price rises to this level → liquidation
  *           Hitting liquidation = lose all margin for this position.
  *
+ * @property highWaterMarkPrice Best price reached since position opened (for trailing stops).
+ *           - LONG: Tracks highest price reached (maxOf currentPrice over time)
+ *           - SHORT: Tracks lowest price reached (minOf currentPrice over time)
+ *           Used to prevent trailing stop-loss from moving backwards.
+ *
  * @property timestamp When this position snapshot was taken.
  *           Used for staleness checks and logging.
  */
@@ -99,6 +104,7 @@ data class PerpetualPosition(
     val leverage: BigDecimal,
     val margin: BigDecimal,
     val liquidationPrice: BigDecimal,
+    val highWaterMarkPrice: BigDecimal,
     val timestamp: Instant = Instant.now()
 ) {
     init {
@@ -108,6 +114,7 @@ data class PerpetualPosition(
         require(leverage > BigDecimal.ZERO) { "Leverage must be positive: $leverage" }
         require(margin > BigDecimal.ZERO) { "Margin must be positive: $margin" }
         require(liquidationPrice > BigDecimal.ZERO) { "Liquidation price must be positive: $liquidationPrice" }
+        require(highWaterMarkPrice > BigDecimal.ZERO) { "High water mark price must be positive: $highWaterMarkPrice" }
     }
 
     /**

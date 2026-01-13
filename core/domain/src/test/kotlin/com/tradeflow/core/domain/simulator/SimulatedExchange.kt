@@ -397,6 +397,7 @@ class SimulatedExchange(
             leverage = leverage,
             margin = margin,
             liquidationPrice = liquidationPrice,
+            highWaterMarkPrice = entryPrice,
             timestamp = Instant.now()
         )
 
@@ -405,6 +406,7 @@ class SimulatedExchange(
 
     /**
      * Updates unrealized PnL for open perpetual position based on current price.
+     * Also updates high water mark for trailing stop purposes.
      */
     private fun updatePerpetualPositionPnL() {
         val position = perpetualPosition ?: return
@@ -414,9 +416,15 @@ class SimulatedExchange(
             OrderSide.SELL -> (position.entryPrice - currentPrice) * position.size
         }
 
+        val newHighWaterMark = when (position.side) {
+            OrderSide.BUY -> maxOf(currentPrice, position.highWaterMarkPrice)
+            OrderSide.SELL -> minOf(currentPrice, position.highWaterMarkPrice)
+        }
+
         perpetualPosition = position.copy(
             currentPrice = currentPrice,
-            unrealizedPnl = pnl
+            unrealizedPnl = pnl,
+            highWaterMarkPrice = newHighWaterMark
         )
     }
 

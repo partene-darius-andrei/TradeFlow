@@ -399,7 +399,8 @@ interface ExchangeRepository {
      *   currentPrice = $96000,
      *   unrealizedPnl = +$10.00,  // (96k - 95k) × 0.01
      *   leverage = 2.0x,
-     *   liquidationPrice = $47500  // 50% drop before liquidation at 2x leverage
+     *   liquidationPrice = $47500,  // 50% drop before liquidation at 2x leverage
+     *   highWaterMarkPrice = $96000  // Highest price reached (for trailing stops)
      * )
      * ```
      *
@@ -413,7 +414,8 @@ interface ExchangeRepository {
      *   currentPrice = $94000,
      *   unrealizedPnl = +$10.00,  // (95k - 94k) × 0.01
      *   leverage = 2.0x,
-     *   liquidationPrice = $142500  // 50% rise before liquidation at 2x leverage
+     *   liquidationPrice = $142500,  // 50% rise before liquidation at 2x leverage
+     *   highWaterMarkPrice = $94000  // Lowest price reached (for trailing stops)
      * )
      * ```
      *
