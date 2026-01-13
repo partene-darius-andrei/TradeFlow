@@ -300,8 +300,17 @@ class MakeTradingDecisionUseCase(
             config.technical.cmfPeriod
         )
 
-        println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
-        println("  [DECISION] RSI: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | Volume: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x avg | CMF: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)}")
+        // Skip if indicators contain NaN (insufficient data)
+        if (indicators.adx.isNaN() || indicators.rsi.isNaN() || indicators.volumeRatio.isNaN() || indicators.cmf.isNaN()) {
+            return Decision.Wait("Indicators contain NaN (insufficient data)")
+        }
+
+        try {
+            println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
+            println("  [DECISION] RSI: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | Volume: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x avg | CMF: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)}")
+        } catch (e: Exception) {
+            // Skip debug output if indicators contain NaN
+        }
 
         // 1. Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
@@ -444,7 +453,11 @@ class MakeTradingDecisionUseCase(
                 // CMF < -0.05 for SHORT = money flowing out (bearish)
                 val cmfConfirmsDirection = if (isLong) indicators.cmf > 0.05 else indicators.cmf < -0.05
                 if (!cmfConfirmsDirection) {
-                    println("  [DECISION] ⚠️  CMF weak: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)} weakly supports ${if (isLong) "LONG" else "SHORT"} (not blocking, but lower confidence)")
+                    try {
+                        println("  [DECISION] ⚠️  CMF weak: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)} weakly supports ${if (isLong) "LONG" else "SHORT"} (not blocking, but lower confidence)")
+                    } catch (e: Exception) {
+                        // Skip debug output if CMF is NaN
+                    }
                 }
 
                 // Calculate stop loss and take profit based on direction
