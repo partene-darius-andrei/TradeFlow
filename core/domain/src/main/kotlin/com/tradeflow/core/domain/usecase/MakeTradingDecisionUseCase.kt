@@ -421,15 +421,15 @@ class MakeTradingDecisionUseCase(
                 val isLong = currentPrice >= indicators.sma200
                 val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
 
-                // RSI Momentum Filter: RSI must confirm direction
-                // Research: RSI as momentum filter (not mean-reversion) achieves 60-65% win rate on BTC
-                // LONG requires RSI > 50 (bullish momentum)
-                // SHORT requires RSI < 50 (bearish momentum)
-                val rsiConfirmsDirection = if (isLong) indicators.rsi > 50.0 else indicators.rsi < 50.0
-                if (!rsiConfirmsDirection) {
-                    val requiredRsi = if (isLong) ">50" else "<50"
-                    println("  [DECISION] ❌ RSI filter: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} does not confirm ${if (isLong) "LONG" else "SHORT"} (requires $requiredRsi)")
-                    return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} does not confirm ${if (isLong) "LONG" else "SHORT"} direction (requires $requiredRsi)")
+                // RSI Momentum Filter: Block only extreme opposite momentum
+                // FIX: Relaxed from RSI > 50 to RSI > 30 for LONG (was blocking 90% of trades)
+                // LONG blocked only if RSI < 30 (extreme bearish)
+                // SHORT blocked only if RSI > 70 (extreme bullish)
+                val rsiBlocksTrade = if (isLong) indicators.rsi < 30.0 else indicators.rsi > 70.0
+                if (rsiBlocksTrade) {
+                    val reason = if (isLong) "RSI < 30 (extreme bearish)" else "RSI > 70 (extreme bullish)"
+                    println("  [DECISION] ❌ RSI filter: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} blocks ${if (isLong) "LONG" else "SHORT"} ($reason)")
+                    return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} blocks ${if (isLong) "LONG" else "SHORT"} ($reason)")
                 }
 
                 // Volume Confirmation Filter: Volume must be significantly above average

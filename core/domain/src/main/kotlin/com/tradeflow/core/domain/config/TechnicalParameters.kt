@@ -129,7 +129,7 @@ data class TechnicalParameters(
     val rsiPeriod: Int = 14,
     val volumeSmaPeriod: Int = 20,
     val cmfPeriod: Int = 21,
-    val minVolumeRatio: Double = 1.5,
+    val minVolumeRatio: Double = 1.2,
     val smaLookbackCandles: Int = 10,
     val minCandlesRequired: Int = 200,
     val barDurationMinutes: Int = 240,
