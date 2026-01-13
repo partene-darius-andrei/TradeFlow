@@ -429,8 +429,10 @@ class SimulatedExchange(
     }
 
     /**
-     * Deducts funding rate from margin every funding interval (default 8 hours).
+     * Deducts funding rate from USD balance every funding interval (default 8 hours).
      * Funding rate is charged to the position holder to maintain perpetual futures price peg.
+     *
+     * FIX: Deduct from usdBalance directly (not margin) so costs are actually paid.
      */
     private fun deductFundingRate(currentTime: Instant) {
         val position = perpetualPosition ?: return
@@ -441,17 +443,15 @@ class SimulatedExchange(
         if (hoursSinceLastFunding >= parameters.fundingIntervalHours) {
             val fundingCost = position.size * position.currentPrice * parameters.fundingRatePerInterval
 
-            // Deduct funding from margin only (returned to balance when position closes)
-            val newMargin = position.margin - fundingCost
+            // Deduct funding from USD balance directly (not margin)
+            usdBalance -= fundingCost
+            lastFundingTime = currentTime
 
-            if (newMargin <= BigDecimal.ZERO) {
-                // Margin exhausted - liquidate position
+            if (usdBalance <= BigDecimal.ZERO) {
+                // Balance exhausted - liquidate position
                 perpetualPosition = null
                 lastFundingTime = null
                 println("⚠️ LIQUIDATED due to funding exhaustion")
-            } else {
-                perpetualPosition = position.copy(margin = newMargin)
-                lastFundingTime = currentTime
             }
         }
     }
