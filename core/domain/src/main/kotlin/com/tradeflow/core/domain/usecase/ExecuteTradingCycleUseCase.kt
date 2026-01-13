@@ -565,19 +565,15 @@ class ExecuteTradingCycleUseCase(
             // 1. Get open perpetual position
             val position = exchangeRepository.getPerpetualPosition(productId).getOrNull() ?: return
 
-            // 2. Calculate high water mark (highest for LONG, lowest for SHORT)
-            // For simplicity, we use currentPrice as a proxy for high water mark
-            // In production, this should be tracked across cycles
-            val highWaterMark = when (position.side) {
-                OrderSide.BUY -> maxOf(currentPrice, position.entryPrice + (position.unrealizedPnl / position.size))
-                OrderSide.SELL -> minOf(currentPrice, position.entryPrice - (position.unrealizedPnl / position.size))
-            }
+            // 2. Use persisted high water mark from position
+            // This prevents trailing stop from moving backwards
+            // FIX: Use position.highWaterMarkPrice instead of recalculating
 
             // 3. Calculate trailing stop state
             val trailingState = trailingStopManager.calculateTrailingStop(
                 entryPrice = position.entryPrice,
                 currentPrice = currentPrice,
-                highestPriceSinceEntry = highWaterMark,
+                highestPriceSinceEntry = position.highWaterMarkPrice,
                 atr = atr,
                 direction = position.side
             )
