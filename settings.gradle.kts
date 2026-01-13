@@ -15,5 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TradeFlow"
 include(":engine")
-include(":core:domain")
-include(":exchange:coinbase")
+include(":backtesting")
