@@ -7,8 +7,8 @@ import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.util.BinanceDataLoader
 import org.junit.Test
-import java.math.BigDecimal
 import kotlin.random.Random
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -50,7 +50,7 @@ class HistoricalBacktestTest {
             val date = allCandles[randomIndex].timestamp
 
             // Reset engine state for each independent sample
-            (engine as? MakeTradingDecisionUseCase)?.resetState()
+            engine.resetState()
 
             val decision = engine.execute(history, currentPrice)
 
@@ -72,7 +72,11 @@ class HistoricalBacktestTest {
         println("WAIT:    $totalWait (${(totalWait * 100.0 / iterations).toInt()}%)")
 
         // Validation: Ensure the strategy actually switches regimes
-        assertTrue(totalTrend + totalRange + totalWait == iterations, "All iterations should produce a decision")
+        assertEquals(
+            totalTrend + totalRange + totalWait,
+            iterations,
+            "All iterations should produce a decision"
+        )
         assertTrue(totalTrend > 0 || totalRange > 0, "Strategy should have encountered some tradeable periods")
     }
 }
