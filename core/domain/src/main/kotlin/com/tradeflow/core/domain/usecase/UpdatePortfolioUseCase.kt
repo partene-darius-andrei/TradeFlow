@@ -1,12 +1,11 @@
 package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.model.Portfolio
-import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import java.time.Instant
 
 class UpdatePortfolioUseCase(
-    private val repository: ExchangeRepository = DependencyInjection.exchangeRepository
+    private val repository: ExchangeRepository
 ) {
 
     suspend fun execute(): Result<Portfolio> = runCatching {

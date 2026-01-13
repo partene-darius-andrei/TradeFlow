@@ -26,55 +26,51 @@ import java.io.File
 import java.math.BigDecimal
 import java.util.Properties
 
-class CoinbaseRepository(
-    private val apiClient: CoinbaseApiClient,
+class CoinbaseRepository() : ExchangeRepository {
+
+    private var apiClient: CoinbaseApiClient
     private val httpClient: HttpClient? = null
-) : ExchangeRepository {
 
-    companion object {
-        fun create(): CoinbaseRepository {
-            val localPropertiesFile = File("local.properties")
-            val props = Properties()
-            if (localPropertiesFile.exists()) {
-                props.load(localPropertiesFile.inputStream())
-            }
-
-            val apiKey = System.getenv("COINBASE_API_KEY")
-                ?: props.getProperty("coinbase.api.key")
-                ?: error("COINBASE_API_KEY not found")
-
-            val secret = System.getenv("COINBASE_API_SECRET")
-                ?: props.getProperty("coinbase.api.secret")
-                ?: error("COINBASE_API_SECRET not found")
-
-            val httpClient = HttpClient(OkHttp) {
-                install(ContentNegotiation) {
-                    json(Json {
-                        ignoreUnknownKeys = true
-                        isLenient = true
-                        prettyPrint = true
-                    })
-                }
-                install(Logging) {
-                    logger = object : Logger {
-                        override fun log(message: String) {
-                            println("[HTTP] $message")
-                        }
-                    }
-                    level = LogLevel.HEADERS
-                }
-            }
-
-            val credentialStore = object : CredentialStore {
-                override suspend fun getApiKey(): String = apiKey
-                override suspend fun getSecret(): String = secret
-            }
-
-            val authProvider = JwtRepository(credentialStore)
-            val apiClient = CoinbaseApiClient(httpClient, authProvider)
-
-            return CoinbaseRepository(apiClient, httpClient)
+    init {
+        val localPropertiesFile = File("local.properties")
+        val props = Properties()
+        if (localPropertiesFile.exists()) {
+            props.load(localPropertiesFile.inputStream())
         }
+
+        val apiKey = System.getenv("COINBASE_API_KEY")
+            ?: props.getProperty("coinbase.api.key")
+            ?: error("COINBASE_API_KEY not found")
+
+        val secret = System.getenv("COINBASE_API_SECRET")
+            ?: props.getProperty("coinbase.api.secret")
+            ?: error("COINBASE_API_SECRET not found")
+
+        val httpClient = HttpClient(OkHttp) {
+            install(ContentNegotiation) {
+                json(Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                    prettyPrint = true
+                })
+            }
+            install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        println("[HTTP] $message")
+                    }
+                }
+                level = LogLevel.HEADERS
+            }
+        }
+
+        val credentialStore = object : CredentialStore {
+            override suspend fun getApiKey(): String = apiKey
+            override suspend fun getSecret(): String = secret
+        }
+
+        val authProvider = JwtRepository(credentialStore)
+        apiClient = CoinbaseApiClient(httpClient, authProvider)
     }
 
     fun close() {
@@ -89,7 +85,7 @@ class CoinbaseRepository(
     }
 
     override suspend fun getPortfolio(): Result<Portfolio> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getCandles(
@@ -97,11 +93,11 @@ class CoinbaseRepository(
         granularity: Granularity,
         limit: Int
     ): Result<List<Candle>> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getCurrentPrice(productId: String): Result<Ticker> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun placeMarketOrder(
@@ -109,7 +105,7 @@ class CoinbaseRepository(
         side: OrderSide,
         size: BigDecimal
     ): Result<Order> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun placeLimitOrder(
@@ -119,23 +115,23 @@ class CoinbaseRepository(
         price: BigDecimal,
         postOnly: Boolean
     ): Result<Order> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun cancelOrder(orderId: String): Result<Unit> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun cancelOrders(orderIds: List<String>): Result<Int> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getOrder(orderId: String): Result<Order> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getOpenOrders(productId: String): Result<List<Order>> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 
     override suspend fun closePerpetualPosition(productId: String): Result<Unit> {
@@ -158,6 +154,6 @@ class CoinbaseRepository(
         takeProfit: BigDecimal,
         stopLoss: BigDecimal
     ): Result<Order> {
-        TODO("Implement in Ticket 13 - Full REST API Client")
+        TODO("Not yet implemented")
     }
 }

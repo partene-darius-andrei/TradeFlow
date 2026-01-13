@@ -32,8 +32,10 @@ class StressTestSuite {
             execution = com.tradeflow.core.domain.config.ExecutionParameters(),
             profile = RiskProfile.BALANCED
         )
-        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
-        val engine = MakeTradingDecisionUseCase()
+        val engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
 
         val historicalCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 500)
         val generator = StationaryBootstrapGenerator(historicalCandles)
@@ -108,8 +110,10 @@ class StressTestSuite {
             execution = com.tradeflow.core.domain.config.ExecutionParameters(),
             profile = RiskProfile.BALANCED
         )
-        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
-        val engine = MakeTradingDecisionUseCase()
+        val engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
 
         val generator = JumpDiffusionGenerator(
             jumpIntensity = 0.10,
@@ -196,17 +200,6 @@ class StressTestSuite {
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
-                    }
-                }
-                is Decision.Defense -> {
-                    // LEGACY: Defense decisions no longer generated
-                    if (inTrade) {
-                        val exitValue = btcHeld * currentPrice
-                        val fee = exitValue * feeRate // Add fee deduction
-                        capital += (exitValue - fee) // Receive value minus fee
-                        if (currentPrice > entryPrice) wins++
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}

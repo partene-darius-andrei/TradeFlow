@@ -20,9 +20,10 @@ class HistoricalBacktestTest {
     @Test
     fun `monte carlo strategy behavior analysis`() {
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
-        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
-
-        val engine = MakeTradingDecisionUseCase()
+        val engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
         // 1. Fetch 1000 daily candles (~2.7 years of history)
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(
             symbol = "BTCUSDT",
@@ -33,8 +34,7 @@ class HistoricalBacktestTest {
 
         val windowSize = 200 // SMA200 requirement
         val iterations = 100
-        
-        var totalDefense = 0
+
         var totalTrend = 0
         var totalRange = 0
         var totalWait = 0
@@ -55,7 +55,6 @@ class HistoricalBacktestTest {
             val decision = engine.execute(history, currentPrice)
 
             val mode = when(decision) {
-                is Decision.Defense -> { totalDefense++; "DEFENSE" }
                 is Decision.Trend -> { totalTrend++; "TREND" }
                 is Decision.Range -> { totalRange++; "RANGE" }
                 is Decision.Wait -> { totalWait++; "WAIT" }
@@ -68,14 +67,12 @@ class HistoricalBacktestTest {
         }
 
         println("\nFinal Regime Distribution across 100 random samples:")
-        println("DEFENSE: $totalDefense (${(totalDefense * 100.0 / iterations).toInt()}%)")
         println("TREND:   $totalTrend (${(totalTrend * 100.0 / iterations).toInt()}%)")
         println("RANGE:   $totalRange (${(totalRange * 100.0 / iterations).toInt()}%)")
         println("WAIT:    $totalWait (${(totalWait * 100.0 / iterations).toInt()}%)")
 
         // Validation: Ensure the strategy actually switches regimes
-        assertTrue(totalDefense + totalTrend + totalRange + totalWait == iterations, "All iterations should produce a decision")
-        assertTrue(totalDefense > 0, "Strategy should have encountered some bearish periods in 1000 days")
-        assertTrue(totalTrend > 0 || totalRange > 0, "Strategy should have encountered some bullish/neutral periods")
+        assertTrue(totalTrend + totalRange + totalWait == iterations, "All iterations should produce a decision")
+        assertTrue(totalTrend > 0 || totalRange > 0, "Strategy should have encountered some tradeable periods")
     }
 }

@@ -17,6 +17,7 @@ ktor = "3.3.3"
 timber = "5.0.1"
 vico = "2.4.0"
 coroutines = "1.10.2"
+koin = "4.0.1"
 googleServices = "4.4.4"
 firebaseBom = "34.7.0"
 firebaseAppDistribution = "5.2.0"
@@ -78,6 +79,10 @@ vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = 
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# Koin DI
+koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 
 # Firebase
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }

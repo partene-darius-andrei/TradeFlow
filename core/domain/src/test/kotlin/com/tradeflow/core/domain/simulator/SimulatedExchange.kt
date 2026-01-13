@@ -1,8 +1,8 @@
 package com.tradeflow.core.domain.simulator
 
 import com.tradeflow.core.domain.config.ExchangeSimulationParameters
+import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.model.*
-import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.repository.ExchangeRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -12,6 +12,7 @@ import java.util.UUID
 
 class SimulatedExchange(
     initialUsd: BigDecimal,
+    private val tradingConfig: TradingConfig,
     private val parameters: ExchangeSimulationParameters = ExchangeSimulationParameters()
 ) : ExchangeRepository {
 
@@ -228,7 +229,7 @@ class SimulatedExchange(
         return try {
             // PERPETUAL FUTURES ONLY (all products are perpetual now)
             // Open perpetual futures position with leverage from config
-            val leverage = DependencyInjection.tradingConfig.strategy.leverage
+            val leverage = tradingConfig.strategy.leverage
             openPerpetualPosition(productId, side, size, entryFillPrice, leverage)
 
             // Place TP/SL orders to close perpetual position

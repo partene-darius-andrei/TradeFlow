@@ -51,8 +51,10 @@ class QuickOptimizationTest {
                     profile = RiskProfile.BALANCED
                 )
 
-                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
-                val engine = MakeTradingDecisionUseCase()
+                val engine = MakeTradingDecisionUseCase(
+                    taService = AnalyzeCandlesUseCase(),
+                    config = customConfig
+                )
 
                 val metrics = simulateStrategy(syntheticCandles, engine)
 
@@ -88,8 +90,10 @@ class QuickOptimizationTest {
             profile = RiskProfile.BALANCED
         )
 
-        com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = optimizedConfig
-        val optimizedEngine = MakeTradingDecisionUseCase()
+        val optimizedEngine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = optimizedConfig
+        )
 
         val oosMetrics = simulateStrategy(outOfSampleData, optimizedEngine)
 
@@ -151,15 +155,6 @@ class QuickOptimizationTest {
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
-                    }
-                }
-                is Decision.Defense -> {
-                    if (inTrade) {
-                        val exitValue = btcHeld * currentPrice
-                        capital += exitValue
-                        if (currentPrice > entryPrice) wins++
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}

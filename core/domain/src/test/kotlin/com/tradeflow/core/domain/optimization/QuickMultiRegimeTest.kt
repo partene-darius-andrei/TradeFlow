@@ -70,8 +70,10 @@ class QuickMultiRegimeTest {
                     val allCandles = generator.generate(nSteps = 500, seed = seed.toLong(), noiseLevel = 0.15)
                     val inSampleCandles = allCandles.take(400)  // 80% for optimization
 
-                    com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
-                    val engine = MakeTradingDecisionUseCase()
+                    val engine = MakeTradingDecisionUseCase(
+                        taService = AnalyzeCandlesUseCase(),
+                        config = customConfig
+                    )
 
                     val metrics = simulateStrategy(inSampleCandles, engine)
 
@@ -132,8 +134,10 @@ class QuickMultiRegimeTest {
                 val allCandles = generator.generate(nSteps = 500, seed = seed.toLong(), noiseLevel = 0.15)
                 val oosCandles = allCandles.drop(400)  // 20% reserved for OOS testing
 
-                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = championConfig
-                val engine = MakeTradingDecisionUseCase()
+                val engine = MakeTradingDecisionUseCase(
+                    taService = AnalyzeCandlesUseCase(),
+                    config = championConfig
+                )
 
                 val metrics = simulateStrategy(oosCandles, engine)
                 oosResults.add(metrics)
@@ -200,15 +204,6 @@ class QuickMultiRegimeTest {
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
-                    }
-                }
-                is Decision.Defense -> {
-                    if (inTrade) {
-                        val exitValue = btcHeld * currentPrice
-                        capital += exitValue
-                        if (currentPrice > entryPrice) wins++
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}

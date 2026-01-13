@@ -33,19 +33,18 @@ enum class ProductType {
 /**
  * Sealed class hierarchy representing trading decisions from MakeTradingDecisionUseCase.
  *
- * The decision engine analyzes market conditions (ADX, SMA, ATR) and outputs ONE of four
+ * The decision engine analyzes market conditions (ADX, SMA, ATR) and outputs ONE of three
  * decision types. Each decision type contains all parameters needed to execute it.
  *
- * **Four Decision Types:**
+ * **Three Decision Types:**
  *
  * 1. **Wait:** Do nothing (insufficient data, circuit breaker active, etc.)
- * 2. **Defense:** Market is below SMA, avoid new positions
- * 3. **Trend:** Strong directional move (high ADX), place directional trade
- * 4. **Range:** Choppy sideways market (low ADX), place grid orders
+ * 2. **Trend:** Strong directional move (high ADX), place directional trade
+ * 3. **Range:** Choppy sideways market (low ADX), mean-reversion trade
  *
  * **Decision Flow:**
  * ```
- * Market Data → MakeTradingDecisionUseCase → Decision (one of 4 types)
+ * Market Data → MakeTradingDecisionUseCase → Decision (one of 3 types)
  *                                            ↓
  *                                      TradeOrchestrator
  *                                            ↓
@@ -57,7 +56,6 @@ enum class ProductType {
  * val decision = decisionEngine.decide(context)
  * when (decision) {
  *     is Decision.Wait -> log.info("Waiting: ${decision.reason}")
- *     is Decision.Defense -> log.info("Defense mode: price below SMA")
  *     is Decision.Trend -> orchestrator.executeTrendTrade(decision)
  *     is Decision.Range -> orchestrator.executeGridTrade(decision)
  * }
@@ -102,59 +100,6 @@ sealed class Decision {
      *           Used for logging and debugging.
      */
     data class Wait(val reason: String) : Decision()
-
-    /**
-     * Decision to defend (avoid new long positions) when price is below SMA baseline.
-     *
-     * Defense mode activates when current price drops below the 200-period SMA,
-     * indicating a bearish trend or weakening market structure. In defense mode,
-     * the strategy avoids opening new long positions to prevent catching a falling knife.
-     *
-     * **When Defense Activates:**
-     * - Current price < SMA200
-     * - Market structure is bearish (downtrend or distribution phase)
-     * - Goal: Preserve capital, wait for price to reclaim SMA before re-entering
-     *
-     * **Defense Strategy:**
-     * - Do NOT open new long positions
-     * - Close existing positions (if implemented)
-     * - Wait for price to cross back above SMA before resuming normal operation
-     *
-     * **Example:**
-     * ```
-     * Current Price: $94,000
-     * SMA200: $96,000
-     * → Defense mode: price is $2,000 below SMA baseline
-     * → Do not enter new longs, market structure is weak
-     * ```
-     *
-     * **Usage:**
-     * ```kotlin
-     * when (decision) {
-     *     is Decision.Defense -> {
-     *         log.warn("Defense mode: price ${decision.currentPrice} below SMA ${decision.sma200}")
-     *         // Close positions or wait for price to recover above SMA
-     *     }
-     *     // ...
-     * }
-     * ```
-     *
-     * @property reason Human-readable explanation ("Price below SMA200 baseline").
-     * @property currentPrice Current market price that triggered defense mode.
-     * @property sma200 200-period SMA value that price is below.
-     *
-     * @throws IllegalArgumentException if currentPrice or sma200 are not positive
-     */
-    data class Defense(
-        val reason: String,
-        val currentPrice: BigDecimal,
-        val sma200: BigDecimal
-    ) : Decision() {
-        init {
-            require(currentPrice > BigDecimal.ZERO) { "Current price must be positive: $currentPrice" }
-            require(sma200 > BigDecimal.ZERO) { "SMA200 must be positive: $sma200" }
-        }
-    }
 
     /**
      * Decision to place a directional trend-following trade.

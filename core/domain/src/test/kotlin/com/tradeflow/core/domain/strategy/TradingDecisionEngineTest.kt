@@ -22,8 +22,10 @@ class MakeTradingDecisionUseCaseTest {
 
     @Before
     fun setup() {
-        com.tradeflow.core.domain.repository.DependencyInjection.setTradingConfig(config)
-        engine = MakeTradingDecisionUseCase()
+        engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
         engine.resetState()
     }
 

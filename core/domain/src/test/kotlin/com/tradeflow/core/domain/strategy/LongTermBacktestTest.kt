@@ -4,6 +4,7 @@ import com.tradeflow.core.domain.config.StrategyParameters
 import com.tradeflow.core.domain.config.TradingConfig
 import com.tradeflow.core.domain.config.RiskProfile
 import com.tradeflow.core.domain.model.Decision
+import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.util.BinanceDataLoader
@@ -39,8 +40,10 @@ class LongTermBacktestTest {
             profile = RiskProfile.BALANCED
         )
 
-        com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = config
-        val engine = MakeTradingDecisionUseCase()
+        val engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
 
         // Fetch ~2.7 years of daily candles (1000 candles max from Binance)
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(
@@ -135,25 +138,6 @@ class LongTermBacktestTest {
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
-                    }
-                }
-                is Decision.Defense -> {
-                    // Legacy: Close any open position
-                    if (inTrade) {
-                        val exitValue = kotlin.math.abs(btcHeld) * currentPrice
-                        val fee = exitValue * feeRate
-                        val isLong = btcHeld > 0
-
-                        if (isLong) {
-                            capital += (exitValue - fee)
-                            if (currentPrice > entryPrice) wins++ else losses++
-                        } else {
-                            capital -= (exitValue + fee)
-                            if (currentPrice < entryPrice) wins++ else losses++
-                        }
-
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}

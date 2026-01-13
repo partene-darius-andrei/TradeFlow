@@ -54,8 +54,10 @@ class OptimizationTest {
                     profile = RiskProfile.BALANCED
                 )
 
-                com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
-                val engine = MakeTradingDecisionUseCase()
+                val engine = MakeTradingDecisionUseCase(
+                    taService = AnalyzeCandlesUseCase(),
+                    config = customConfig
+                )
 
                 val metrics = simulateStrategy(syntheticCandles, engine)
 
@@ -91,8 +93,10 @@ class OptimizationTest {
             profile = RiskProfile.BALANCED
         )
 
-        com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = optimizedConfig
-        val optimizedEngine = MakeTradingDecisionUseCase()
+        val optimizedEngine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = optimizedConfig
+        )
 
         // FIXED: Use ALL historical data for out-of-sample (need 200 candles history for SMA200)
         // But only calculate metrics starting from candle 400 (out-of-sample period)
@@ -174,8 +178,10 @@ class OptimizationTest {
                 (0 until 10).forEach { seed ->
                     val candles = generator.generate(nSteps = 400, seed = seed.toLong(), noiseLevel = 0.15)
 
-                    com.tradeflow.core.domain.repository.DependencyInjection.tradingConfig = customConfig
-                    val engine = MakeTradingDecisionUseCase()
+                    val engine = MakeTradingDecisionUseCase(
+                        taService = AnalyzeCandlesUseCase(),
+                        config = customConfig
+                    )
 
                     val metrics = simulateStrategy(candles, engine)
 
@@ -261,17 +267,6 @@ class OptimizationTest {
                         inTrade = true
                         entryPrice = currentPrice
                         trades++
-                    }
-                }
-                is Decision.Defense -> {
-                    // LEGACY: Defense decisions no longer generated, but handle if received
-                    if (inTrade) {
-                        val exitValue = btcHeld * currentPrice
-                        val fee = exitValue * feeRate // FIXED: Add fee deduction
-                        capital += (exitValue - fee) // Receive value minus fee
-                        if (currentPrice > entryPrice) wins++
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}
@@ -398,24 +393,6 @@ class OptimizationTest {
                         if (index >= startIndex) {
                             trades++
                         }
-                    }
-                }
-                is com.tradeflow.core.domain.model.Decision.Defense -> {
-                    if (inTrade) {
-                        val exitValue = kotlin.math.abs(btcHeld) * currentPrice
-                        val fee = exitValue * feeRate
-                        val isLong = btcHeld > 0
-
-                        if (isLong) {
-                            capital += (exitValue - fee)
-                            if (currentPrice > entryPrice && index >= startIndex) wins++
-                        } else {
-                            capital -= (exitValue + fee)
-                            if (currentPrice < entryPrice && index >= startIndex) wins++
-                        }
-
-                        btcHeld = 0.0
-                        inTrade = false
                     }
                 }
                 else -> {}

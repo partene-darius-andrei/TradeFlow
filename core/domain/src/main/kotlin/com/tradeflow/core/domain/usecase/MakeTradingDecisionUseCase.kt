@@ -2,7 +2,6 @@ package com.tradeflow.core.domain.usecase
 
 import com.tradeflow.core.domain.config.DecisionMode
 import com.tradeflow.core.domain.config.TradingConfig
-import com.tradeflow.core.domain.repository.DependencyInjection
 import com.tradeflow.core.domain.usecase.AnalyzeCandlesUseCase
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
@@ -109,8 +108,8 @@ import java.math.BigDecimal
  * @see StrategyParameters for hysteresis configuration (confirmationCandles, ADX thresholds)
  */
 class MakeTradingDecisionUseCase(
-    private val taService: AnalyzeCandlesUseCase = AnalyzeCandlesUseCase(),
-    private val config: TradingConfig = DependencyInjection.tradingConfig
+    private val taService: AnalyzeCandlesUseCase,
+    private val config: TradingConfig
 ) {
 
     /**

@@ -10,10 +10,14 @@ dependencies {
     // Core Kotlin only
     implementation(libs.kotlinx.coroutines.core)
 
+    // Dependency Injection
+    implementation(libs.koin.core)
+
     // Technical Analysis
     implementation(libs.ta4j.core)
 
     // Testing
+    testImplementation(libs.koin.test)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)

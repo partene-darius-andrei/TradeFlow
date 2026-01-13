@@ -26,15 +26,21 @@ class RealTradeSimulationTest {
     fun `analyze PnL and equity curve over 30 days of real data`() = runBlocking {
         val config = TradingConfig.forProfile(RiskProfile.BALANCED)
         val initialCapital = BigDecimal("500.00")
-        val exchange = SimulatedExchange(initialCapital)
+        val exchange = SimulatedExchange(
+            initialUsd = initialCapital,
+            tradingConfig = config
+        )
 
-        com.tradeflow.core.domain.repository.DependencyInjection
-            .setRepository(exchange)
-            .setTradingConfig(config)
-            
-
-        val engine = MakeTradingDecisionUseCase()
-        val orchestrator = ExecuteTradingCycleUseCase()
+        val engine = MakeTradingDecisionUseCase(
+            taService = AnalyzeCandlesUseCase(),
+            config = config
+        )
+        val orchestrator = ExecuteTradingCycleUseCase(
+            exchangeRepository = exchange,
+            makeDecisionUseCase = engine,
+            config = config,
+            trailingStopManager = com.tradeflow.core.domain.risk.TrailingStopManager(config)
+        )
 
         val allCandles = BinanceDataLoader.fetchHistoricalCandles(interval = "4h", limit = 400)
         val primeHistory = allCandles.take(200)

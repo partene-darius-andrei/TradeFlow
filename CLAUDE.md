@@ -15,7 +15,7 @@ TradeFlow has transitioned from Android app to standalone JVM application for re
 | Layer | Responsibility | Key Component |
 |-------|----------------|---------------|
 | **Engine** | Main Loop & Execution | `Main.kt`, JWT Auth, HTTP Client |
-| **Domain** | Pure Logic & Models | `TradeOrchestrator`, `TechnicalAnalysisService`, `DecisionEngine` |
+| **Domain** | Pure Logic & Models | `ExecuteTradingCycleUseCase`, `AnalyzeCandlesUseCase`, `MakeTradingDecisionUseCase` |
 | **Exchange** | Remote API | `CoinbaseRepository`, `JwtRepository` |
 
 ### Why Standalone?
@@ -28,21 +28,29 @@ TradeFlow has transitioned from Android app to standalone JVM application for re
 
 ## 🏗️ Core Components
 
-### 1. TradeOrchestrator (The "Brain")
+### 1. ExecuteTradingCycleUseCase (The "Brain")
+**Implementation:** `ExecuteTradingCycleUseCase.kt`
+
 Single entry point for the trading cycle. Handles:
 - Fetching fresh market data and portfolio state
-- Risk management (Drawdown circuit breaker)
+- Risk management (Drawdown circuit breaker, position sizing)
 - Triggering the decision engine and executing orders
+- **Trailing stop management:** Dynamically updates stop-loss orders to protect profits
 
-### 2. TechnicalAnalysisService (The "Eyes")
+### 2. AnalyzeCandlesUseCase (The "Eyes")
+**Implementation:** `AnalyzeCandlesUseCase.kt`
+
 Unified service for technical indicators.
-- Calculates SMA, ADX, and ATR in a **single pass** over candles
+- Calculates SMA, ADX, ATR, RSI, Volume, CMF in a **single pass** over candles
 - Uses `ta4j` internally but exposes clean `BigDecimal` results
 
-### 3. TradingDecisionEngine (The "Strategy")
+### 3. MakeTradingDecisionUseCase (The "Strategy")
+**Implementation:** `MakeTradingDecisionUseCase.kt`
+
 **Stateful** engine with 3-candle hysteresis to prevent whipsaw mode switching.
-- Converts indicators into a `Decision` (Wait, Defense, Trend, Range)
+- Converts indicators into a `Decision` (Wait, Trend, Range)
 - Maintains internal state: `lastMode`, `confirmationCount`, `candidateMode`
+- **Signal quality filters:** RSI, Volume (1.5× avg), CMF for high-confidence trades only
 
 ---
 
@@ -193,16 +201,37 @@ data class RiskParameters(
 - Account drops from $500 → $425 → trading halts
 - Manual review required to restart
 
+**Perpetual Futures Risk Management (v3.0):**
+- **Margin-based limits:** Position size controlled by margin requirements (notionalValue / leverage)
+- **No BTC balance exposure checks:** Removed for perpetuals (spot-only concept)
+- **Liquidation monitoring:** Automatic position closure if price hits liquidation level
+- **Funding rate checks:** Skip trades if funding rate > maxAcceptableFundingRate
+- **Per-position limits:** Still enforced via maxPositionPercent (default 5.23%)
+
 ### Regime Switching Strategy
 
-**Three modes:**
-1. **DEFENSE:** Bear market (SMA50 < SMA200) - stay in cash
-2. **TREND:** Strong trend (ADX > 25) - ride momentum
-3. **RANGE:** Sideways (ADX < 25) - mean reversion
+**Two modes (Perpetual Futures v3.0):**
+1. **TREND:** Strong directional market (ADX ≥ threshold, default 15.69)
+   - Place directional trade: LONG if price above SMA200, SHORT if below
+   - ATR-based stops and targets
+   - **Trailing stops enabled:** Stop moves with price to protect profits (+15% performance)
 
-**Only Trade High-Conviction Setups:**
-- Confidence >= 0.75 required
-- Expected results: 52-58% win rate, 2:1 R:R, 3-5% monthly return
+2. **RANGE:** Choppy sideways market (ADX < threshold)
+   - Mean-reversion strategy: trade against SMA200 deviations
+   - LONG when price drops > 0.5× ATR below SMA200
+   - SHORT when price rises > 0.5× ATR above SMA200
+   - Target: Return to SMA200 (mean)
+   - Stop: 2× ATR beyond entry
+
+**Signal Quality Filters (v3.0):**
+- RSI confirmation: LONG requires RSI > 50, SHORT requires RSI < 50
+- Volume confirmation: Trade volume must exceed 1.5× average
+- CMF (Chaikin Money Flow): Optional confidence boost for money flow alignment
+
+**Expected Performance:**
+- Win rate: 52-58% (after fees and slippage)
+- Risk/reward: 2:1 to 2.7:1
+- Monthly return: 3-5% (exceptional skill required)
 
 ---
 

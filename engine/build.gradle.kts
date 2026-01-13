@@ -15,6 +15,9 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":exchange:coinbase"))
 
+    // Dependency Injection
+    implementation(libs.koin.core)
+
     // Ktor (needed for HTTP client in Main.kt)
     implementation("io.ktor:ktor-client-core:3.3.3")
     implementation("io.ktor:ktor-client-okhttp:3.3.3")
