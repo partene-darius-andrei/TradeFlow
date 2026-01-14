@@ -5,12 +5,12 @@ import java.math.BigDecimal
 private fun String.bd(): BigDecimal = BigDecimal(this)
 
 object StrategyConfig {
-    var confirmationCandles: Int = 3
-    var adxTrendThreshold: Double = 20.0
-    var adxRangeThreshold: Double = 1.0
-    var stopLossAtrMultiplier: BigDecimal = "10.0".bd()
+    var confirmationCandles: Int = 2
+    var adxTrendThreshold: Double = 19.0
+    var adxRangeThreshold: Double = 0.9
+    var stopLossAtrMultiplier: BigDecimal = "10.5".bd()
     var takeProfitAtrMultiplier: BigDecimal = "20.0".bd()
-    var trendPositionPercent: BigDecimal = "0.075".bd()
+    var trendPositionPercent: BigDecimal = "0.05".bd()
     var leverage: BigDecimal = "3.0".bd()
 
     // Signal quality filters (constants - don't need to change)
