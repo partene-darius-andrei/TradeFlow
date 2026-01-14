@@ -15,9 +15,7 @@ import java.math.BigDecimal
  * Results: 60-90% win rate vs 19-30% single timeframe
  */
 class MultiTimeframeDecisionUseCase {
-    private val taService = AnalyzeCandlesUseCase()
-    private val engine1h = MakeTradingDecisionUseCase(taService)
-    private val engine15m = MakeTradingDecisionUseCase(taService)
+    private val makeDecisionUseCase = MakeTradingDecisionUseCase()
 
     data class MultiTimeframeCandles(
         val candles1h: List<Candle>,
@@ -25,12 +23,12 @@ class MultiTimeframeDecisionUseCase {
         val currentPrice: BigDecimal
     )
 
-    fun execute(mtfCandles: MultiTimeframeCandles): Decision {
+    operator fun invoke(mtfCandles: MultiTimeframeCandles): Decision {
         // 1. Get 1h regime (highest authority)
-        val decision1h = engine1h.execute(mtfCandles.candles1h, mtfCandles.currentPrice)
+        val decision1h = makeDecisionUseCase(mtfCandles.candles1h, mtfCandles.currentPrice)
 
         // 2. Get 15m decision (entry timing)
-        val decision15m = engine15m.execute(mtfCandles.candles15m, mtfCandles.currentPrice)
+        val decision15m = makeDecisionUseCase(mtfCandles.candles15m, mtfCandles.currentPrice)
 
         // 3. Apply confluence filter: both must agree
         val canTrade = when {

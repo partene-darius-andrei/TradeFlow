@@ -1,17 +1,14 @@
 package com.tradeflow.backtesting.optimization
 
+import com.tradeflow.backtesting.config.BacktestConfig
 import kotlin.random.Random
 
 data class Chromosome(
     val params: TradingParameters
 ) {
     companion object {
-        fun random(random: Random): Chromosome {
-            return Chromosome(TradingParameters.random(random))
-        }
-
-        fun fromTradingParameters(params: TradingParameters): Chromosome {
-            return Chromosome(params)
+        fun random(random: Random, config: BacktestConfig = BacktestConfig.default()): Chromosome {
+            return Chromosome(TradingParameters.random(random, config))
         }
     }
 }
@@ -35,11 +32,12 @@ data class OptimizationResult(
 )
 
 class GeneticOptimizer(
-    private val populationSize: Int = 50,
-    private val generations: Int = 100,
-    private val mutationRate: Double = 0.15,
-    private val eliteRatio: Double = 0.1
+    private val config: BacktestConfig = BacktestConfig.default()
 ) {
+    private val populationSize: Int = config.populationSize
+    private val generations: Int = config.generations
+    private val mutationRate: Double = config.mutationRate
+    private val eliteRatio: Double = config.eliteRatio
 
     fun optimize(
         fitnessFunction: (TradingParameters) -> Double,
@@ -71,7 +69,7 @@ class GeneticOptimizer(
             )
             evolutionHistory.add(stats)
 
-            if (gen % 10 == 0) {
+            if (gen % config.reportInterval == 0) {
                 println("Gen $gen | Best: ${"%.4f".format(stats.bestFitness)} | " +
                     "Avg: ${"%.4f".format(stats.avgFitness)} | " +
                     "Worst: ${"%.4f".format(stats.worstFitness)}")
@@ -94,6 +92,7 @@ class GeneticOptimizer(
         println("  Take Profit ATR Multiplier: ${champion.chromosome.params.takeProfitAtrMultiplier}")
         println("  Trend Position %:          ${(champion.chromosome.params.trendPositionPercent * 100).let { "%.2f".format(it) }}%")
         println("  Confirmation Candles:      ${champion.chromosome.params.confirmationCandles}")
+        println("  Leverage:                  ${champion.chromosome.params.leverage}x")
         println("=".repeat(80))
 
         return OptimizationResult(
@@ -105,7 +104,7 @@ class GeneticOptimizer(
 
     private fun initializePopulation(random: Random): List<Individual> {
         return List(populationSize) {
-            Individual(Chromosome.random(random))
+            Individual(Chromosome.random(random, config))
         }
     }
 
@@ -136,7 +135,7 @@ class GeneticOptimizer(
     }
 
     private fun tournamentSelection(population: List<Individual>, random: Random): Individual {
-        val tournamentSize = 3
+        val tournamentSize = config.tournamentSize
         val tournament = (0 until tournamentSize).map {
             population[random.nextInt(population.size)]
         }
@@ -154,7 +153,8 @@ class GeneticOptimizer(
                 confirmationCandles = if (random.nextBoolean()) p1.confirmationCandles else p2.confirmationCandles,
                 trendPositionPercent = if (random.nextBoolean()) p1.trendPositionPercent else p2.trendPositionPercent,
                 stopLossAtrMultiplier = if (random.nextBoolean()) p1.stopLossAtrMultiplier else p2.stopLossAtrMultiplier,
-                takeProfitAtrMultiplier = if (random.nextBoolean()) p1.takeProfitAtrMultiplier else p2.takeProfitAtrMultiplier
+                takeProfitAtrMultiplier = if (random.nextBoolean()) p1.takeProfitAtrMultiplier else p2.takeProfitAtrMultiplier,
+                leverage = if (random.nextBoolean()) p1.leverage else p2.leverage
             )
         )
     }
@@ -162,24 +162,34 @@ class GeneticOptimizer(
     private fun mutate(chromosome: Chromosome, random: Random): Chromosome {
         val p = chromosome.params
 
-        return when (random.nextInt(6)) {
+        return when (random.nextInt(7)) {
             0 -> Chromosome(p.copy(
-                adxTrendThreshold = (p.adxTrendThreshold + random.nextDouble(-2.0, 2.0)).coerceIn(15.0, 30.0)
+                adxTrendThreshold = (p.adxTrendThreshold + random.nextDouble(config.adxMutationRange.start, config.adxMutationRange.endInclusive))
+                    .coerceIn(config.adxTrendThresholdRange.start, config.adxTrendThresholdRange.endInclusive)
             ))
             1 -> Chromosome(p.copy(
-                adxRangeThreshold = (p.adxRangeThreshold + random.nextDouble(-0.3, 0.3)).coerceIn(0.5, 2.0)
+                adxRangeThreshold = (p.adxRangeThreshold + random.nextDouble(config.adxRangeMutationRange.start, config.adxRangeMutationRange.endInclusive))
+                    .coerceIn(config.adxRangeThresholdRange.start, config.adxRangeThresholdRange.endInclusive)
             ))
             2 -> Chromosome(p.copy(
-                stopLossAtrMultiplier = (p.stopLossAtrMultiplier + random.nextDouble(-2.0, 2.0)).coerceIn(3.0, 20.0)
+                stopLossAtrMultiplier = (p.stopLossAtrMultiplier + random.nextDouble(config.slMutationRange.start, config.slMutationRange.endInclusive))
+                    .coerceIn(config.stopLossAtrMultiplierRange.start, config.stopLossAtrMultiplierRange.endInclusive)
             ))
             3 -> Chromosome(p.copy(
-                takeProfitAtrMultiplier = (p.takeProfitAtrMultiplier + random.nextDouble(-3.0, 3.0)).coerceIn(5.0, 40.0)
+                takeProfitAtrMultiplier = (p.takeProfitAtrMultiplier + random.nextDouble(config.tpMutationRange.start, config.tpMutationRange.endInclusive))
+                    .coerceIn(config.takeProfitAtrMultiplierRange.start, config.takeProfitAtrMultiplierRange.endInclusive)
             ))
             4 -> Chromosome(p.copy(
-                trendPositionPercent = (p.trendPositionPercent + random.nextDouble(-0.01, 0.01)).coerceIn(0.01, 0.15)
+                trendPositionPercent = (p.trendPositionPercent + random.nextDouble(config.positionMutationRange.start, config.positionMutationRange.endInclusive))
+                    .coerceIn(config.trendPositionPercentRange.start, config.trendPositionPercentRange.endInclusive)
+            ))
+            5 -> Chromosome(p.copy(
+                confirmationCandles = (p.confirmationCandles + random.nextInt(config.confirmationMutationRange.first, config.confirmationMutationRange.last + 1))
+                    .coerceIn(config.confirmationCandlesRange.first, config.confirmationCandlesRange.last)
             ))
             else -> Chromosome(p.copy(
-                confirmationCandles = (p.confirmationCandles + random.nextInt(-1, 2)).coerceIn(1, 5)
+                leverage = (p.leverage + random.nextDouble(-1.0, 1.0))
+                    .coerceIn(config.leverageRange.start, config.leverageRange.endInclusive)
             ))
         }
     }

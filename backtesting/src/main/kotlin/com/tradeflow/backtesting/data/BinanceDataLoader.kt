@@ -5,9 +5,13 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.get
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.math.BigDecimal
 import java.time.Instant
@@ -16,32 +20,62 @@ object BinanceDataLoader {
 
     private val client = HttpClient(OkHttp)
 
+    suspend fun fetchPeriodData(period: Pair<Long, Long>): Pair<List<Candle>, List<Candle>> = coroutineScope {
+
+        val candles1h = async {
+            fetchHistoricalCandles(
+                interval = "1h",
+                startTime = period.first,
+                endTime = period.second,
+            )
+        }
+
+        val candles15m = async {
+            fetchHistoricalCandles(
+                interval = "15m",
+                startTime = period.first,
+                endTime = period.second,
+            )
+        }
+
+        Pair(candles1h.await(), candles15m.await())
+    }
+
     fun fetchHistoricalCandles(
-        symbol: String = "BTCUSDT",
-        interval: String = "1h",
-        startTime: Long? = null,
-        endTime: Long? = null,
+        interval: String,
+        startTime: Long,
+        endTime: Long,
         limit: Int = 500
     ): List<Candle> = runBlocking {
         val url = buildString {
             append("https://api.binance.com/api/v3/klines")
-            append("?symbol=$symbol")
+            append("?symbol=BTCUSDT")
             append("&interval=$interval")
             append("&limit=$limit")
-            if (startTime != null) append("&startTime=$startTime")
-            if (endTime != null) append("&endTime=$endTime")
+            append("&startTime=$startTime")
+            append("&endTime=$endTime")
         }
 
         val response: String = client.get(url).body()
-        parseKlines(response, interval)
+        parseKlines(response)
     }
 
-    private fun parseKlines(jsonArray: String, interval: String): List<Candle> {
+    private fun parseKlines(jsonResponse: String): List<Candle> {
         val json = Json { ignoreUnknownKeys = true }
-        val rawData = json.parseToJsonElement(jsonArray).jsonArray
+        val element = json.parseToJsonElement(jsonResponse)
 
-        return rawData.map { element ->
-            val kline = element.jsonArray
+        // Check if response is an error object
+        if (element is JsonObject) {
+            val code = element["code"]?.jsonPrimitive?.content
+            val msg = element["msg"]?.jsonPrimitive?.content
+            throw IllegalStateException("Binance API error: code=$code, msg=$msg")
+        }
+
+        // Parse array of candles
+        val rawData = element.jsonArray
+
+        return rawData.map { candleElement ->
+            val kline = candleElement.jsonArray
             Candle(
                 timestamp = Instant.ofEpochMilli(kline[0].jsonPrimitive.content.toLong()),
                 open = BigDecimal(kline[1].jsonPrimitive.content),

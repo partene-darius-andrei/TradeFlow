@@ -1,38 +1,35 @@
 package com.tradeflow.backtesting.optimization
 
+import com.tradeflow.backtesting.config.BacktestConfig
 import com.tradeflow.backtesting.data.BinanceDataLoader
 import com.tradeflow.backtesting.data.RandomPeriodGenerator
-import com.tradeflow.backtesting.data.RandomPeriod
 import com.tradeflow.backtesting.engine.BacktestEngine
 import com.tradeflow.backtesting.engine.BacktestResult
-import com.tradeflow.core.domain.TradingConfig
-import com.tradeflow.core.domain.model.Candle
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import java.math.BigDecimal
+import com.tradeflow.core.domain.StrategyConfig
 import kotlin.math.sqrt
 
-class ParameterValidator {
+class ParameterValidator(
+    private val config: BacktestConfig = BacktestConfig.default()
+) {
 
-    suspend fun run(args: Array<String>) {
+    suspend operator fun invoke() {
+
         println("\n🧪 RUN VALIDATION - VALIDATE CURRENT PARAMETERS")
         println("=".repeat(90))
         println("Purpose: Validate current parameters on random historical data (no optimization)")
         println("=".repeat(90))
 
-        val numPeriods = args.getOrNull(0)?.toIntOrNull() ?: 10
-        val minDays = args.getOrNull(1)?.toIntOrNull() ?: 60
-        val maxDays = args.getOrNull(2)?.toIntOrNull() ?: 180
-        val seed = args.getOrNull(3)?.toLongOrNull()
+        val numPeriods = config.defaultNumPeriods
+        val minDays = config.minPeriodDays
+        val maxDays = config.maxPeriodDays
 
         println("\nConfiguration:")
         println("  Random Periods:    $numPeriods")
         println("  Period Range:      $minDays - $maxDays days")
-        println("  Random Seed:       ${seed ?: "Random"}")
         println()
 
         printCurrentParameters()
-        val periods = generatePeriods(numPeriods, minDays, maxDays, seed)
+        val periods = generatePeriods(numPeriods, minDays, maxDays)
         val results = runBacktests(periods, numPeriods)
 
         if (results.isEmpty()) {
@@ -47,45 +44,51 @@ class ParameterValidator {
     private fun printCurrentParameters() {
         println("📋 CURRENT TRADING PARAMETERS")
         println("─".repeat(90))
-        println("  ADX Trend Threshold:     ${TradingConfig.Strategy.getAdxTrendThreshold()}")
-        println("  ADX Range Threshold:     ${TradingConfig.Strategy.getAdxRangeThreshold()}")
-        println("  Confirmation Candles:    ${TradingConfig.Strategy.getConfirmationCandles()}")
-        println("  Trend Position %:        ${(TradingConfig.Strategy.getTrendPositionPercent().toDouble() * 100).let { "%.2f".format(it) }}%")
-        println("  Stop Loss ATR Mult:      ${TradingConfig.Strategy.getStopLossAtrMultiplier()}")
-        println("  Take Profit ATR Mult:    ${TradingConfig.Strategy.getTakeProfitAtrMultiplier()}")
+        println("  ADX Trend Threshold:     ${StrategyConfig.adxTrendThreshold}")
+        println("  ADX Range Threshold:     ${StrategyConfig.adxRangeThreshold}")
+        println("  Confirmation Candles:    ${StrategyConfig.confirmationCandles}")
+        println("  Trend Position %:        ${(StrategyConfig.trendPositionPercent.toDouble() * 100).let { "%.2f".format(it) }}%")
+        println("  Stop Loss ATR Mult:      ${StrategyConfig.stopLossAtrMultiplier}")
+        println("  Take Profit ATR Mult:    ${StrategyConfig.takeProfitAtrMultiplier}")
         println()
     }
 
-    private fun generatePeriods(numPeriods: Int, minDays: Int, maxDays: Int, seed: Long?): List<RandomPeriod> {
+    private fun generatePeriods(numPeriods: Int, minDays: Int, maxDays: Int): List<Pair<Long, Long>> {
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
+            config = config,
             count = numPeriods,
             minDurationDays = minDays,
-            maxDurationDays = maxDays,
-            seed = seed
+            maxDurationDays = maxDays
         )
 
-        periods.forEachIndexed { index, period ->
-            println("  ${index + 1}. ${period.description}")
+        periods.forEachIndexed { index, (start, end) ->
+            val startDate = java.time.Instant.ofEpochMilli(start).toString().substring(0, 10)
+            val endDate = java.time.Instant.ofEpochMilli(end).toString().substring(0, 10)
+            val days = ((end - start) / (1000 * 60 * 60 * 24)).toInt()
+            println("  ${index + 1}. $startDate to $endDate ($days days)")
         }
         println()
         return periods
     }
 
-    private suspend fun runBacktests(periods: List<RandomPeriod>, numPeriods: Int): List<Pair<RandomPeriod, BacktestResult>> {
+    private suspend fun runBacktests(periods: List<Pair<Long, Long>>, numPeriods: Int): List<Pair<Pair<Long, Long>, BacktestResult>> {
         println("📡 FETCHING DATA & RUNNING BACKTESTS")
         println("─".repeat(90))
 
-        val results = mutableListOf<Pair<RandomPeriod, BacktestResult>>()
-        val engine = BacktestEngine(initialCapital = BigDecimal("500.00"))
+        val results = mutableListOf<Pair<Pair<Long, Long>, BacktestResult>>()
+        val engine = BacktestEngine(config)
 
         periods.forEachIndexed { index, period ->
             try {
-                print("  [${index + 1}/$numPeriods] ${period.description}... ")
+                val startDate = java.time.Instant.ofEpochMilli(period.first).toString().substring(0, 10)
+                val endDate = java.time.Instant.ofEpochMilli(period.second).toString().substring(0, 10)
+                val days = ((period.second - period.first) / (1000 * 60 * 60 * 24)).toInt()
+                print("  [${index + 1}/$numPeriods] $startDate to $endDate ($days days)... ")
 
-                val (candles1h, candles15m) = fetchPeriodData(period)
-                val result = engine.execute(candles1h, candles15m, primeSize = 300, verbose = false)
+                val (candles1h, candles15m) = BinanceDataLoader.fetchPeriodData(period)
+                val result = engine.execute(candles1h, candles15m)
 
                 println("✓ (PnL: ${if (result.pnlPercent >= 0) "+" else ""}${"%.2f".format(result.pnlPercent)}%, " +
                     "WR: ${"%.1f".format(result.winRate)}%, Trades: ${result.trades.size})")
@@ -100,33 +103,6 @@ class ParameterValidator {
         return results
     }
 
-    private suspend fun fetchPeriodData(period: RandomPeriod): Pair<List<Candle>, List<Candle>> = coroutineScope {
-        val required1h = RandomPeriodGenerator.calculateRequiredCandles(period, "1h")
-        val required15m = RandomPeriodGenerator.calculateRequiredCandles(period, "15m")
-
-        val candles1h = async {
-            BinanceDataLoader.fetchHistoricalCandles(
-                symbol = "BTCUSDT",
-                interval = "1h",
-                startTime = period.startTime,
-                endTime = period.endTime,
-                limit = required1h.coerceAtMost(1000)
-            )
-        }
-
-        val candles15m = async {
-            BinanceDataLoader.fetchHistoricalCandles(
-                symbol = "BTCUSDT",
-                interval = "15m",
-                startTime = period.startTime,
-                endTime = period.endTime,
-                limit = required15m.coerceAtMost(1000)
-            )
-        }
-
-        Pair(candles1h.await(), candles15m.await())
-    }
-
     private fun calculateStdDev(values: List<Double>): Double {
         if (values.size < 2) return 0.0
         val mean = values.average()
@@ -134,7 +110,14 @@ class ParameterValidator {
         return sqrt(variance)
     }
 
-    private fun printAggregatedResults(results: List<Pair<RandomPeriod, BacktestResult>>) {
+    private fun printPerformanceMetrics(result: BacktestResult) {
+        println("PnL:      ${"%.2f".format(result.pnlPercent)}%")
+        println("Win Rate: ${"%.1f".format(result.winRate)}%")
+        println("Sharpe:   ${"%.2f".format(result.sharpeRatio)}")
+        println("Trades:   ${result.trades.size}")
+    }
+
+    private fun printAggregatedResults(results: List<Pair<Pair<Long, Long>, BacktestResult>>) {
         if (results.isEmpty()) {
             println("⚠️  No results to aggregate")
             return
@@ -186,23 +169,15 @@ class ParameterValidator {
 
         println("🏆 BEST PERFORMANCE")
         println("─".repeat(90))
-        bestRun?.let { (period, result) ->
-            println("Period:   ${period.description}")
-            println("PnL:      ${"%.2f".format(result.pnlPercent)}%")
-            println("Win Rate: ${"%.1f".format(result.winRate)}%")
-            println("Sharpe:   ${"%.2f".format(result.sharpeRatio)}")
-            println("Trades:   ${result.trades.size}")
+        bestRun?.let { (_, result) ->
+            printPerformanceMetrics(result)
         }
         println()
 
         println("📉 WORST PERFORMANCE")
         println("─".repeat(90))
-        worstRun?.let { (period, result) ->
-            println("Period:   ${period.description}")
-            println("PnL:      ${"%.2f".format(result.pnlPercent)}%")
-            println("Win Rate: ${"%.1f".format(result.winRate)}%")
-            println("Sharpe:   ${"%.2f".format(result.sharpeRatio)}")
-            println("Trades:   ${result.trades.size}")
+        worstRun?.let { (_, result) ->
+            printPerformanceMetrics(result)
         }
         println()
 
@@ -214,9 +189,9 @@ class ParameterValidator {
         println("Win Rate Std Dev:     ${"%.2f".format(winRateStdDev)}%")
 
         val consistency = when {
-            profitableRuns >= 8 && avgPnl > 3.0 -> "✅ HIGHLY CONSISTENT - Strategy is robust"
-            profitableRuns >= 7 && avgPnl > 1.0 -> "✅ CONSISTENT - Good edge across periods"
-            profitableRuns >= 5 && avgPnl > 0.0 -> "⚠️  MODERATELY CONSISTENT - Needs improvement"
+            profitableRuns >= config.highConsistencyThreshold && avgPnl > config.highConsistencyPnLThreshold -> "✅ HIGHLY CONSISTENT - Strategy is robust"
+            profitableRuns >= config.consistencyThreshold && avgPnl > config.consistencyPnLThreshold -> "✅ CONSISTENT - Good edge across periods"
+            profitableRuns >= config.moderateConsistencyThreshold && avgPnl > config.moderateConsistencyPnLThreshold -> "⚠️  MODERATELY CONSISTENT - Needs improvement"
             else -> "❌ INCONSISTENT - Strategy lacks robustness"
         }
         println()
@@ -226,17 +201,17 @@ class ParameterValidator {
         println("💡 RECOMMENDATIONS")
         println("─".repeat(90))
         when {
-            overallWinRate >= 55.0 && avgPnl > 3.0 && profitableRuns >= 8 -> {
+            overallWinRate >= config.strongEdgeWinRateThreshold && avgPnl > config.strongEdgePnLThreshold && profitableRuns >= config.strongEdgeProfitableThreshold -> {
                 println("✅ Strategy shows strong edge across diverse market conditions")
                 println("✅ Ready for paper trading with real-time data")
                 println("✅ Monitor performance for 30 days before going live")
             }
-            overallWinRate >= 50.0 && avgPnl > 0.0 && profitableRuns >= 6 -> {
+            overallWinRate >= config.promiseWinRateThreshold && avgPnl > config.promisePnLThreshold && profitableRuns >= config.promiseProfitableThreshold -> {
                 println("⚠️  Strategy shows promise but needs refinement")
                 println("⚠️  Consider running RunOptimization to optimize configuration")
                 println("⚠️  Analyze losing periods to identify weaknesses")
             }
-            totalTrades < 200 -> {
+            totalTrades < config.minTradesForSignificance -> {
                 println("⚠️  Insufficient trade sample size ($totalTrades total)")
                 println("⚠️  Extend test periods or adjust filters to generate more trades")
                 println("⚠️  Need at least 200-300 trades for statistical significance")
@@ -252,18 +227,18 @@ class ParameterValidator {
         println()
     }
 
-    private fun printNextSteps(results: List<Pair<RandomPeriod, BacktestResult>>) {
+    private fun printNextSteps(results: List<Pair<Pair<Long, Long>, BacktestResult>>) {
         println("💡 NEXT STEPS")
         println("─".repeat(90))
         val avgPnl = results.map { it.second.pnlPercent }.average()
         val overallWinRate = results.map { it.second.winRate }.average()
 
         when {
-            avgPnl > 3.0 && overallWinRate > 55.0 -> {
+            avgPnl > config.wellPerformingPnLThreshold && overallWinRate > config.wellPerformingWinRateThreshold -> {
                 println("✅ Parameters are performing well")
                 println("   → Proceed to paper trading")
             }
-            avgPnl > 0.0 && overallWinRate > 50.0 -> {
+            avgPnl > config.marginalPnLThreshold && overallWinRate > config.marginalWinRateThreshold -> {
                 println("⚠️  Parameters are marginal")
                 println("   → Consider running RunOptimization to optimize")
             }

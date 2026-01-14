@@ -1,16 +1,10 @@
 package com.tradeflow.backtesting.data
 
+import com.tradeflow.backtesting.config.BacktestConfig
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
-
-data class RandomPeriod(
-    val startTime: Long,
-    val endTime: Long,
-    val durationDays: Int,
-    val description: String
-)
 
 object RandomPeriodGenerator {
 
@@ -18,13 +12,14 @@ object RandomPeriodGenerator {
     private val TODAY = LocalDate.now()
 
     fun generateRandomPeriods(
-        count: Int = 10,
-        minDurationDays: Int = 30,
-        maxDurationDays: Int = 180,
+        config: BacktestConfig = BacktestConfig.default(),
+        count: Int = config.defaultNumPeriods,
+        minDurationDays: Int = config.minPeriodDays,
+        maxDurationDays: Int = config.maxPeriodDays,
         seed: Long? = null
-    ): List<RandomPeriod> {
+    ): List<Pair<Long, Long>> {
         val random = seed?.let { Random(it) } ?: Random.Default
-        val periods = mutableListOf<RandomPeriod>()
+        val periods = emptyList<Pair<Long, Long>>().toMutableList()
         val totalDaysAvailable = ChronoUnit.DAYS.between(BITCOIN_BIRTH, TODAY).toInt()
 
         repeat(count) {
@@ -38,33 +33,18 @@ object RandomPeriodGenerator {
             val startTime = startDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
             val endTime = endDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
-            val year = startDate.year
-            val month = startDate.month
-            val marketCondition = when (year) {
-                in 2017..2018 -> "Bull Run → Bear"
-                2019 -> "Recovery"
-                2020 -> "COVID Crash → Bull"
-                2021 -> "Peak Bull Run"
-                2022 -> "Bear Market"
-                2023 -> "Recovery"
-                else -> "Current Era"
-            }
-
-            periods.add(
-                RandomPeriod(
-                    startTime = startTime,
-                    endTime = endTime,
-                    durationDays = durationDays,
-                    description = "$year $month ($durationDays days) - $marketCondition"
-                )
-            )
+            periods.add(startTime to endTime)
         }
 
-        return periods.sortedBy { it.startTime }
+        return periods.sortedBy { it.first }
     }
 
-    fun calculateRequiredCandles(period: RandomPeriod, interval: String): Int {
-        val durationMillis = period.endTime - period.startTime
+    fun calculateRequiredCandles(
+        period: Pair<Long, Long>,
+        interval: String,
+        config: BacktestConfig = BacktestConfig.default()
+    ): Int {
+        val durationMillis = period.second - period.first
         val intervalMillis = when (interval) {
             "1m" -> 60_000L
             "5m" -> 300_000L
@@ -74,6 +54,6 @@ object RandomPeriodGenerator {
             "1d" -> 86_400_000L
             else -> throw IllegalArgumentException("Unsupported interval: $interval")
         }
-        return ((durationMillis / intervalMillis) + 200).toInt()
+        return ((durationMillis / intervalMillis) + config.lookbackBuffer).toInt()
     }
 }

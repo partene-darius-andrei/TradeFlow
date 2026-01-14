@@ -1,5 +1,7 @@
 package com.tradeflow.backtesting.optimization
 
+import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.core.domain.StrategyConfig
 import java.math.BigDecimal
 
 data class TradingParameters(
@@ -37,18 +39,28 @@ data class TradingParameters(
 
     fun toBigDecimal(value: Double): BigDecimal = BigDecimal(value.toString())
 
+    fun applyTo(config: StrategyConfig) {
+        config.adxTrendThreshold = adxTrendThreshold
+        config.adxRangeThreshold = adxRangeThreshold
+        config.confirmationCandles = confirmationCandles
+        config.trendPositionPercent = toBigDecimal(trendPositionPercent)
+        config.stopLossAtrMultiplier = toBigDecimal(stopLossAtrMultiplier)
+        config.takeProfitAtrMultiplier = toBigDecimal(takeProfitAtrMultiplier)
+        config.leverage = toBigDecimal(leverage)
+    }
+
     companion object {
         fun current(): TradingParameters = TradingParameters()
 
-        fun random(seed: kotlin.random.Random): TradingParameters {
+        fun random(seed: kotlin.random.Random, config: BacktestConfig = BacktestConfig.default()): TradingParameters {
             return TradingParameters(
-                adxTrendThreshold = seed.nextDouble(15.0, 30.0),
-                adxRangeThreshold = seed.nextDouble(0.5, 2.0),
-                confirmationCandles = seed.nextInt(1, 6),
-                trendPositionPercent = seed.nextDouble(0.01, 0.15),
-                stopLossAtrMultiplier = seed.nextDouble(3.0, 20.0),
-                takeProfitAtrMultiplier = seed.nextDouble(5.0, 40.0),
-                leverage = seed.nextDouble(1.0, 10.0)
+                adxTrendThreshold = seed.nextDouble(config.adxTrendThresholdRange.start, config.adxTrendThresholdRange.endInclusive),
+                adxRangeThreshold = seed.nextDouble(config.adxRangeThresholdRange.start, config.adxRangeThresholdRange.endInclusive),
+                confirmationCandles = seed.nextInt(config.confirmationCandlesRange.first, config.confirmationCandlesRange.last + 1),
+                trendPositionPercent = seed.nextDouble(config.trendPositionPercentRange.start, config.trendPositionPercentRange.endInclusive),
+                stopLossAtrMultiplier = seed.nextDouble(config.stopLossAtrMultiplierRange.start, config.stopLossAtrMultiplierRange.endInclusive),
+                takeProfitAtrMultiplier = seed.nextDouble(config.takeProfitAtrMultiplierRange.start, config.takeProfitAtrMultiplierRange.endInclusive),
+                leverage = seed.nextDouble(config.leverageRange.start, config.leverageRange.endInclusive)
             )
         }
     }

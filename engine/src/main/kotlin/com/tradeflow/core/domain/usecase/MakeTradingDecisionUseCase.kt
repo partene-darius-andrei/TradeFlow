@@ -1,20 +1,24 @@
 package com.tradeflow.core.domain.usecase
 
+import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
+import com.tradeflow.core.domain.model.Indicators
 import com.tradeflow.core.domain.model.OrderSide
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-enum class Mode {
-    TREND,
-    RANGE
-}
 
-class MakeTradingDecisionUseCase(
-    private val analyzeCandlesUseCase: AnalyzeCandlesUseCase
-) {
+
+class MakeTradingDecisionUseCase {
+
+    private enum class Mode {
+        TREND,
+        RANGE
+    }
+
+    private fun BigDecimal.toUsd() = this.setScale(2, RoundingMode.HALF_UP)
 
     private var lastMode: Mode = Mode.TREND
 
@@ -22,52 +26,25 @@ class MakeTradingDecisionUseCase(
 
     private var candidateMode: Mode? = null
 
+    private val analyzeCandlesUseCase = AnalyzeCandlesUseCase()
 
-    fun execute(candles: List<Candle>, currentPrice: BigDecimal): Decision {
+    operator fun invoke(candles: List<Candle>, currentPrice: BigDecimal): Decision {
         if (candles.size < TradingConfig.Technical.MIN_CANDLES_REQUIRED) {
             return Decision.Wait("Not enough candles: ${candles.size}/${TradingConfig.Technical.MIN_CANDLES_REQUIRED}")
         }
 
-        val indicators = analyzeCandlesUseCase.calculateAll(
-            candles,
-            TradingConfig.Technical.SMA_PERIOD,
-            TradingConfig.Technical.ADX_PERIOD,
-            TradingConfig.Technical.ATR_PERIOD,
-            TradingConfig.Technical.RSI_PERIOD,
-            TradingConfig.Technical.VOLUME_SMA_PERIOD,
-            TradingConfig.Technical.CMF_PERIOD
-        )
+        val indicators = analyzeCandlesUseCase(candles)
 
         // Skip if indicators contain NaN (insufficient data)
-        if (indicators.adx.isNaN() || indicators.rsi.isNaN() || indicators.volumeRatio.isNaN() || indicators.cmf.isNaN()) {
+        if (indicators.adx.isNaN() || indicators.rsi.isNaN() || indicators.volumeRatio.isNaN()) {
             return Decision.Wait("Indicators contain NaN (insufficient data)")
         }
 
-        try {
-            println("  [DECISION] Price: $currentPrice | SMA: ${indicators.sma200.setScale(0, java.math.RoundingMode.HALF_UP)} | ADX: ${indicators.adx.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | ATR: ${indicators.atr.setScale(0, java.math.RoundingMode.HALF_UP)}")
-            println("  [DECISION] RSI: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} | Volume: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x avg | CMF: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)}")
-        } catch (e: Exception) {
-            // Skip debug output if indicators contain NaN
-        }
-
         // 1. Determine desired mode based on Trend Strength (ADX)
-        val adxTrendThreshold = TradingConfig.Strategy.getAdxTrendThreshold()
-        val adxRangeThreshold = TradingConfig.Strategy.getAdxRangeThreshold()
         val desiredMode = when {
-            indicators.adx >= adxTrendThreshold -> {
-                println("  [DECISION] ADX ${indicators.adx} >= $adxTrendThreshold → Wants TREND")
-                Mode.TREND
-            }
-            indicators.adx <= adxRangeThreshold -> {
-                println("  [DECISION] ADX ${indicators.adx} <= $adxRangeThreshold → Wants RANGE")
-                Mode.RANGE
-            }
-            else -> {
-                // ADX in neutral zone (between range and trend thresholds)
-                // Stay in current mode to avoid whipsaw
-                println("  [DECISION] ADX ${indicators.adx} in neutral zone ($adxRangeThreshold-$adxTrendThreshold) → Stay in $lastMode")
-                lastMode
-            }
+            indicators.adx >= StrategyConfig.adxTrendThreshold -> Mode.TREND
+            indicators.adx <= StrategyConfig.adxRangeThreshold -> Mode.RANGE
+            else -> lastMode
         }
 
         // 2. Apply Hysteresis (require N consecutive confirmations before switching)
@@ -89,7 +66,7 @@ class MakeTradingDecisionUseCase(
         }
 
         // Check if we have enough confirmations to switch
-        val confirmationRequired = TradingConfig.Strategy.getConfirmationCandles()
+        val confirmationRequired = StrategyConfig.confirmationCandles
         if (confirmationCount >= confirmationRequired) {
             // ✅ CONFIRMATION COMPLETE - switch to new mode
             lastMode = desiredMode
@@ -103,7 +80,7 @@ class MakeTradingDecisionUseCase(
     }
 
 
-    private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: AnalyzeCandlesUseCase.Indicators): Decision {
+    private fun createDecision(mode: Mode, currentPrice: BigDecimal, indicators: Indicators): Decision {
         return when (mode) {
             Mode.TREND -> {
                 // Determine direction: LONG (BUY) if price > SMA200, SHORT (SELL) if price < SMA200
@@ -114,50 +91,34 @@ class MakeTradingDecisionUseCase(
                 // FIX: Relaxed from RSI > 50 to RSI > 30 for LONG (was blocking 90% of trades)
                 // LONG blocked only if RSI < 30 (extreme bearish)
                 // SHORT blocked only if RSI > 70 (extreme bullish)
-                val rsiBlocksTrade = if (isLong) indicators.rsi < 30.0 else indicators.rsi > 70.0
+                val rsiBlocksTrade = if (isLong) {
+                    indicators.rsi < StrategyConfig.RSI_LONG_BLOCK_THRESHOLD
+                } else {
+                    indicators.rsi > StrategyConfig.RSI_SHORT_BLOCK_THRESHOLD
+                }
                 if (rsiBlocksTrade) {
                     val reason = if (isLong) "RSI < 30 (extreme bearish)" else "RSI > 70 (extreme bullish)"
-                    println("  [DECISION] ❌ RSI filter: ${indicators.rsi.toBigDecimal().setScale(1, java.math.RoundingMode.HALF_UP)} blocks ${if (isLong) "LONG" else "SHORT"} ($reason)")
                     return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks ${if (isLong) "LONG" else "SHORT"} ($reason)")
                 }
 
                 // Volume Confirmation Filter: Volume must be significantly above average
                 // Research: Volume > 1.5x improves breakout success from 39% to 65% (+26 percentage points)
                 if (indicators.volumeRatio < TradingConfig.Technical.MIN_VOLUME_RATIO) {
-                    println("  [DECISION] ❌ Volume filter: ${indicators.volumeRatio.toBigDecimal().setScale(2, java.math.RoundingMode.HALF_UP)}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
-                    return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().setScale(2, RoundingMode.HALF_UP)}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
-                }
-
-                // CMF Confirmation (optional, adds additional confidence layer)
-                // CMF > 0.05 for LONG = money flowing in (bullish)
-                // CMF < -0.05 for SHORT = money flowing out (bearish)
-                val cmfConfirmsDirection = if (isLong) indicators.cmf > 0.05 else indicators.cmf < -0.05
-                if (!cmfConfirmsDirection) {
-                    try {
-                        println("  [DECISION] ⚠️  CMF weak: ${indicators.cmf.toBigDecimal().setScale(3, java.math.RoundingMode.HALF_UP)} weakly supports ${if (isLong) "LONG" else "SHORT"} (not blocking, but lower confidence)")
-                    } catch (e: Exception) {
-                        // Skip debug output if CMF is NaN
-                    }
+                    return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().toUsd()}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
                 }
 
                 // Calculate stop loss and take profit based on direction
-                val stopLossMultiplier = TradingConfig.Strategy.getStopLossAtrMultiplier()
-                val takeProfitMultiplier = TradingConfig.Strategy.getTakeProfitAtrMultiplier()
-                val positionPercent = TradingConfig.Strategy.getTrendPositionPercent()
-
                 val sl = if (isLong) {
-                    currentPrice - (indicators.atr * stopLossMultiplier)
+                    currentPrice - (indicators.atr * StrategyConfig.stopLossAtrMultiplier)
                 } else {
-                    currentPrice + (indicators.atr * stopLossMultiplier)
+                    currentPrice + (indicators.atr * StrategyConfig.stopLossAtrMultiplier)
                 }
 
                 val tp = if (isLong) {
-                    currentPrice + (indicators.atr * takeProfitMultiplier)
+                    currentPrice + (indicators.atr * StrategyConfig.takeProfitAtrMultiplier)
                 } else {
-                    currentPrice - (indicators.atr * takeProfitMultiplier)
+                    currentPrice - (indicators.atr * StrategyConfig.takeProfitAtrMultiplier)
                 }
-
-                println("  [DECISION] → Final: IS LONG $isLong ${positionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
 
                 Decision.Trend(
                     direction = direction,
