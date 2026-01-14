@@ -51,19 +51,21 @@ class MakeTradingDecisionUseCase(
         }
 
         // 1. Determine desired mode based on Trend Strength (ADX)
+        val adxTrendThreshold = TradingConfig.Strategy.getAdxTrendThreshold()
+        val adxRangeThreshold = TradingConfig.Strategy.getAdxRangeThreshold()
         val desiredMode = when {
-            indicators.adx >= TradingConfig.Strategy.ADX_TREND_THRESHOLD -> {
-                println("  [DECISION] ADX ${indicators.adx} >= ${TradingConfig.Strategy.ADX_TREND_THRESHOLD} → Wants TREND")
+            indicators.adx >= adxTrendThreshold -> {
+                println("  [DECISION] ADX ${indicators.adx} >= $adxTrendThreshold → Wants TREND")
                 Mode.TREND
             }
-            indicators.adx <= TradingConfig.Strategy.ADX_RANGE_THRESHOLD -> {
-                println("  [DECISION] ADX ${indicators.adx} <= ${TradingConfig.Strategy.ADX_RANGE_THRESHOLD} → Wants RANGE")
+            indicators.adx <= adxRangeThreshold -> {
+                println("  [DECISION] ADX ${indicators.adx} <= $adxRangeThreshold → Wants RANGE")
                 Mode.RANGE
             }
             else -> {
                 // ADX in neutral zone (between range and trend thresholds)
                 // Stay in current mode to avoid whipsaw
-                println("  [DECISION] ADX ${indicators.adx} in neutral zone (${TradingConfig.Strategy.ADX_RANGE_THRESHOLD}-${TradingConfig.Strategy.ADX_TREND_THRESHOLD}) → Stay in $lastMode")
+                println("  [DECISION] ADX ${indicators.adx} in neutral zone ($adxRangeThreshold-$adxTrendThreshold) → Stay in $lastMode")
                 lastMode
             }
         }
@@ -87,7 +89,8 @@ class MakeTradingDecisionUseCase(
         }
 
         // Check if we have enough confirmations to switch
-        if (confirmationCount >= TradingConfig.Strategy.CONFIRMATION_CANDLES) {
+        val confirmationRequired = TradingConfig.Strategy.getConfirmationCandles()
+        if (confirmationCount >= confirmationRequired) {
             // ✅ CONFIRMATION COMPLETE - switch to new mode
             lastMode = desiredMode
             candidateMode = null
@@ -96,7 +99,7 @@ class MakeTradingDecisionUseCase(
         }
 
         // Still waiting for confirmation
-        return Decision.Wait("Confirming mode switch to $desiredMode ($confirmationCount/${TradingConfig.Strategy.CONFIRMATION_CANDLES})")
+        return Decision.Wait("Confirming mode switch to $desiredMode ($confirmationCount/$confirmationRequired)")
     }
 
 
@@ -138,19 +141,23 @@ class MakeTradingDecisionUseCase(
                 }
 
                 // Calculate stop loss and take profit based on direction
+                val stopLossMultiplier = TradingConfig.Strategy.getStopLossAtrMultiplier()
+                val takeProfitMultiplier = TradingConfig.Strategy.getTakeProfitAtrMultiplier()
+                val positionPercent = TradingConfig.Strategy.getTrendPositionPercent()
+
                 val sl = if (isLong) {
-                    currentPrice - (indicators.atr * TradingConfig.Strategy.stopLossAtrMultiplier)
+                    currentPrice - (indicators.atr * stopLossMultiplier)
                 } else {
-                    currentPrice + (indicators.atr * TradingConfig.Strategy.stopLossAtrMultiplier)
+                    currentPrice + (indicators.atr * stopLossMultiplier)
                 }
 
                 val tp = if (isLong) {
-                    currentPrice + (indicators.atr * TradingConfig.Strategy.takeProfitAtrMultiplier)
+                    currentPrice + (indicators.atr * takeProfitMultiplier)
                 } else {
-                    currentPrice - (indicators.atr * TradingConfig.Strategy.takeProfitAtrMultiplier)
+                    currentPrice - (indicators.atr * takeProfitMultiplier)
                 }
 
-                println("  [DECISION] → Final: IS LONG $isLong ${TradingConfig.Strategy.trendPositionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
+                println("  [DECISION] → Final: IS LONG $isLong ${positionPercent.multiply(BigDecimal("100"))}% | Entry: $currentPrice | SL: $sl | TP: $tp")
 
                 Decision.Trend(
                     direction = direction,

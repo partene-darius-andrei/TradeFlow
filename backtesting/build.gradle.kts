@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass.set("com.tradeflow.BacktestEngineKt")
+    mainClass.set("com.tradeflow.backtesting.RunValidationKt")
 }
 
 kotlin {
@@ -29,4 +29,8 @@ dependencies {
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")
+
+    // Testing
+    testImplementation(kotlin("test"))
+    testImplementation("junit:junit:4.13.2")
 }
