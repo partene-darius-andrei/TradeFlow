@@ -20,11 +20,27 @@ object BinanceDataLoader {
 
     private val client = HttpClient(OkHttp)
 
-    suspend fun fetchPeriodData(period: Pair<Long, Long>): Pair<List<Candle>, List<Candle>> = coroutineScope {
+    data class MultiTimeframeData(
+        val candles1h: List<Candle>,
+        val candles30m: List<Candle>,
+        val candles15m: List<Candle>,
+        val candles5m: List<Candle>,
+        val candles1m: List<Candle>
+    )
+
+    suspend fun fetchPeriodData(period: Pair<Long, Long>): MultiTimeframeData = coroutineScope {
 
         val candles1h = async {
             fetchHistoricalCandles(
                 interval = "1h",
+                startTime = period.first,
+                endTime = period.second,
+            )
+        }
+
+        val candles30m = async {
+            fetchHistoricalCandles(
+                interval = "30m",
                 startTime = period.first,
                 endTime = period.second,
             )
@@ -38,7 +54,29 @@ object BinanceDataLoader {
             )
         }
 
-        Pair(candles1h.await(), candles15m.await())
+        val candles5m = async {
+            fetchHistoricalCandles(
+                interval = "5m",
+                startTime = period.first,
+                endTime = period.second,
+            )
+        }
+
+        val candles1m = async {
+            fetchHistoricalCandles(
+                interval = "1m",
+                startTime = period.first,
+                endTime = period.second,
+            )
+        }
+
+        MultiTimeframeData(
+            candles1h = candles1h.await(),
+            candles30m = candles30m.await(),
+            candles15m = candles15m.await(),
+            candles5m = candles5m.await(),
+            candles1m = candles1m.await()
+        )
     }
 
     fun fetchHistoricalCandles(

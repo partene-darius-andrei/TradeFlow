@@ -70,7 +70,10 @@ class BacktestEngine(
 
     fun execute(
         all1h: List<Candle>,
-        all15m: List<Candle>
+        all30m: List<Candle>,
+        all15m: List<Candle>,
+        all5m: List<Candle>,
+        all1m: List<Candle>
     ): BacktestResult {
         // Apply noise injection if configured (for robustness testing)
         val processedAll1h = if (config.noiseLevel != NoiseLevel.NONE) {
@@ -79,14 +82,32 @@ class BacktestEngine(
             all1h
         }
 
+        val processedAll30m = if (config.noiseLevel != NoiseLevel.NONE) {
+            CandleNoiseInjector.injectNoise(all30m, config.noiseLevel, config)
+        } else {
+            all30m
+        }
+
         val processedAll15m = if (config.noiseLevel != NoiseLevel.NONE) {
             CandleNoiseInjector.injectNoise(all15m, config.noiseLevel, config)
         } else {
             all15m
         }
 
-        val prime15m = processedAll15m.take(config.primeSize)
-        val test15m = processedAll15m.drop(config.primeSize)
+        val processedAll5m = if (config.noiseLevel != NoiseLevel.NONE) {
+            CandleNoiseInjector.injectNoise(all5m, config.noiseLevel, config)
+        } else {
+            all5m
+        }
+
+        val processedAll1m = if (config.noiseLevel != NoiseLevel.NONE) {
+            CandleNoiseInjector.injectNoise(all1m, config.noiseLevel, config)
+        } else {
+            all1m
+        }
+
+        val prime1m = processedAll1m.take(config.primeSize)
+        val test1m = processedAll1m.drop(config.primeSize)
 
         var equity = initialCapital
         val openOrders = mutableListOf<Order>()
@@ -94,25 +115,35 @@ class BacktestEngine(
         var peak = initialCapital
         var maxDrawdown = BigDecimal.ZERO
 
-        test15m.forEachIndexed { index, candle15m ->
-            val history15m = (prime15m + test15m.take(index + 1)).takeLast(config.lookbackWindow)
-            val index1h = (config.primeSize + (index / 4)).coerceAtMost(processedAll1h.size - 1)
+        test1m.forEachIndexed { index, candle1m ->
+            val history1m = (prime1m + test1m.take(index + 1)).takeLast(config.lookbackWindow)
+            val index5m = (config.primeSize + (index / 5)).coerceAtMost(processedAll5m.size - 1)
+            val history5m = processedAll5m.take(index5m + 1).takeLast(config.lookbackWindow)
+            val index15m = (config.primeSize + (index / 15)).coerceAtMost(processedAll15m.size - 1)
+            val history15m = processedAll15m.take(index15m + 1).takeLast(config.lookbackWindow)
+            val index30m = (config.primeSize + (index / 30)).coerceAtMost(processedAll30m.size - 1)
+            val history30m = processedAll30m.take(index30m + 1).takeLast(config.lookbackWindow)
+            val index1h = (config.primeSize + (index / 60)).coerceAtMost(processedAll1h.size - 1)
             val history1h = processedAll1h.take(index1h + 1).takeLast(config.lookbackWindow)
 
-            if (history1h.size < config.minCandlesRequired || history15m.size < config.minCandlesRequired) {
+            if (history1h.size < config.minCandlesRequired ||
+                history30m.size < config.minCandlesRequired ||
+                history15m.size < config.minCandlesRequired ||
+                history5m.size < config.minCandlesRequired ||
+                history1m.size < config.minCandlesRequired) {
                 return@forEachIndexed
             }
 
             // Check exits
             openOrders.filter { it.isOpen }.forEach { trade ->
                 val hitStopLoss = when (trade.direction) {
-                    OrderSide.BUY -> candle15m.low <= trade.stopLoss
-                    OrderSide.SELL -> candle15m.high >= trade.stopLoss
+                    OrderSide.BUY -> candle1m.low <= trade.stopLoss
+                    OrderSide.SELL -> candle1m.high >= trade.stopLoss
                 }
 
                 val hitTakeProfit = when (trade.direction) {
-                    OrderSide.BUY -> candle15m.high >= trade.takeProfit
-                    OrderSide.SELL -> candle15m.low <= trade.takeProfit
+                    OrderSide.BUY -> candle1m.high >= trade.takeProfit
+                    OrderSide.SELL -> candle1m.low <= trade.takeProfit
                 }
 
                 if (hitStopLoss) {
@@ -132,21 +163,40 @@ class BacktestEngine(
             val decision = multiTimeFrameDecisionUseCase(
                 MultiTimeframeDecisionUseCase.MultiTimeframeCandles(
                     candles1h = history1h,
+                    candles30m = history30m,
                     candles15m = history15m,
-                    currentPrice = candle15m.close
+                    candles5m = history5m,
+                    candles1m = history1m,
+                    currentPrice = candle1m.close
                 )
             )
 
-            if (decision is Decision.Trend) {
-                val newOrder = Order(
-                    direction = decision.direction,
-                    entryPrice = decision.entryPrice,
-                    stopLoss = decision.stopLoss,
-                    takeProfit = decision.takeProfit,
-                    leverage = StrategyConfig.leverage
-                )
-                openOrders.add(newOrder)
-                println("  🎯 TRADE OPENED")
+            when (decision) {
+                is Decision.Trend -> {
+                    val newOrder = Order(
+                        direction = decision.direction,
+                        entryPrice = decision.entryPrice,
+                        stopLoss = decision.stopLoss,
+                        takeProfit = decision.takeProfit,
+                        leverage = StrategyConfig.leverage
+                    )
+                    openOrders.add(newOrder)
+                    println("  🎯 TREND TRADE OPENED")
+                }
+                is Decision.Range -> {
+                    val newOrder = Order(
+                        direction = decision.direction,
+                        entryPrice = decision.entryPrice,
+                        stopLoss = decision.stopLoss,
+                        takeProfit = decision.takeProfit,
+                        leverage = StrategyConfig.leverage
+                    )
+                    openOrders.add(newOrder)
+                    println("  🎯 RANGE TRADE OPENED (mean-reversion)")
+                }
+                is Decision.Wait -> {
+                    // No action
+                }
             }
 
             // Update peak and max drawdown
@@ -156,16 +206,9 @@ class BacktestEngine(
             } else BigDecimal.ZERO
             if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown
 
-            println("  Progress: ${index + 1}/${test15m.size} candles | " +
+            println("  Progress: ${index + 1}/${test1m.size} candles | " +
                     "Open: ${openOrders.size} | Closed: ${closedOrders.size} | " +
                     "Equity: \$${equity.toUsd()}")
-        }
-
-        // Close remaining trades
-        openOrders.filter { it.isOpen }.forEach { trade ->
-            trade.exitPrice = test15m.last().close
-            closedOrders.add(trade)
-            equity += closeTrade(trade, equity, "Market Close")
         }
 
         return calculateMetrics(equity, closedOrders, maxDrawdown)

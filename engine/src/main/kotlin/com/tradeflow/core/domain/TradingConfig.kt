@@ -8,10 +8,14 @@ object StrategyConfig {
     var confirmationCandles: Int = 2
     var adxTrendThreshold: Double = 19.0
     var adxRangeThreshold: Double = 0.9
-    var stopLossAtrMultiplier: BigDecimal = "10.5".bd()
-    var takeProfitAtrMultiplier: BigDecimal = "20.0".bd()
+    var stopLossAtrMultiplier: BigDecimal = "0.01".bd()
+    var takeProfitAtrMultiplier: BigDecimal = "0.02".bd()
     var trendPositionPercent: BigDecimal = "0.05".bd()
     var leverage: BigDecimal = "3.0".bd()
+
+    var rangeEntryMultiplier: Double = 0.5
+    var rangeStopMultiplier: Double = 2.0
+    var rangeRsiMidpoint: Double = 50.0
 
     // Signal quality filters (constants - don't need to change)
     const val RSI_LONG_BLOCK_THRESHOLD: Double = 30.0

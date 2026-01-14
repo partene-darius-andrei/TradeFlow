@@ -13,5 +13,11 @@ sealed class Decision {
         val takeProfit: BigDecimal
     ) : Decision()
 
-    data object Range : Decision()
+    data class Range(
+        val direction: OrderSide,
+        val entryPrice: BigDecimal,
+        val stopLoss: BigDecimal,
+        val takeProfit: BigDecimal,
+        val meanPrice: BigDecimal
+    ) : Decision()
 }

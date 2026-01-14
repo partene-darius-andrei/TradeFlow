@@ -128,7 +128,48 @@ class MakeTradingDecisionUseCase {
                 )
             }
             Mode.RANGE -> {
-                Decision.Range
+                val sma200 = indicators.sma200
+                val atr = indicators.atr
+
+                val deviation = currentPrice - sma200
+                val atrMultiple = (deviation.abs().divide(atr, 4, RoundingMode.HALF_UP)).toDouble()
+
+                if (atrMultiple < StrategyConfig.rangeEntryMultiplier) {
+                    return Decision.Wait("Price too close to mean (${atrMultiple}× ATR < ${StrategyConfig.rangeEntryMultiplier}× threshold)")
+                }
+
+                val direction = when {
+                    currentPrice < sma200 -> OrderSide.BUY
+                    currentPrice > sma200 -> OrderSide.SELL
+                    else -> return Decision.Wait("Price at mean")
+                }
+
+                val rsiValid = when (direction) {
+                    OrderSide.BUY -> indicators.rsi > StrategyConfig.rangeRsiMidpoint
+                    OrderSide.SELL -> indicators.rsi < StrategyConfig.rangeRsiMidpoint
+                }
+                if (!rsiValid) {
+                    val operator = if (direction == OrderSide.BUY) ">" else "<"
+                    val reason = "RSI must be $operator ${StrategyConfig.rangeRsiMidpoint} for ${if (direction == OrderSide.BUY) "LONG" else "SHORT"}"
+                    return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks ${if (direction == OrderSide.BUY) "LONG" else "SHORT"} ($reason)")
+                }
+
+                if (indicators.volumeRatio < TradingConfig.Technical.MIN_VOLUME_RATIO) {
+                    return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().toUsd()}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
+                }
+
+                val stopLoss = when (direction) {
+                    OrderSide.BUY -> currentPrice - (atr * StrategyConfig.rangeStopMultiplier.toBigDecimal())
+                    OrderSide.SELL -> currentPrice + (atr * StrategyConfig.rangeStopMultiplier.toBigDecimal())
+                }
+
+                Decision.Range(
+                    direction = direction,
+                    entryPrice = currentPrice,
+                    stopLoss = stopLoss,
+                    takeProfit = sma200,
+                    meanPrice = sma200
+                )
             }
         }
     }

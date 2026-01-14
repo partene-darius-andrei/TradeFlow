@@ -8,7 +8,10 @@ import com.tradeflow.core.domain.model.Candle
 
 class ParameterFitnessEvaluator(
     private val candles1h: List<Candle>,
+    private val candles30m: List<Candle>,
     private val candles15m: List<Candle>,
+    private val candles5m: List<Candle>,
+    private val candles1m: List<Candle>,
     private val config: BacktestConfig = BacktestConfig.default()
 ) {
     private val sharpeWeight: Double = config.sharpeWeight
@@ -18,7 +21,7 @@ class ParameterFitnessEvaluator(
     fun evaluate(params: TradingParameters): Double {
         params.applyTo(StrategyConfig)
         val engine = BacktestEngine(config)
-        val result = engine.execute(candles1h, candles15m)
+        val result = engine.execute(candles1h, candles30m, candles15m, candles5m, candles1m)
         return calculateFitness(result)
     }
 

@@ -43,14 +43,14 @@ class ParameterOptimizer(
 
         println("📡 FETCHING DATA FROM BINANCE")
         println("─".repeat(90))
-        val datasets = mutableListOf<Triple<Pair<Long, Long>, List<Candle>, List<Candle>>>()
+        val datasets = mutableListOf<Pair<Pair<Long, Long>, BinanceDataLoader.MultiTimeframeData>>()
 
         periods.forEachIndexed { index, period ->
             try {
                 print("  Fetching period ${index + 1}/$numPeriods... ")
-                val (candles1h, candles15m) = BinanceDataLoader.fetchPeriodData(period)
-                println("✓ (${candles1h.size} 1h + ${candles15m.size} 15m candles)")
-                datasets.add(Triple(period, candles1h, candles15m))
+                val data = BinanceDataLoader.fetchPeriodData(period)
+                println("✓ (${data.candles1h.size} 1h + ${data.candles30m.size} 30m + ${data.candles15m.size} 15m + ${data.candles5m.size} 5m + ${data.candles1m.size} 1m)")
+                datasets.add(Pair(period, data))
             } catch (e: Exception) {
                 println("✗ Error: ${e.message}")
             }
@@ -61,13 +61,19 @@ class ParameterOptimizer(
             return
         }
 
-        val allCandles1h = datasets.flatMap { it.second }
-        val allCandles15m = datasets.flatMap { it.third }
+        val allCandles1h = datasets.flatMap { it.second.candles1h }
+        val allCandles30m = datasets.flatMap { it.second.candles30m }
+        val allCandles15m = datasets.flatMap { it.second.candles15m }
+        val allCandles5m = datasets.flatMap { it.second.candles5m }
+        val allCandles1m = datasets.flatMap { it.second.candles1m }
 
         println("\n📊 COMBINED DATASET")
         println("─".repeat(90))
         println("  Total 1h candles:  ${allCandles1h.size}")
+        println("  Total 30m candles: ${allCandles30m.size}")
         println("  Total 15m candles: ${allCandles15m.size}")
+        println("  Total 5m candles:  ${allCandles5m.size}")
+        println("  Total 1m candles:  ${allCandles1m.size}")
         println("  Total days:        ${allCandles1h.size / 24}")
         println()
 
@@ -78,7 +84,7 @@ class ParameterOptimizer(
 
         val optimizer = GeneticOptimizer(config)
 
-        val evaluator = ParameterFitnessEvaluator(allCandles1h, allCandles15m, config)
+        val evaluator = ParameterFitnessEvaluator(allCandles1h, allCandles30m, allCandles15m, allCandles5m, allCandles1m, config)
 
         val result = optimizer.optimize(
             fitnessFunction = { params -> evaluator.evaluate(params) },
