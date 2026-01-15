@@ -1,6 +1,6 @@
 package com.tradeflow.backtesting.data
 
-import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.backtesting.config.NoiseConfig
 import com.tradeflow.backtesting.config.NoiseProfile
 import com.tradeflow.core.domain.model.Candle
 import java.math.BigDecimal
@@ -16,7 +16,7 @@ enum class NoiseLevel {
     HIGH,
     EXTREME;
 
-    fun toNoiseProfile(config: BacktestConfig): NoiseProfile {
+    fun toNoiseProfile(config: NoiseConfig): NoiseProfile {
         return when (this) {
             NONE -> NoiseProfile(0.0, 0.0, 0.0, 0.0, 0.0)
             LOW -> config.noiseLevelLow
@@ -32,7 +32,7 @@ object CandleNoiseInjector {
     fun injectNoise(
         candles: List<Candle>,
         noiseLevel: NoiseLevel = NoiseLevel.MEDIUM,
-        config: BacktestConfig = BacktestConfig.default(),
+        config: NoiseConfig = NoiseConfig.default(),
         seed: Long? = null
     ): List<Candle> {
         if (noiseLevel == NoiseLevel.NONE) return candles
@@ -99,7 +99,7 @@ object CandleNoiseInjector {
         return candle.copy(volume = newVolume)
     }
 
-    private fun applyFlashEvent(candle: Candle, config: BacktestConfig, random: Random): Candle {
+    private fun applyFlashEvent(candle: Candle, config: NoiseConfig, random: Random): Candle {
         val flashMagnitude = random.nextDouble(config.flashEventMagnitudeRange.start, config.flashEventMagnitudeRange.endInclusive)
         val isFlashCrash = random.nextBoolean()
 
@@ -116,7 +116,7 @@ object CandleNoiseInjector {
         }
     }
 
-    private fun applyGapEvent(previousCandle: Candle, currentCandle: Candle, config: BacktestConfig, random: Random): Candle {
+    private fun applyGapEvent(previousCandle: Candle, currentCandle: Candle, config: NoiseConfig, random: Random): Candle {
         val gapSize = random.nextDouble(config.gapSizeRange.start, config.gapSizeRange.endInclusive)
         val isGapUp = random.nextBoolean()
 
@@ -130,7 +130,7 @@ object CandleNoiseInjector {
         )
     }
 
-    private fun applyWickExtension(candle: Candle, config: BacktestConfig, random: Random): Candle {
+    private fun applyWickExtension(candle: Candle, config: NoiseConfig, random: Random): Candle {
         val wickExtension = random.nextDouble(config.wickExtensionRange.start, config.wickExtensionRange.endInclusive)
         val extendHigh = random.nextBoolean()
 

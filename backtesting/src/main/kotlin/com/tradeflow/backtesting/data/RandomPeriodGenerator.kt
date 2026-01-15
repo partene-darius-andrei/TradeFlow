@@ -1,6 +1,6 @@
 package com.tradeflow.backtesting.data
 
-import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.backtesting.config.ValidationConfig
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -12,7 +12,7 @@ object RandomPeriodGenerator {
     private val TODAY = LocalDate.now()
 
     fun generateRandomPeriods(
-        config: BacktestConfig = BacktestConfig.default(),
+        config: ValidationConfig = ValidationConfig.default(),
         count: Int = config.defaultNumPeriods,
         minDurationDays: Int = config.minPeriodDays,
         maxDurationDays: Int = config.maxPeriodDays,
@@ -42,7 +42,7 @@ object RandomPeriodGenerator {
     fun calculateRequiredCandles(
         period: Pair<Long, Long>,
         interval: String,
-        config: BacktestConfig = BacktestConfig.default()
+        config: ValidationConfig = ValidationConfig.default()
     ): Int {
         val durationMillis = period.second - period.first
         val intervalMillis = when (interval) {

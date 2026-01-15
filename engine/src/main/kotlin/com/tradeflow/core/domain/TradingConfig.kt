@@ -2,25 +2,28 @@ package com.tradeflow.core.domain
 
 import java.math.BigDecimal
 
-private fun String.bd(): BigDecimal = BigDecimal(this)
+data class StrategyConfig(
+    val confirmationCandles: Int = 1,
+    val adxTrendThreshold: Double = 17.0,
+    val adxRangeThreshold: Double = 1.0,
+    val stopLossAtrMultiplier: BigDecimal = "0.5".bd(),
+    val takeProfitAtrMultiplier: BigDecimal = "1.5".bd(),
+    val trendPositionPercent: BigDecimal = "0.05".bd(),
+    val leverage: BigDecimal = "3".bd(),
 
-object StrategyConfig {
-    var confirmationCandles: Int = 1
-    var adxTrendThreshold: Double = 17.0
-    var adxRangeThreshold: Double = 1.0
-    var stopLossAtrMultiplier: BigDecimal = "0.5".bd()
-    var takeProfitAtrMultiplier: BigDecimal = "1.5".bd()
-    var trendPositionPercent: BigDecimal = "0.05".bd()
-    var leverage: BigDecimal = "3".bd()
+    val rangeEntryMultiplier: Double = 0.5,
+    val rangeStopMultiplier: Double = 2.0,
+    val rangeRsiMidpoint: Double = 50.0
+) {
+    companion object {
+        const val RSI_LONG_BLOCK_THRESHOLD: Double = 30.0
+        const val RSI_SHORT_BLOCK_THRESHOLD: Double = 70.0
 
-    var rangeEntryMultiplier: Double = 0.5
-    var rangeStopMultiplier: Double = 2.0
-    var rangeRsiMidpoint: Double = 50.0
-
-    // Signal quality filters (constants - don't need to change)
-    const val RSI_LONG_BLOCK_THRESHOLD: Double = 30.0
-    const val RSI_SHORT_BLOCK_THRESHOLD: Double = 70.0
+        fun default(): StrategyConfig = StrategyConfig()
+    }
 }
+
+private fun String.bd(): BigDecimal = BigDecimal(this)
 
 object TradingConfig {
 

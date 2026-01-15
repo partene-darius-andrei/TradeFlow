@@ -17,7 +17,9 @@ import kotlin.math.abs
 private fun BigDecimal.toUsd() = this.setScale(2, RoundingMode.HALF_UP)
 
 class BacktestEngine(
-    private val config: BacktestConfig = BacktestConfig.default()
+    private val config: BacktestConfig = BacktestConfig.default(),
+    private val strategyConfig: StrategyConfig = StrategyConfig.default(),
+    private val noiseConfig: com.tradeflow.backtesting.config.NoiseConfig = com.tradeflow.backtesting.config.NoiseConfig.default()
 ) {
     private val initialCapital: BigDecimal = config.initialCapital
     // ==================================================================================
@@ -36,7 +38,7 @@ class BacktestEngine(
     // Note: Using standard rates (no BNB discount) for conservative estimates
     // ==================================================================================
 
-    private val makeTradingDecisionUseCase = MakeTradingDecisionUseCase()
+    private val makeTradingDecisionUseCase = MakeTradingDecisionUseCase(strategyConfig)
 
     /**
      * Calculate total trading costs for a position.
@@ -54,7 +56,7 @@ class BacktestEngine(
     private fun closeTrade(trade: Order, equity: BigDecimal, reason: String): BigDecimal {
         trade.exitReason = reason
 
-        val positionSize = equity * StrategyConfig.trendPositionPercent * StrategyConfig.leverage
+        val positionSize = equity * strategyConfig.trendPositionPercent * strategyConfig.leverage
         val pnl = trade.calculatePnl()
         val grossPnlUsd = positionSize * pnl
 
@@ -77,31 +79,31 @@ class BacktestEngine(
     ): BacktestResult {
         // Apply noise injection if configured (for robustness testing)
         val processedAll1h = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all1h, config.noiseLevel, config)
+            CandleNoiseInjector.injectNoise(all1h, config.noiseLevel, noiseConfig)
         } else {
             all1h
         }
 
         val processedAll30m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all30m, config.noiseLevel, config)
+            CandleNoiseInjector.injectNoise(all30m, config.noiseLevel, noiseConfig)
         } else {
             all30m
         }
 
         val processedAll15m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all15m, config.noiseLevel, config)
+            CandleNoiseInjector.injectNoise(all15m, config.noiseLevel, noiseConfig)
         } else {
             all15m
         }
 
         val processedAll5m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all5m, config.noiseLevel, config)
+            CandleNoiseInjector.injectNoise(all5m, config.noiseLevel, noiseConfig)
         } else {
             all5m
         }
 
         val processedAll1m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all1m, config.noiseLevel, config)
+            CandleNoiseInjector.injectNoise(all1m, config.noiseLevel, noiseConfig)
         } else {
             all1m
         }
@@ -169,7 +171,7 @@ class BacktestEngine(
                         entryPrice = decision.entryPrice,
                         stopLoss = decision.stopLoss,
                         takeProfit = decision.takeProfit,
-                        leverage = StrategyConfig.leverage
+                        leverage = strategyConfig.leverage
                     )
                     openOrders.add(newOrder)
                     println("  🎯 TREND TRADE OPENED")
@@ -180,7 +182,7 @@ class BacktestEngine(
                         entryPrice = decision.entryPrice,
                         stopLoss = decision.stopLoss,
                         takeProfit = decision.takeProfit,
-                        leverage = StrategyConfig.leverage
+                        leverage = strategyConfig.leverage
                     )
                     openOrders.add(newOrder)
                     println("  🎯 RANGE TRADE OPENED (mean-reversion)")

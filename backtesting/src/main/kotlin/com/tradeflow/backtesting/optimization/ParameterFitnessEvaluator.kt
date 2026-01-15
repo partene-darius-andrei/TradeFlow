@@ -1,6 +1,7 @@
 package com.tradeflow.backtesting.optimization
 
 import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.backtesting.config.OptimizationConfig
 import com.tradeflow.backtesting.engine.BacktestEngine
 import com.tradeflow.backtesting.engine.BacktestResult
 import com.tradeflow.core.domain.StrategyConfig
@@ -12,28 +13,26 @@ class ParameterFitnessEvaluator(
     private val candles15m: List<Candle>,
     private val candles5m: List<Candle>,
     private val candles1m: List<Candle>,
-    private val config: BacktestConfig = BacktestConfig.default()
+    private val backtestConfig: BacktestConfig = BacktestConfig.default(),
+    private val optimizationConfig: OptimizationConfig = OptimizationConfig.default()
 ) {
-    private val sharpeWeight: Double = config.sharpeWeight
-    private val returnWeight: Double = config.returnWeight
-    private val drawdownPenalty: Double = config.drawdownPenalty
+    private val fitness = optimizationConfig.fitness
 
-    fun evaluate(params: TradingParameters): Double {
-        params.applyTo(StrategyConfig)
-        val engine = BacktestEngine(config)
+    fun evaluate(config: StrategyConfig): Double {
+        val engine = BacktestEngine(backtestConfig, config)
         val result = engine.execute(candles1h, candles30m, candles15m, candles5m, candles1m)
         return calculateFitness(result)
     }
 
     private fun calculateFitness(result: BacktestResult): Double {
-        val normalizedSharpe = (result.sharpeRatio / config.sharpeNormalizationFactor).coerceIn(-1.0, 1.0)
-        val normalizedReturn = (result.pnlPercent / config.returnNormalizationFactor).coerceIn(-1.0, 1.0)
+        val normalizedSharpe = (result.sharpeRatio / fitness.sharpeNormalizationFactor).coerceIn(-1.0, 1.0)
+        val normalizedReturn = (result.pnlPercent / fitness.returnNormalizationFactor).coerceIn(-1.0, 1.0)
         val normalizedDrawdown = 1.0 - result.maxDrawdown
 
-        val fitness = sharpeWeight * normalizedSharpe +
-            returnWeight * normalizedReturn +
-            drawdownPenalty * normalizedDrawdown
+        val compositeFitness = fitness.sharpeWeight * normalizedSharpe +
+            fitness.returnWeight * normalizedReturn +
+            fitness.drawdownPenalty * normalizedDrawdown
 
-        return fitness
+        return compositeFitness
     }
 }

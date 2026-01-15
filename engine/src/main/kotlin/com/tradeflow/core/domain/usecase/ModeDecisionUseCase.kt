@@ -3,7 +3,9 @@ package com.tradeflow.core.domain.usecase
 import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.model.Indicators
 
-class ModeDecisionUseCase {
+class ModeDecisionUseCase(
+    private val config: StrategyConfig = StrategyConfig.default()
+) {
 
     enum class Mode {
         TREND,
@@ -23,8 +25,8 @@ class ModeDecisionUseCase {
     operator fun invoke(indicators: Indicators): ModeResult {
         // Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
-            indicators.adx >= StrategyConfig.adxTrendThreshold -> Mode.TREND
-            indicators.adx <= StrategyConfig.adxRangeThreshold -> Mode.RANGE
+            indicators.adx >= config.adxTrendThreshold -> Mode.TREND
+            indicators.adx <= config.adxRangeThreshold -> Mode.RANGE
             else -> lastMode
         }
 
@@ -47,7 +49,7 @@ class ModeDecisionUseCase {
         }
 
         // Check if we have enough confirmations to switch
-        val confirmationRequired = StrategyConfig.confirmationCandles
+        val confirmationRequired = config.confirmationCandles
         if (confirmationCount >= confirmationRequired) {
             // ✅ CONFIRMATION COMPLETE - switch to new mode
             lastMode = desiredMode

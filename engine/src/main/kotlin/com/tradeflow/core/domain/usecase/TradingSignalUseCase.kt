@@ -8,7 +8,9 @@ import com.tradeflow.core.domain.model.OrderSide
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-class TradingSignalUseCase {
+class TradingSignalUseCase(
+    private val config: StrategyConfig = StrategyConfig.default()
+) {
 
     private fun BigDecimal.toUsd() = this.setScale(2, RoundingMode.HALF_UP)
 
@@ -39,15 +41,15 @@ class TradingSignalUseCase {
 
         // Calculate stop loss and take profit based on direction
         val sl = if (isLong) {
-            currentPrice - (indicators.atr * StrategyConfig.stopLossAtrMultiplier)
+            currentPrice - (indicators.atr * config.stopLossAtrMultiplier)
         } else {
-            currentPrice + (indicators.atr * StrategyConfig.stopLossAtrMultiplier)
+            currentPrice + (indicators.atr * config.stopLossAtrMultiplier)
         }
 
         val tp = if (isLong) {
-            currentPrice + (indicators.atr * StrategyConfig.takeProfitAtrMultiplier)
+            currentPrice + (indicators.atr * config.takeProfitAtrMultiplier)
         } else {
-            currentPrice - (indicators.atr * StrategyConfig.takeProfitAtrMultiplier)
+            currentPrice - (indicators.atr * config.takeProfitAtrMultiplier)
         }
 
         return Decision.Trend(
@@ -65,8 +67,8 @@ class TradingSignalUseCase {
         val deviation = currentPrice - sma200
         val atrMultiple = (deviation.abs().divide(atr, 4, RoundingMode.HALF_UP)).toDouble()
 
-        if (atrMultiple < StrategyConfig.rangeEntryMultiplier) {
-            return Decision.Wait("Price too close to mean (${atrMultiple}× ATR < ${StrategyConfig.rangeEntryMultiplier}× threshold)")
+        if (atrMultiple < config.rangeEntryMultiplier) {
+            return Decision.Wait("Price too close to mean (${atrMultiple}× ATR < ${config.rangeEntryMultiplier}× threshold)")
         }
 
         val direction = when {
@@ -76,12 +78,12 @@ class TradingSignalUseCase {
         }
 
         val rsiValid = when (direction) {
-            OrderSide.BUY -> indicators.rsi > StrategyConfig.rangeRsiMidpoint
-            OrderSide.SELL -> indicators.rsi < StrategyConfig.rangeRsiMidpoint
+            OrderSide.BUY -> indicators.rsi > config.rangeRsiMidpoint
+            OrderSide.SELL -> indicators.rsi < config.rangeRsiMidpoint
         }
         if (!rsiValid) {
             val operator = if (direction == OrderSide.BUY) ">" else "<"
-            val reason = "RSI must be $operator ${StrategyConfig.rangeRsiMidpoint} for ${if (direction == OrderSide.BUY) "LONG" else "SHORT"}"
+            val reason = "RSI must be $operator ${config.rangeRsiMidpoint} for ${if (direction == OrderSide.BUY) "LONG" else "SHORT"}"
             return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks ${if (direction == OrderSide.BUY) "LONG" else "SHORT"} ($reason)")
         }
 
@@ -90,8 +92,8 @@ class TradingSignalUseCase {
         }
 
         val stopLoss = when (direction) {
-            OrderSide.BUY -> currentPrice - (atr * StrategyConfig.rangeStopMultiplier.toBigDecimal())
-            OrderSide.SELL -> currentPrice + (atr * StrategyConfig.rangeStopMultiplier.toBigDecimal())
+            OrderSide.BUY -> currentPrice - (atr * config.rangeStopMultiplier.toBigDecimal())
+            OrderSide.SELL -> currentPrice + (atr * config.rangeStopMultiplier.toBigDecimal())
         }
 
         return Decision.Range(

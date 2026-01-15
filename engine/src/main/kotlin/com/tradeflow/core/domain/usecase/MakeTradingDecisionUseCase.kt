@@ -1,15 +1,18 @@
 package com.tradeflow.core.domain.usecase
 
+import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import java.math.BigDecimal
 
-class MakeTradingDecisionUseCase {
+class MakeTradingDecisionUseCase(
+    private val config: StrategyConfig = StrategyConfig.default()
+) {
 
     private val analyzeCandlesUseCase = AnalyzeCandlesUseCase()
-    private val modeDecisionUseCase = ModeDecisionUseCase()
-    private val tradingSignalUseCase = TradingSignalUseCase()
+    private val modeDecisionUseCase = ModeDecisionUseCase(config)
+    private val tradingSignalUseCase = TradingSignalUseCase(config)
 
     operator fun invoke(candles: List<Candle>, currentPrice: BigDecimal): Decision {
         if (candles.size < TradingConfig.Technical.MIN_CANDLES_REQUIRED) {

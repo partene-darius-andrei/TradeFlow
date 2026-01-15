@@ -1,8 +1,11 @@
 package com.tradeflow.backtesting.optimization
 
 import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.backtesting.config.OptimizationConfig
+import com.tradeflow.backtesting.config.ValidationConfig
 import com.tradeflow.backtesting.data.BinanceDataLoader
 import com.tradeflow.backtesting.data.RandomPeriodGenerator
+import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.model.Candle
 
 class ParameterOptimizer(
@@ -11,7 +14,9 @@ class ParameterOptimizer(
 
     suspend fun run(args: Array<String>) {
 
-        val config: BacktestConfig = BacktestConfig.default()
+        val backtestConfig = BacktestConfig.default()
+        val optimizationConfig = OptimizationConfig.default()
+        val validationConfig = ValidationConfig.default()
 
         println("\n🧬 RUN OPTIMIZATION - RANDOM PERIODS MODE")
         println("=".repeat(90))
@@ -34,7 +39,7 @@ class ParameterOptimizer(
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
-            config = config,
+            config = validationConfig,
             count = numPeriods,
             seed = seed
         )
@@ -82,9 +87,9 @@ class ParameterOptimizer(
         println("This will take several minutes...")
         println()
 
-        val optimizer = GeneticOptimizer(config)
+        val optimizer = GeneticOptimizer(optimizationConfig)
 
-        val evaluator = ParameterFitnessEvaluator(allCandles1h, allCandles30m, allCandles15m, allCandles5m, allCandles1m, config)
+        val evaluator = ParameterFitnessEvaluator(allCandles1h, allCandles30m, allCandles15m, allCandles5m, allCandles1m, backtestConfig, optimizationConfig)
 
         val result = optimizer.optimize(
             fitnessFunction = { params -> evaluator.evaluate(params) },
@@ -97,13 +102,13 @@ class ParameterOptimizer(
         println()
         println("📋 OPTIMIZED PARAMETERS")
         println("─".repeat(90))
-        val champion = result.champion.params
+        val champion = result.champion.config
         println("  adxTrendThreshold:       ${champion.adxTrendThreshold}")
         println("  adxRangeThreshold:       ${champion.adxRangeThreshold}")
         println("  confirmationCandles:     ${champion.confirmationCandles}")
         println(
             "  trendPositionPercent:    ${champion.trendPositionPercent} (${
-                (champion.trendPositionPercent * 100).let {
+                (champion.trendPositionPercent.toDouble() * 100).let {
                     "%.2f".format(
                         it
                     )
@@ -115,7 +120,7 @@ class ParameterOptimizer(
         println("  leverage:                ${champion.leverage}x")
         println()
 
-        val baselineFitness = evaluator.evaluate(TradingParameters.current())
+        val baselineFitness = evaluator.evaluate(StrategyConfig.default())
         val improvement =
             ((result.fitness - baselineFitness) / baselineFitness.coerceAtLeast(0.0001)) * 100
 
@@ -132,7 +137,7 @@ class ParameterOptimizer(
         )
         println()
 
-        if (improvement > config.significantImprovementThreshold) {
+        if (improvement > validationConfig.significantImprovementThreshold) {
             println("✅ SIGNIFICANT IMPROVEMENT - Consider updating TradingConfig with these parameters")
         } else if (improvement > 0.0) {
             println("⚠️  MARGINAL IMPROVEMENT - Test thoroughly before deploying")

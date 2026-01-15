@@ -1,6 +1,7 @@
 package com.tradeflow.backtesting.optimization
 
 import com.tradeflow.backtesting.config.BacktestConfig
+import com.tradeflow.backtesting.config.ValidationConfig
 import com.tradeflow.backtesting.data.BinanceDataLoader
 import com.tradeflow.backtesting.data.RandomPeriodGenerator
 import com.tradeflow.backtesting.engine.BacktestEngine
@@ -9,7 +10,9 @@ import com.tradeflow.core.domain.StrategyConfig
 import kotlin.math.sqrt
 
 class ParameterValidator(
-    private val config: BacktestConfig = BacktestConfig.default()
+    private val backtestConfig: BacktestConfig = BacktestConfig.default(),
+    private val validationConfig: ValidationConfig = ValidationConfig.default(),
+    private val strategyConfig: StrategyConfig = StrategyConfig.default()
 ) {
 
     suspend operator fun invoke() {
@@ -19,9 +22,9 @@ class ParameterValidator(
         println("Purpose: Validate current parameters on random historical data (no optimization)")
         println("=".repeat(90))
 
-        val numPeriods = config.loops
-        val minDays = config.minPeriodDays
-        val maxDays = config.maxPeriodDays
+        val numPeriods = backtestConfig.loops
+        val minDays = validationConfig.minPeriodDays
+        val maxDays = validationConfig.maxPeriodDays
 
         println("\nConfiguration:")
         println("  Random Periods:    $numPeriods")
@@ -44,12 +47,12 @@ class ParameterValidator(
     private fun printCurrentParameters() {
         println("📋 CURRENT TRADING PARAMETERS")
         println("─".repeat(90))
-        println("  ADX Trend Threshold:     ${StrategyConfig.adxTrendThreshold}")
-        println("  ADX Range Threshold:     ${StrategyConfig.adxRangeThreshold}")
-        println("  Confirmation Candles:    ${StrategyConfig.confirmationCandles}")
-        println("  Trend Position %:        ${(StrategyConfig.trendPositionPercent.toDouble() * 100).let { "%.2f".format(it) }}%")
-        println("  Stop Loss ATR Mult:      ${StrategyConfig.stopLossAtrMultiplier}")
-        println("  Take Profit ATR Mult:    ${StrategyConfig.takeProfitAtrMultiplier}")
+        println("  ADX Trend Threshold:     ${strategyConfig.adxTrendThreshold}")
+        println("  ADX Range Threshold:     ${strategyConfig.adxRangeThreshold}")
+        println("  Confirmation Candles:    ${strategyConfig.confirmationCandles}")
+        println("  Trend Position %:        ${(strategyConfig.trendPositionPercent.toDouble() * 100).let { "%.2f".format(it) }}%")
+        println("  Stop Loss ATR Mult:      ${strategyConfig.stopLossAtrMultiplier}")
+        println("  Take Profit ATR Mult:    ${strategyConfig.takeProfitAtrMultiplier}")
         println()
     }
 
@@ -57,7 +60,7 @@ class ParameterValidator(
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
-            config = config,
+            config = validationConfig,
             count = numPeriods,
             minDurationDays = minDays,
             maxDurationDays = maxDays
@@ -78,7 +81,7 @@ class ParameterValidator(
         println("─".repeat(90))
 
         val results = mutableListOf<Pair<Pair<Long, Long>, BacktestResult>>()
-        val engine = BacktestEngine(config)
+        val engine = BacktestEngine(backtestConfig, strategyConfig)
 
         periods.forEachIndexed { index, period ->
             try {
@@ -189,9 +192,9 @@ class ParameterValidator(
         println("Win Rate Std Dev:     ${"%.2f".format(winRateStdDev)}%")
 
         val consistency = when {
-            profitableRuns >= config.highConsistencyThreshold && avgPnl > config.highConsistencyPnLThreshold -> "✅ HIGHLY CONSISTENT - Strategy is robust"
-            profitableRuns >= config.consistencyThreshold && avgPnl > config.consistencyPnLThreshold -> "✅ CONSISTENT - Good edge across periods"
-            profitableRuns >= config.moderateConsistencyThreshold && avgPnl > config.moderateConsistencyPnLThreshold -> "⚠️  MODERATELY CONSISTENT - Needs improvement"
+            profitableRuns >= validationConfig.highConsistencyThreshold && avgPnl > validationConfig.highConsistencyPnLThreshold -> "✅ HIGHLY CONSISTENT - Strategy is robust"
+            profitableRuns >= validationConfig.consistencyThreshold && avgPnl > validationConfig.consistencyPnLThreshold -> "✅ CONSISTENT - Good edge across periods"
+            profitableRuns >= validationConfig.moderateConsistencyThreshold && avgPnl > validationConfig.moderateConsistencyPnLThreshold -> "⚠️  MODERATELY CONSISTENT - Needs improvement"
             else -> "❌ INCONSISTENT - Strategy lacks robustness"
         }
         println()
@@ -201,17 +204,17 @@ class ParameterValidator(
         println("💡 RECOMMENDATIONS")
         println("─".repeat(90))
         when {
-            overallWinRate >= config.strongEdgeWinRateThreshold && avgPnl > config.strongEdgePnLThreshold && profitableRuns >= config.strongEdgeProfitableThreshold -> {
+            overallWinRate >= validationConfig.strongEdgeWinRateThreshold && avgPnl > validationConfig.strongEdgePnLThreshold && profitableRuns >= validationConfig.strongEdgeProfitableThreshold -> {
                 println("✅ Strategy shows strong edge across diverse market conditions")
                 println("✅ Ready for paper trading with real-time data")
                 println("✅ Monitor performance for 30 days before going live")
             }
-            overallWinRate >= config.promiseWinRateThreshold && avgPnl > config.promisePnLThreshold && profitableRuns >= config.promiseProfitableThreshold -> {
+            overallWinRate >= validationConfig.promiseWinRateThreshold && avgPnl > validationConfig.promisePnLThreshold && profitableRuns >= validationConfig.promiseProfitableThreshold -> {
                 println("⚠️  Strategy shows promise but needs refinement")
                 println("⚠️  Consider running RunOptimization to optimize configuration")
                 println("⚠️  Analyze losing periods to identify weaknesses")
             }
-            totalTrades < config.minTradesForSignificance -> {
+            totalTrades < validationConfig.minTradesForSignificance -> {
                 println("⚠️  Insufficient trade sample size ($totalTrades total)")
                 println("⚠️  Extend test periods or adjust filters to generate more trades")
                 println("⚠️  Need at least 200-300 trades for statistical significance")
@@ -234,11 +237,11 @@ class ParameterValidator(
         val overallWinRate = results.map { it.second.winRate }.average()
 
         when {
-            avgPnl > config.wellPerformingPnLThreshold && overallWinRate > config.wellPerformingWinRateThreshold -> {
+            avgPnl > validationConfig.wellPerformingPnLThreshold && overallWinRate > validationConfig.wellPerformingWinRateThreshold -> {
                 println("✅ Parameters are performing well")
                 println("   → Proceed to paper trading")
             }
-            avgPnl > config.marginalPnLThreshold && overallWinRate > config.marginalWinRateThreshold -> {
+            avgPnl > validationConfig.marginalPnLThreshold && overallWinRate > validationConfig.marginalWinRateThreshold -> {
                 println("⚠️  Parameters are marginal")
                 println("   → Consider running RunOptimization to optimize")
             }
