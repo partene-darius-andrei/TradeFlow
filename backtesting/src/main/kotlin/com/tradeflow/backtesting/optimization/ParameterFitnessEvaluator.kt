@@ -15,7 +15,8 @@ class ParameterFitnessEvaluator(
     private val fitness = optimizationConfig.fitness
 
     fun evaluate(config: StrategyConfig): Double {
-        val engine = BacktestEngine(backtestConfig, config)
+        val silentConfig = backtestConfig.copy(silent = true)
+        val engine = BacktestEngine(silentConfig, config)
         val result = engine.execute(candles)
         return calculateFitness(result)
     }

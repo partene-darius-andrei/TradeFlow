@@ -20,7 +20,9 @@ class ParameterOptimizer {
 
     private val backtestConfig = BacktestConfig()
     private val optimizationConfig = OptimizationConfig()
-    private val validationConfig = ValidationConfig()
+    private val validationConfig = ValidationConfig(
+        period = com.tradeflow.backtesting.config.PeriodConfig.forOptimization()
+    )
     private val seed = System.currentTimeMillis()
 
     init {

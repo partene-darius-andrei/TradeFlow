@@ -2,6 +2,7 @@ package com.tradeflow.backtesting.optimization
 
 import com.tradeflow.backtesting.config.OptimizationConfig
 import com.tradeflow.core.domain.StrategyConfig
+import kotlinx.coroutines.*
 import kotlin.random.Random
 
 data class Individual(
@@ -33,23 +34,21 @@ class GeneticOptimizer(
     fun optimize(
         fitnessFunction: (StrategyConfig) -> Double,
         seed: Long = System.currentTimeMillis()
-    ): OptimizationResult {
+    ): OptimizationResult = runBlocking {
         val random = Random(seed)
         var population = initializePopulation(random)
 
         val evolutionHistory = mutableListOf<GenerationStats>()
 
-        println("\n🧬 GENETIC ALGORITHM OPTIMIZATION")
+        println("\n🧬 GENETIC ALGORITHM OPTIMIZATION (PARALLEL)")
         println("=".repeat(80))
         println("Population: $populationSize | Generations: $generations")
         println("Mutation Rate: ${(mutationRate * 100).toInt()}% | Elite Ratio: ${(eliteRatio * 100).toInt()}%")
+        println("CPU Cores: ${Runtime.getRuntime().availableProcessors()}")
         println("=".repeat(80))
 
         repeat(generations) { gen ->
-            population.forEach { individual ->
-                individual.fitness = fitnessFunction(individual.config)
-            }
-
+            population = evaluatePopulationParallel(population, fitnessFunction)
             population = population.sortedByDescending { it.fitness }
 
             val stats = GenerationStats(
@@ -87,11 +86,23 @@ class GeneticOptimizer(
         println("  Leverage:                  ${cfg.leverage.default}x")
         println("=".repeat(80))
 
-        return OptimizationResult(
+        OptimizationResult(
             champion = champion.config,
             fitness = champion.fitness,
             history = evolutionHistory
         )
+    }
+
+    private suspend fun evaluatePopulationParallel(
+        population: List<Individual>,
+        fitnessFunction: (StrategyConfig) -> Double
+    ): List<Individual> = coroutineScope {
+        population.map { individual ->
+            async(Dispatchers.Default) {
+                individual.fitness = fitnessFunction(individual.config)
+                individual
+            }
+        }.awaitAll()
     }
 
     private fun initializePopulation(random: Random): List<Individual> {

@@ -120,9 +120,11 @@ class BacktestEngine(
         val costs = calculateTradingCosts(positionSize)
         val netPnlUsd = grossPnlUsd - costs
 
-        val emoji = if (netPnlUsd > BigDecimal.ZERO) "💰" else "❌"
-        val sign = if (netPnlUsd > BigDecimal.ZERO) "+" else ""
-        println("  $emoji TRADE CLOSED | $sign$${ netPnlUsd.toUsd() }")
+        if (!config.silent) {
+            val emoji = if (netPnlUsd > BigDecimal.ZERO) "💰" else "❌"
+            val sign = if (netPnlUsd > BigDecimal.ZERO) "+" else ""
+            println("  $emoji TRADE CLOSED | $sign$${ netPnlUsd.toUsd() }")
+        }
 
         return netPnlUsd
     }
@@ -151,11 +153,15 @@ class BacktestEngine(
             when (val decision = makeTradingDecisionUseCase(history, currentCandle.close)) {
                 is Decision.Trend -> {
                     openOrders.add(openTrade(decision))
-                    println("  🎯 TREND TRADE OPENED")
+                    if (!config.silent) {
+                        println("  🎯 TREND TRADE OPENED")
+                    }
                 }
                 is Decision.Range -> {
                     openOrders.add(openTrade(decision))
-                    println("  🎯 RANGE TRADE OPENED (mean-reversion)")
+                    if (!config.silent) {
+                        println("  🎯 RANGE TRADE OPENED (mean-reversion)")
+                    }
                 }
                 is Decision.Wait -> {
                     // No action
@@ -169,9 +175,11 @@ class BacktestEngine(
             } else BigDecimal.ZERO
             if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown
 
-            println("  Progress: ${index + 1}/${testCandles.size} candles | " +
-                    "Open: ${openOrders.size} | Closed: ${closedOrders.size} | " +
-                    "Equity: \$${equity.toUsd()}")
+            if (!config.silent) {
+                println("  Progress: ${index + 1}/${testCandles.size} candles | " +
+                        "Open: ${openOrders.size} | Closed: ${closedOrders.size} | " +
+                        "Equity: \$${equity.toUsd()}")
+            }
         }
 
         return calculateMetrics(equity, closedOrders, maxDrawdown)

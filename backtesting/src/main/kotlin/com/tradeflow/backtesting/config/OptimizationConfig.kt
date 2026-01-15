@@ -6,12 +6,12 @@ data class OptimizationConfig(
 )
 
 data class GeneticAlgorithmConfig(
-    val populationSize: Int = 20,
-    val generations: Int = 30,
+    val populationSize: Int = 16,
+    val generations: Int = 20,
     val mutationRate: Double = 0.15,
     val eliteRatio: Double = 0.1,
     val tournamentSize: Int = 3,
-    val reportInterval: Int = 10
+    val reportInterval: Int = 5
 )
 
 data class FitnessWeights(

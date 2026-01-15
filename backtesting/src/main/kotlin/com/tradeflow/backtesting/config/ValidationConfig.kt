@@ -7,7 +7,18 @@ data class PeriodConfig(
     val lookbackBuffer: Int = 200,
     val seed: Int = 3,
     val trainTestRatio: Double = 0.7
-)
+) {
+    companion object {
+        fun forOptimization() = PeriodConfig(
+            defaultNumPeriods = 3,
+            minPeriodDays = 30,
+            maxPeriodDays = 60,
+            lookbackBuffer = 200,
+            seed = 3,
+            trainTestRatio = 0.7
+        )
+    }
+}
 
 data class ConsistencyThresholds(
     val highThreshold: Int = 8,

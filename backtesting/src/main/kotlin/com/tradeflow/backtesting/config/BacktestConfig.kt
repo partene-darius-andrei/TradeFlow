@@ -14,5 +14,6 @@ data class BacktestConfig(
     val lookbackWindow: Int = 200,
     val minCandlesRequired: Int = 200,
     val noiseLevel: NoiseLevel = NoiseLevel.NONE,
-    val interval: Interval = Interval.OneMinute
+    val interval: Interval = Interval.OneMinute,
+    val silent: Boolean = false
 )
