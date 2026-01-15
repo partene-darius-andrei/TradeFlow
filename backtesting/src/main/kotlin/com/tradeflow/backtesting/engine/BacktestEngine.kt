@@ -9,7 +9,7 @@ import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.Order
 import com.tradeflow.core.domain.model.OrderSide
-import com.tradeflow.core.domain.usecase.MultiTimeframeDecisionUseCase
+import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
@@ -36,7 +36,7 @@ class BacktestEngine(
     // Note: Using standard rates (no BNB discount) for conservative estimates
     // ==================================================================================
 
-    private val multiTimeFrameDecisionUseCase = MultiTimeframeDecisionUseCase()
+    private val makeTradingDecisionUseCase = MakeTradingDecisionUseCase()
 
     /**
      * Calculate total trading costs for a position.
@@ -159,17 +159,8 @@ class BacktestEngine(
 
             openOrders.removeAll { !it.isOpen }
 
-            // Execute new signals using multi-timeframe confluence logic
-            val decision = multiTimeFrameDecisionUseCase(
-                MultiTimeframeDecisionUseCase.MultiTimeframeCandles(
-                    candles1h = history1h,
-                    candles30m = history30m,
-                    candles15m = history15m,
-                    candles5m = history5m,
-                    candles1m = history1m,
-                    currentPrice = candle1m.close
-                )
-            )
+            // Execute new signals using 1h timeframe only
+            val decision = makeTradingDecisionUseCase(history1h, candle1m.close)
 
             when (decision) {
                 is Decision.Trend -> {

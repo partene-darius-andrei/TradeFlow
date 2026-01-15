@@ -19,7 +19,7 @@ class ParameterValidator(
         println("Purpose: Validate current parameters on random historical data (no optimization)")
         println("=".repeat(90))
 
-        val numPeriods = config.defaultNumPeriods
+        val numPeriods = config.loops
         val minDays = config.minPeriodDays
         val maxDays = config.maxPeriodDays
 

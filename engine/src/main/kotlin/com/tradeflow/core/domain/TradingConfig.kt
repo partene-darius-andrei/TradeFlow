@@ -5,13 +5,13 @@ import java.math.BigDecimal
 private fun String.bd(): BigDecimal = BigDecimal(this)
 
 object StrategyConfig {
-    var confirmationCandles: Int = 2
-    var adxTrendThreshold: Double = 19.0
-    var adxRangeThreshold: Double = 0.9
-    var stopLossAtrMultiplier: BigDecimal = "0.01".bd()
-    var takeProfitAtrMultiplier: BigDecimal = "0.02".bd()
+    var confirmationCandles: Int = 1
+    var adxTrendThreshold: Double = 17.0
+    var adxRangeThreshold: Double = 1.0
+    var stopLossAtrMultiplier: BigDecimal = "0.5".bd()
+    var takeProfitAtrMultiplier: BigDecimal = "1.5".bd()
     var trendPositionPercent: BigDecimal = "0.05".bd()
-    var leverage: BigDecimal = "3.0".bd()
+    var leverage: BigDecimal = "3".bd()
 
     var rangeEntryMultiplier: Double = 0.5
     var rangeStopMultiplier: Double = 2.0
@@ -30,7 +30,7 @@ object TradingConfig {
         const val ATR_PERIOD: Int = 14
         const val RSI_PERIOD: Int = 14
         const val VOLUME_SMA_PERIOD: Int = 20
-        const val MIN_VOLUME_RATIO: Double = 1.2
+        const val MIN_VOLUME_RATIO: Double = 1.0
         const val MIN_CANDLES_REQUIRED: Int = 200
         const val SMA_PREVIOUS_LOOKBACK: Int = 10
         const val PNL_PRECISION_DECIMAL_PLACES: Int = 6

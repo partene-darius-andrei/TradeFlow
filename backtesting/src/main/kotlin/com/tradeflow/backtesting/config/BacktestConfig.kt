@@ -13,6 +13,7 @@ data class BacktestConfig(
     val exitSlippageRate: BigDecimal = "0.0005".toBigDecimal(),
 
     // ===== BACKTEST SETUP =====
+    val loops: Int = 100,
     val primeSize: Int = 300,
     val lookbackWindow: Int = 200,
     val minCandlesRequired: Int = 200,
@@ -28,8 +29,8 @@ data class BacktestConfig(
     val leverageRange: ClosedRange<Double> = 1.0..10.0,
 
     // ===== GENETIC ALGORITHM =====
-    val populationSize: Int = 50,
-    val generations: Int = 100,
+    val populationSize: Int = 20,
+    val generations: Int = 30,
     val mutationRate: Double = 0.15,
     val eliteRatio: Double = 0.1,
     val tournamentSize: Int = 3,
@@ -44,9 +45,9 @@ data class BacktestConfig(
     val confirmationMutationRange: IntRange = -1..2,
 
     // ===== DATA GENERATION =====
-    val defaultNumPeriods: Int = 50,
+    val defaultNumPeriods: Int = 20,
     val minPeriodDays: Int = 60,
-    val maxPeriodDays: Int = 180,
+    val maxPeriodDays: Int = 120,
     val lookbackBuffer: Int = 200,
     val seed: Int = 3,
     val trainTestRatio: Double = 0.7,
