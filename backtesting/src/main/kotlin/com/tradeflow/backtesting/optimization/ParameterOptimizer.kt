@@ -70,7 +70,7 @@ class ParameterOptimizer {
         return periods
     }
 
-    private suspend fun fetchDatasets(
+    private fun fetchDatasets(
         periods: List<Pair<Long, Long>>
     ): List<Pair<Pair<Long, Long>, List<Candle>>> {
         println("📡 FETCHING DATA FROM BINANCE")

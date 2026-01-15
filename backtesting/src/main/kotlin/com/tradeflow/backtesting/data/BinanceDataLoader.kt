@@ -20,7 +20,7 @@ object BinanceDataLoader {
 
     fun fetchPeriodData(
         period: Pair<Long, Long>,
-        interval: Interval = Interval.FifteenMinutes
+        interval: Interval
     ): List<Candle> {
         return fetchHistoricalCandles(
             startTime = period.first,
@@ -32,7 +32,7 @@ object BinanceDataLoader {
     fun fetchHistoricalCandles(
         startTime: Long,
         endTime: Long,
-        interval: Interval = Interval.FifteenMinutes
+        interval: Interval
     ): List<Candle> = runBlocking {
         val url = buildString {
             append("https://api.binance.com/api/v3/klines")
