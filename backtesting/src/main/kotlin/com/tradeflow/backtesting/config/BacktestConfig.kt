@@ -15,5 +15,5 @@ data class BacktestConfig(
     val minCandlesRequired: Int = 200,
     val noiseLevel: NoiseLevel = NoiseLevel.NONE,
     val interval: Interval = Interval.OneMinute,
-    val silent: Boolean = false
+    val silent: Boolean = true
 )
