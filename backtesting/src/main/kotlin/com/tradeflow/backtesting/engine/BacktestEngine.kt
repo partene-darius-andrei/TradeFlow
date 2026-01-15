@@ -4,7 +4,6 @@ import com.tradeflow.backtesting.config.BacktestConfig
 import com.tradeflow.backtesting.data.CandleNoiseInjector
 import com.tradeflow.backtesting.data.NoiseLevel
 import com.tradeflow.core.domain.StrategyConfig
-import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.Order
@@ -65,14 +64,14 @@ class BacktestEngine(
             entryPrice = decision.entryPrice,
             stopLoss = decision.stopLoss,
             takeProfit = decision.takeProfit,
-            leverage = strategyConfig.leverage
+            leverage = strategyConfig.leverage.default.toBigDecimal()
         )
         is Decision.Range -> Order(
             direction = decision.direction,
             entryPrice = decision.entryPrice,
             stopLoss = decision.stopLoss,
             takeProfit = decision.takeProfit,
-            leverage = strategyConfig.leverage
+            leverage = strategyConfig.leverage.default.toBigDecimal()
         )
         is Decision.Wait -> error("Cannot open trade for Wait decision")
     }
@@ -114,7 +113,7 @@ class BacktestEngine(
     private fun closeTrade(trade: Order, equity: BigDecimal, reason: String): BigDecimal {
         trade.exitReason = reason
 
-        val positionSize = equity * strategyConfig.trendPositionPercent * strategyConfig.leverage
+        val positionSize = equity * strategyConfig.trendPositionPercent.default.toBigDecimal() * strategyConfig.leverage.default.toBigDecimal()
         val pnl = trade.calculatePnl()
         val grossPnlUsd = positionSize * pnl
 
@@ -166,7 +165,7 @@ class BacktestEngine(
             // Update peak and max drawdown
             if (equity > peak) peak = equity
             val currentDrawdown = if (peak > BigDecimal.ZERO) {
-                (peak - equity).divide(peak, TradingConfig.Technical.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
+                (peak - equity).divide(peak, StrategyConfig.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
             } else BigDecimal.ZERO
             if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown
 

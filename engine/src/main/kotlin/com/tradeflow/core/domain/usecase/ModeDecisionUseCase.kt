@@ -25,8 +25,8 @@ class ModeDecisionUseCase(
     operator fun invoke(indicators: Indicators): ModeResult {
         // Determine desired mode based on Trend Strength (ADX)
         val desiredMode = when {
-            indicators.adx >= config.adxTrendThreshold -> Mode.TREND
-            indicators.adx <= config.adxRangeThreshold -> Mode.RANGE
+            indicators.adx >= config.adxTrendThreshold.default -> Mode.TREND
+            indicators.adx <= config.adxRangeThreshold.default -> Mode.RANGE
             else -> lastMode
         }
 
@@ -49,7 +49,7 @@ class ModeDecisionUseCase(
         }
 
         // Check if we have enough confirmations to switch
-        val confirmationRequired = config.confirmationCandles
+        val confirmationRequired = config.confirmationCandles.default.toInt()
         if (confirmationCount >= confirmationRequired) {
             // ✅ CONFIRMATION COMPLETE - switch to new mode
             lastMode = desiredMode

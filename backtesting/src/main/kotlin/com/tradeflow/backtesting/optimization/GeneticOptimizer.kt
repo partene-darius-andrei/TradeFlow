@@ -2,34 +2,10 @@ package com.tradeflow.backtesting.optimization
 
 import com.tradeflow.backtesting.config.OptimizationConfig
 import com.tradeflow.core.domain.StrategyConfig
-import java.math.BigDecimal
 import kotlin.random.Random
 
-data class Chromosome(
-    val config: StrategyConfig
-) {
-    companion object {
-        fun random(random: Random, ranges: OptimizationConfig = OptimizationConfig()): Chromosome {
-            val r = ranges.ranges
-            return Chromosome(
-                StrategyConfig(
-                    adxTrendThreshold = random.nextDouble(r.adxTrendThreshold.start, r.adxTrendThreshold.endInclusive),
-                    adxRangeThreshold = random.nextDouble(r.adxRangeThreshold.start, r.adxRangeThreshold.endInclusive),
-                    confirmationCandles = random.nextInt(r.confirmationCandles.first, r.confirmationCandles.last + 1),
-                    trendPositionPercent = random.nextDouble(r.trendPositionPercent.start, r.trendPositionPercent.endInclusive).bd(),
-                    stopLossAtrMultiplier = random.nextDouble(r.stopLossAtrMultiplier.start, r.stopLossAtrMultiplier.endInclusive).bd(),
-                    takeProfitAtrMultiplier = random.nextDouble(r.takeProfitAtrMultiplier.start, r.takeProfitAtrMultiplier.endInclusive).bd(),
-                    leverage = random.nextDouble(r.leverage.start, r.leverage.endInclusive).bd()
-                )
-            )
-        }
-    }
-}
-
-private fun Double.bd(): BigDecimal = BigDecimal(this.toString())
-
 data class Individual(
-    val chromosome: Chromosome,
+    val config: StrategyConfig,
     var fitness: Double = 0.0
 )
 
@@ -41,7 +17,7 @@ data class GenerationStats(
 )
 
 data class OptimizationResult(
-    val champion: Chromosome,
+    val champion: StrategyConfig,
     val fitness: Double,
     val history: List<GenerationStats>
 )
@@ -71,7 +47,7 @@ class GeneticOptimizer(
 
         repeat(generations) { gen ->
             population.forEach { individual ->
-                individual.fitness = fitnessFunction(individual.chromosome.config)
+                individual.fitness = fitnessFunction(individual.config)
             }
 
             population = population.sortedByDescending { it.fitness }
@@ -101,18 +77,18 @@ class GeneticOptimizer(
         println("=".repeat(80))
         println("Champion Fitness: ${champion.fitness}")
         println("\nOptimal Parameters:")
-        val cfg = champion.chromosome.config
-        println("  ADX Trend Threshold:       ${cfg.adxTrendThreshold}")
-        println("  ADX Range Threshold:       ${cfg.adxRangeThreshold}")
-        println("  Stop Loss ATR Multiplier:  ${cfg.stopLossAtrMultiplier}")
-        println("  Take Profit ATR Multiplier: ${cfg.takeProfitAtrMultiplier}")
-        println("  Trend Position %:          ${(cfg.trendPositionPercent.toDouble() * 100).let { "%.2f".format(it) }}%")
-        println("  Confirmation Candles:      ${cfg.confirmationCandles}")
-        println("  Leverage:                  ${cfg.leverage}x")
+        val cfg = champion.config
+        println("  ADX Trend Threshold:       ${cfg.adxTrendThreshold.default}")
+        println("  ADX Range Threshold:       ${cfg.adxRangeThreshold.default}")
+        println("  Stop Loss ATR Multiplier:  ${cfg.stopLossAtrMultiplier.default}")
+        println("  Take Profit ATR Multiplier: ${cfg.takeProfitAtrMultiplier.default}")
+        println("  Trend Position %:          ${(cfg.trendPositionPercent.default * 100).let { "%.2f".format(it) }}%")
+        println("  Confirmation Candles:      ${cfg.confirmationCandles.default.toInt()}")
+        println("  Leverage:                  ${cfg.leverage.default}x")
         println("=".repeat(80))
 
         return OptimizationResult(
-            champion = champion.chromosome,
+            champion = champion.config,
             fitness = champion.fitness,
             history = evolutionHistory
         )
@@ -120,7 +96,7 @@ class GeneticOptimizer(
 
     private fun initializePopulation(random: Random): List<Individual> {
         return List(populationSize) {
-            Individual(Chromosome.random(random, config))
+            Individual(StrategyConfig.randomInRanges())
         }
     }
 
@@ -138,7 +114,7 @@ class GeneticOptimizer(
             val parent1 = tournamentSelection(population, random)
             val parent2 = tournamentSelection(population, random)
 
-            var child = crossover(parent1.chromosome, parent2.chromosome, random)
+            var child = crossover(parent1.config, parent2.config, random)
 
             if (random.nextDouble() < mutationRate) {
                 child = mutate(child, random)
@@ -158,57 +134,65 @@ class GeneticOptimizer(
         return tournament.maxByOrNull { it.fitness }!!
     }
 
-    private fun crossover(parent1: Chromosome, parent2: Chromosome, random: Random): Chromosome {
-        val p1 = parent1.config
-        val p2 = parent2.config
-
-        return Chromosome(
-            StrategyConfig(
-                adxTrendThreshold = if (random.nextBoolean()) p1.adxTrendThreshold else p2.adxTrendThreshold,
-                adxRangeThreshold = if (random.nextBoolean()) p1.adxRangeThreshold else p2.adxRangeThreshold,
-                confirmationCandles = if (random.nextBoolean()) p1.confirmationCandles else p2.confirmationCandles,
-                trendPositionPercent = if (random.nextBoolean()) p1.trendPositionPercent else p2.trendPositionPercent,
-                stopLossAtrMultiplier = if (random.nextBoolean()) p1.stopLossAtrMultiplier else p2.stopLossAtrMultiplier,
-                takeProfitAtrMultiplier = if (random.nextBoolean()) p1.takeProfitAtrMultiplier else p2.takeProfitAtrMultiplier,
-                leverage = if (random.nextBoolean()) p1.leverage else p2.leverage
-            )
+    private fun crossover(parent1: StrategyConfig, parent2: StrategyConfig, random: Random): StrategyConfig {
+        return StrategyConfig(
+            confirmationCandles = if (random.nextBoolean()) parent1.confirmationCandles.copy() else parent2.confirmationCandles.copy(),
+            adxTrendThreshold = if (random.nextBoolean()) parent1.adxTrendThreshold.copy() else parent2.adxTrendThreshold.copy(),
+            adxRangeThreshold = if (random.nextBoolean()) parent1.adxRangeThreshold.copy() else parent2.adxRangeThreshold.copy(),
+            stopLossAtrMultiplier = if (random.nextBoolean()) parent1.stopLossAtrMultiplier.copy() else parent2.stopLossAtrMultiplier.copy(),
+            takeProfitAtrMultiplier = if (random.nextBoolean()) parent1.takeProfitAtrMultiplier.copy() else parent2.takeProfitAtrMultiplier.copy(),
+            trendPositionPercent = if (random.nextBoolean()) parent1.trendPositionPercent.copy() else parent2.trendPositionPercent.copy(),
+            leverage = if (random.nextBoolean()) parent1.leverage.copy() else parent2.leverage.copy(),
+            rangeEntryMultiplier = if (random.nextBoolean()) parent1.rangeEntryMultiplier.copy() else parent2.rangeEntryMultiplier.copy(),
+            rangeStopMultiplier = if (random.nextBoolean()) parent1.rangeStopMultiplier.copy() else parent2.rangeStopMultiplier.copy(),
+            rangeRsiMidpoint = if (random.nextBoolean()) parent1.rangeRsiMidpoint.copy() else parent2.rangeRsiMidpoint.copy(),
+            smaPeriod = if (random.nextBoolean()) parent1.smaPeriod.copy() else parent2.smaPeriod.copy(),
+            adxPeriod = if (random.nextBoolean()) parent1.adxPeriod.copy() else parent2.adxPeriod.copy(),
+            atrPeriod = if (random.nextBoolean()) parent1.atrPeriod.copy() else parent2.atrPeriod.copy(),
+            rsiPeriod = if (random.nextBoolean()) parent1.rsiPeriod.copy() else parent2.rsiPeriod.copy(),
+            volumeSmaPeriod = if (random.nextBoolean()) parent1.volumeSmaPeriod.copy() else parent2.volumeSmaPeriod.copy(),
+            minVolumeRatio = if (random.nextBoolean()) parent1.minVolumeRatio.copy() else parent2.minVolumeRatio.copy(),
+            rsiLongBlockThreshold = if (random.nextBoolean()) parent1.rsiLongBlockThreshold.copy() else parent2.rsiLongBlockThreshold.copy(),
+            rsiShortBlockThreshold = if (random.nextBoolean()) parent1.rsiShortBlockThreshold.copy() else parent2.rsiShortBlockThreshold.copy(),
+            smaPreviousLookback = if (random.nextBoolean()) parent1.smaPreviousLookback.copy() else parent2.smaPreviousLookback.copy()
         )
     }
 
-    private fun mutate(chromosome: Chromosome, random: Random): Chromosome {
-        val p = chromosome.config
-        val ranges = config.ranges
-        val mutations = config.mutations
+    private fun mutate(config: StrategyConfig, random: Random): StrategyConfig {
+        val p = config.copy()
+        val allParams = listOf(
+            p::confirmationCandles, p::adxTrendThreshold, p::adxRangeThreshold,
+            p::stopLossAtrMultiplier, p::takeProfitAtrMultiplier, p::trendPositionPercent,
+            p::leverage, p::rangeEntryMultiplier, p::rangeStopMultiplier, p::rangeRsiMidpoint,
+            p::smaPeriod, p::adxPeriod, p::atrPeriod, p::rsiPeriod, p::volumeSmaPeriod, p::minVolumeRatio,
+            p::rsiLongBlockThreshold, p::rsiShortBlockThreshold, p::smaPreviousLookback
+        )
 
-        return when (random.nextInt(7)) {
-            0 -> Chromosome(p.copy(
-                adxTrendThreshold = (p.adxTrendThreshold + random.nextDouble(mutations.adx.start, mutations.adx.endInclusive))
-                    .coerceIn(ranges.adxTrendThreshold.start, ranges.adxTrendThreshold.endInclusive)
-            ))
-            1 -> Chromosome(p.copy(
-                adxRangeThreshold = (p.adxRangeThreshold + random.nextDouble(mutations.adxRange.start, mutations.adxRange.endInclusive))
-                    .coerceIn(ranges.adxRangeThreshold.start, ranges.adxRangeThreshold.endInclusive)
-            ))
-            2 -> Chromosome(p.copy(
-                stopLossAtrMultiplier = (p.stopLossAtrMultiplier.toDouble() + random.nextDouble(mutations.stopLoss.start, mutations.stopLoss.endInclusive))
-                    .coerceIn(ranges.stopLossAtrMultiplier.start, ranges.stopLossAtrMultiplier.endInclusive).bd()
-            ))
-            3 -> Chromosome(p.copy(
-                takeProfitAtrMultiplier = (p.takeProfitAtrMultiplier.toDouble() + random.nextDouble(mutations.takeProfit.start, mutations.takeProfit.endInclusive))
-                    .coerceIn(ranges.takeProfitAtrMultiplier.start, ranges.takeProfitAtrMultiplier.endInclusive).bd()
-            ))
-            4 -> Chromosome(p.copy(
-                trendPositionPercent = (p.trendPositionPercent.toDouble() + random.nextDouble(mutations.position.start, mutations.position.endInclusive))
-                    .coerceIn(ranges.trendPositionPercent.start, ranges.trendPositionPercent.endInclusive).bd()
-            ))
-            5 -> Chromosome(p.copy(
-                confirmationCandles = (p.confirmationCandles + random.nextInt(mutations.confirmation.first, mutations.confirmation.last + 1))
-                    .coerceIn(ranges.confirmationCandles.first, ranges.confirmationCandles.last)
-            ))
-            else -> Chromosome(p.copy(
-                leverage = (p.leverage.toDouble() + random.nextDouble(-1.0, 1.0))
-                    .coerceIn(ranges.leverage.start, ranges.leverage.endInclusive).bd()
-            ))
+        val paramToMutate = allParams.random(random)
+        val originalParam = paramToMutate.get()
+        val mutatedParam = originalParam.mutated(random)
+
+        return when (paramToMutate.name) {
+            "confirmationCandles" -> p.copy(confirmationCandles = mutatedParam)
+            "adxTrendThreshold" -> p.copy(adxTrendThreshold = mutatedParam)
+            "adxRangeThreshold" -> p.copy(adxRangeThreshold = mutatedParam)
+            "stopLossAtrMultiplier" -> p.copy(stopLossAtrMultiplier = mutatedParam)
+            "takeProfitAtrMultiplier" -> p.copy(takeProfitAtrMultiplier = mutatedParam)
+            "trendPositionPercent" -> p.copy(trendPositionPercent = mutatedParam)
+            "leverage" -> p.copy(leverage = mutatedParam)
+            "rangeEntryMultiplier" -> p.copy(rangeEntryMultiplier = mutatedParam)
+            "rangeStopMultiplier" -> p.copy(rangeStopMultiplier = mutatedParam)
+            "rangeRsiMidpoint" -> p.copy(rangeRsiMidpoint = mutatedParam)
+            "smaPeriod" -> p.copy(smaPeriod = mutatedParam)
+            "adxPeriod" -> p.copy(adxPeriod = mutatedParam)
+            "atrPeriod" -> p.copy(atrPeriod = mutatedParam)
+            "rsiPeriod" -> p.copy(rsiPeriod = mutatedParam)
+            "volumeSmaPeriod" -> p.copy(volumeSmaPeriod = mutatedParam)
+            "minVolumeRatio" -> p.copy(minVolumeRatio = mutatedParam)
+            "rsiLongBlockThreshold" -> p.copy(rsiLongBlockThreshold = mutatedParam)
+            "rsiShortBlockThreshold" -> p.copy(rsiShortBlockThreshold = mutatedParam)
+            "smaPreviousLookback" -> p.copy(smaPreviousLookback = mutatedParam)
+            else -> p
         }
     }
 }

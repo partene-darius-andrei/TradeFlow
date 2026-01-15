@@ -12,12 +12,12 @@ class ValidationReporter(
     fun printCurrentParameters(strategyConfig: StrategyConfig) {
         println("📋 CURRENT TRADING PARAMETERS")
         println("─".repeat(90))
-        println("  ADX Trend Threshold:     ${strategyConfig.adxTrendThreshold}")
-        println("  ADX Range Threshold:     ${strategyConfig.adxRangeThreshold}")
-        println("  Confirmation Candles:    ${strategyConfig.confirmationCandles}")
-        println("  Trend Position %:        ${(strategyConfig.trendPositionPercent.toDouble() * 100).let { "%.2f".format(it) }}%")
-        println("  Stop Loss ATR Mult:      ${strategyConfig.stopLossAtrMultiplier}")
-        println("  Take Profit ATR Mult:    ${strategyConfig.takeProfitAtrMultiplier}")
+        println("  ADX Trend Threshold:     ${strategyConfig.adxTrendThreshold.default}")
+        println("  ADX Range Threshold:     ${strategyConfig.adxRangeThreshold.default}")
+        println("  Confirmation Candles:    ${strategyConfig.confirmationCandles.default.toInt()}")
+        println("  Trend Position %:        ${(strategyConfig.trendPositionPercent.default * 100).let { "%.2f".format(it) }}%")
+        println("  Stop Loss ATR Mult:      ${strategyConfig.stopLossAtrMultiplier.default}")
+        println("  Take Profit ATR Mult:    ${strategyConfig.takeProfitAtrMultiplier.default}")
         println()
     }
 

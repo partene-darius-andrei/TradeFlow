@@ -1,6 +1,5 @@
 package com.tradeflow.core.domain.usecase
 
-import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Indicators
 import org.ta4j.core.BaseBar
@@ -17,7 +16,9 @@ import org.ta4j.core.num.DecimalNum
 import java.math.BigDecimal
 import java.time.Duration
 
-class AnalyzeCandlesUseCase {
+class AnalyzeCandlesUseCase(
+    private val config: com.tradeflow.core.domain.StrategyConfig = com.tradeflow.core.domain.StrategyConfig()
+) {
 
     operator fun invoke(candles: List<Candle>): Indicators {
 
@@ -25,7 +26,7 @@ class AnalyzeCandlesUseCase {
         val candleDuration = if (candles.size >= 2) {
             Duration.between(candles[0].timestamp, candles[1].timestamp)
         } else {
-            Duration.ofHours(TradingConfig.Technical.DEFAULT_CANDLE_DURATION_HOURS.toLong())
+            Duration.ofHours(com.tradeflow.core.domain.StrategyConfig.DEFAULT_CANDLE_DURATION_HOURS.toLong())
         }
 
         val series = BaseBarSeriesBuilder().build()
@@ -48,33 +49,33 @@ class AnalyzeCandlesUseCase {
         }
 
         val closePrice = ClosePriceIndicator(series)
-        val smaIndicator = SMAIndicator(closePrice, TradingConfig.Technical.SMA_PERIOD)
+        val smaIndicator = SMAIndicator(closePrice, config.smaPeriod.default.toInt())
 
         val smaValue = smaIndicator.getValue(series.endIndex).doubleValue()
         val smaPreviousIndex =
-            (series.endIndex - TradingConfig.Technical.SMA_PREVIOUS_LOOKBACK).coerceAtLeast(0)
+            (series.endIndex - config.smaPreviousLookback.default.toInt()).coerceAtLeast(0)
         val smaPreviousValue = smaIndicator.getValue(smaPreviousIndex).doubleValue()
 
         val adxValue =
-            ADXIndicator(series, TradingConfig.Technical.ADX_PERIOD).getValue(series.endIndex)
+            ADXIndicator(series, config.adxPeriod.default.toInt()).getValue(series.endIndex)
                 .doubleValue()
         val atrValue =
-            ATRIndicator(series, TradingConfig.Technical.ATR_PERIOD).getValue(series.endIndex)
+            ATRIndicator(series, config.atrPeriod.default.toInt()).getValue(series.endIndex)
                 .doubleValue()
 
         // RSI calculation (momentum filter)
-        val rsiIndicator = RSIIndicator(closePrice, TradingConfig.Technical.RSI_PERIOD)
+        val rsiIndicator = RSIIndicator(closePrice, config.rsiPeriod.default.toInt())
         val rsiValue = rsiIndicator.getValue(series.endIndex).doubleValue()
 
         // Volume indicators
         val volumeIndicator = VolumeIndicator(series)
         val volumeSmaIndicator =
-            SMAIndicator(volumeIndicator, TradingConfig.Technical.VOLUME_SMA_PERIOD)
+            SMAIndicator(volumeIndicator, config.volumeSmaPeriod.default.toInt())
 
         val currentVolumeValue = volumeIndicator.getValue(series.endIndex).doubleValue()
         val volumeSmaValue = volumeSmaIndicator.getValue(series.endIndex).doubleValue()
         val volumeRatio =
-            if (volumeSmaValue > 0) currentVolumeValue / volumeSmaValue else TradingConfig.Technical.VOLUME_RATIO_DEFAULT_FALLBACK
+            if (volumeSmaValue > 0) currentVolumeValue / volumeSmaValue else com.tradeflow.core.domain.StrategyConfig.VOLUME_RATIO_DEFAULT_FALLBACK
 
         // OBV (On-Balance Volume)
         val obvIndicator = OnBalanceVolumeIndicator(series)

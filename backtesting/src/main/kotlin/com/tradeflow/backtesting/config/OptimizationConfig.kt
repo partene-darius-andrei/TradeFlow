@@ -1,20 +1,8 @@
 package com.tradeflow.backtesting.config
 
 data class OptimizationConfig(
-    val ranges: OptimizationRanges = OptimizationRanges(),
     val ga: GeneticAlgorithmConfig = GeneticAlgorithmConfig(),
-    val mutations: MutationRanges = MutationRanges(),
     val fitness: FitnessWeights = FitnessWeights()
-)
-
-data class OptimizationRanges(
-    val adxTrendThreshold: ClosedRange<Double> = 15.0..30.0,
-    val adxRangeThreshold: ClosedRange<Double> = 0.5..2.0,
-    val confirmationCandles: IntRange = 1..5,
-    val trendPositionPercent: ClosedRange<Double> = 0.01..0.15,
-    val stopLossAtrMultiplier: ClosedRange<Double> = 3.0..20.0,
-    val takeProfitAtrMultiplier: ClosedRange<Double> = 5.0..40.0,
-    val leverage: ClosedRange<Double> = 1.0..10.0
 )
 
 data class GeneticAlgorithmConfig(
@@ -24,15 +12,6 @@ data class GeneticAlgorithmConfig(
     val eliteRatio: Double = 0.1,
     val tournamentSize: Int = 3,
     val reportInterval: Int = 10
-)
-
-data class MutationRanges(
-    val adx: ClosedRange<Double> = -2.0..2.0,
-    val adxRange: ClosedRange<Double> = -0.3..0.3,
-    val stopLoss: ClosedRange<Double> = -2.0..2.0,
-    val takeProfit: ClosedRange<Double> = -3.0..3.0,
-    val position: ClosedRange<Double> = -0.01..0.01,
-    val confirmation: IntRange = -1..2
 )
 
 data class FitnessWeights(

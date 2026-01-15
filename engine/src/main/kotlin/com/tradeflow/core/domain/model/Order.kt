@@ -1,6 +1,6 @@
 package com.tradeflow.core.domain.model
 
-import com.tradeflow.core.domain.TradingConfig
+import com.tradeflow.core.domain.StrategyConfig
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -23,8 +23,8 @@ data class Order(
     fun calculatePnl(): BigDecimal {
         val exit = exitPrice ?: return BigDecimal.ZERO
         return when (direction) {
-            Side.BUY -> (exit - entryPrice).divide(entryPrice, TradingConfig.Technical.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
-            Side.SELL -> (entryPrice - exit).divide(entryPrice, TradingConfig.Technical.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
+            Side.BUY -> (exit - entryPrice).divide(entryPrice, StrategyConfig.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
+            Side.SELL -> (entryPrice - exit).divide(entryPrice, StrategyConfig.PNL_PRECISION_DECIMAL_PLACES, RoundingMode.HALF_UP)
         }
     }
 }

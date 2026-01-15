@@ -127,20 +127,20 @@ class ParameterOptimizer {
         println("Champion Fitness: ${"%.4f".format(result.fitness)}")
         println()
 
-        printChampionParameters(result.champion.config)
+        printChampionParameters(result.champion)
         printComparison(result, candles)
     }
 
     private fun printChampionParameters(champion: StrategyConfig) {
         println("📋 OPTIMIZED PARAMETERS")
         println("─".repeat(90))
-        println("  adxTrendThreshold:       ${champion.adxTrendThreshold}")
-        println("  adxRangeThreshold:       ${champion.adxRangeThreshold}")
-        println("  confirmationCandles:     ${champion.confirmationCandles}")
-        println("  trendPositionPercent:    ${champion.trendPositionPercent} (${"%.2f".format(champion.trendPositionPercent.toDouble() * 100)}%)")
-        println("  stopLossAtrMultiplier:   ${champion.stopLossAtrMultiplier}")
-        println("  takeProfitAtrMultiplier: ${champion.takeProfitAtrMultiplier}")
-        println("  leverage:                ${champion.leverage}x")
+        println("  adxTrendThreshold:       ${champion.adxTrendThreshold.default}")
+        println("  adxRangeThreshold:       ${champion.adxRangeThreshold.default}")
+        println("  confirmationCandles:     ${champion.confirmationCandles.default.toInt()}")
+        println("  trendPositionPercent:    ${champion.trendPositionPercent.default} (${"%.2f".format(champion.trendPositionPercent.default * 100)}%)")
+        println("  stopLossAtrMultiplier:   ${champion.stopLossAtrMultiplier.default}")
+        println("  takeProfitAtrMultiplier: ${champion.takeProfitAtrMultiplier.default}")
+        println("  leverage:                ${champion.leverage.default}x")
         println()
     }
 
