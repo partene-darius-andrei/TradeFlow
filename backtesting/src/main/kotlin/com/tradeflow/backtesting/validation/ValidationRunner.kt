@@ -24,7 +24,7 @@ class ValidationRunner(
                 val days = ((period.second - period.first) / (1000 * 60 * 60 * 24)).toInt()
                 print("  [${index + 1}/$numPeriods] ${period.first.toDateString()} to ${period.second.toDateString()} ($days days)... ")
 
-                val candles = BinanceDataLoader.fetchPeriodData(period)
+                val candles = BinanceDataLoader.fetchPeriodData(period, backtestConfig.interval)
                 val result = engine.execute(candles)
 
                 println("✓ (PnL: ${if (result.pnlPercent >= 0) "+" else ""}${"%.2f".format(result.pnlPercent)}%, " +

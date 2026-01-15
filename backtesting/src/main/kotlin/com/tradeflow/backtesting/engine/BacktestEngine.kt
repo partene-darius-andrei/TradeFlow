@@ -140,23 +140,16 @@ class BacktestEngine(
         var peak = initialCapital
         var maxDrawdown = BigDecimal.ZERO
 
-        val intervalRatio = config.tradingIntervalMinutes / config.executionIntervalMinutes
-
         testCandles.forEachIndexed { index, currentCandle ->
-            // Build history for trading decisions (sample at trading interval)
-            val tradingHistory = (primeCandles + testCandles.take(index + 1))
-                .filterIndexed { i, _ -> i % intervalRatio == 0 }
-                .takeLast(config.lookbackWindow)
+            val history = (primeCandles + testCandles.take(index + 1)).takeLast(config.lookbackWindow)
 
-            if (tradingHistory.size < config.minCandlesRequired) {
+            if (history.size < config.minCandlesRequired) {
                 return@forEachIndexed
             }
 
-            // Check exits on every candle (execution interval)
             equity = checkExits(openOrders, currentCandle, equity, closedOrders)
 
-            // Execute new signals using trading interval timeframe
-            when (val decision = makeTradingDecisionUseCase(tradingHistory, currentCandle.close)) {
+            when (val decision = makeTradingDecisionUseCase(history, currentCandle.close)) {
                 is Decision.Trend -> {
                     openOrders.add(openTrade(decision))
                     println("  🎯 TREND TRADE OPENED")

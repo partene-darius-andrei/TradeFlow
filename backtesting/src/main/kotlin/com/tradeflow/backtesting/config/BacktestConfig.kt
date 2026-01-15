@@ -1,6 +1,7 @@
 package com.tradeflow.backtesting.config
 
 import com.tradeflow.backtesting.data.NoiseLevel
+import com.tradeflow.core.domain.model.Interval
 import java.math.BigDecimal
 
 data class BacktestConfig(
@@ -8,11 +9,10 @@ data class BacktestConfig(
     val entryFeeRate: BigDecimal = "0.0005".toBigDecimal(),
     val exitFeeRate: BigDecimal = "0.0002".toBigDecimal(),
     val exitSlippageRate: BigDecimal = "0.0005".toBigDecimal(),
-    val loops: Int = 100,
+    val loops: Int = 20,
     val primeSize: Int = 300,
     val lookbackWindow: Int = 200,
     val minCandlesRequired: Int = 200,
     val noiseLevel: NoiseLevel = NoiseLevel.NONE,
-    val tradingIntervalMinutes: Int = 60,
-    val executionIntervalMinutes: Int = 1
+    val interval: Interval = Interval.FifteenMinutes
 )

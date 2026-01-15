@@ -80,8 +80,8 @@ class ParameterOptimizer {
         periods.forEachIndexed { index, period ->
             try {
                 print("  Fetching period ${index + 1}/${periods.size}... ")
-                val candles = BinanceDataLoader.fetchPeriodData(period)
-                println("✓ (${candles.size} 1m candles)")
+                val candles = BinanceDataLoader.fetchPeriodData(period, backtestConfig.interval)
+                println("✓ (${candles.size} ${backtestConfig.interval.apiString} candles)")
                 datasets.add(Pair(period, candles))
             } catch (e: Exception) {
                 println("✗ Error: ${e.message}")
@@ -95,9 +95,8 @@ class ParameterOptimizer {
 
         println("\n📊 COMBINED DATASET")
         println("─".repeat(90))
-        println("  Total candles (${backtestConfig.executionIntervalMinutes}m):  ${candles.size}")
-        println("  Total days:                ${candles.size / (24 * 60 / backtestConfig.executionIntervalMinutes)}")
-        println("  Trading decisions every:   ${backtestConfig.tradingIntervalMinutes}m")
+        println("  Total candles (${backtestConfig.interval.apiString}):  ${candles.size}")
+        println("  Total days:                ${candles.size / (24 * 60 / backtestConfig.interval.minutes)}")
         println()
 
         return candles

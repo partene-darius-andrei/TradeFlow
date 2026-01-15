@@ -1,6 +1,7 @@
 package com.tradeflow.backtesting.data
 
 import com.tradeflow.core.domain.model.Candle
+import com.tradeflow.core.domain.model.Interval
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
@@ -17,21 +18,26 @@ object BinanceDataLoader {
 
     private val client = HttpClient(OkHttp)
 
-    fun fetchPeriodData(period: Pair<Long, Long>): List<Candle> {
+    fun fetchPeriodData(
+        period: Pair<Long, Long>,
+        interval: Interval = Interval.FifteenMinutes
+    ): List<Candle> {
         return fetchHistoricalCandles(
             startTime = period.first,
-            endTime = period.second
+            endTime = period.second,
+            interval = interval
         )
     }
 
     fun fetchHistoricalCandles(
         startTime: Long,
         endTime: Long,
+        interval: Interval = Interval.FifteenMinutes
     ): List<Candle> = runBlocking {
         val url = buildString {
             append("https://api.binance.com/api/v3/klines")
             append("?symbol=BTCUSDT")
-            append("&interval=1m")
+            append("&interval=${interval.apiString}")
             append("&limit=1000")
             append("&startTime=$startTime")
             append("&endTime=$endTime")
