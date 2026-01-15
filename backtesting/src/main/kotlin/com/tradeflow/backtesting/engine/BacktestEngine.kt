@@ -8,7 +8,6 @@ import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.Order
-import com.tradeflow.core.domain.model.OrderSide
 import com.tradeflow.core.domain.usecase.MakeTradingDecisionUseCase
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -88,13 +87,13 @@ class BacktestEngine(
 
         openOrders.filter { it.isOpen }.forEach { trade ->
             val hitStopLoss = when (trade.direction) {
-                OrderSide.BUY -> candle.low <= trade.stopLoss
-                OrderSide.SELL -> candle.high >= trade.stopLoss
+                Order.Side.BUY -> candle.low <= trade.stopLoss
+                Order.Side.SELL -> candle.high >= trade.stopLoss
             }
 
             val hitTakeProfit = when (trade.direction) {
-                OrderSide.BUY -> candle.high >= trade.takeProfit
-                OrderSide.SELL -> candle.low <= trade.takeProfit
+                Order.Side.BUY -> candle.high >= trade.takeProfit
+                Order.Side.SELL -> candle.low <= trade.takeProfit
             }
 
             if (hitStopLoss) {
@@ -129,21 +128,11 @@ class BacktestEngine(
         return netPnlUsd
     }
 
-    fun execute(
-        all1h: List<Candle>,
-        all30m: List<Candle>,
-        all15m: List<Candle>,
-        all5m: List<Candle>,
-        all1m: List<Candle>
-    ): BacktestResult {
-        val processedAll1h = applyNoiseIfNeeded(all1h)
-        val processedAll30m = applyNoiseIfNeeded(all30m)
-        val processedAll15m = applyNoiseIfNeeded(all15m)
-        val processedAll5m = applyNoiseIfNeeded(all5m)
-        val processedAll1m = applyNoiseIfNeeded(all1m)
+    fun execute(candles: List<Candle>): BacktestResult {
+        val processedCandles = applyNoiseIfNeeded(candles)
 
-        val prime1m = processedAll1m.take(config.primeSize)
-        val test1m = processedAll1m.drop(config.primeSize)
+        val primeCandles = processedCandles.take(config.primeSize)
+        val testCandles = processedCandles.drop(config.primeSize)
 
         var equity = initialCapital
         val openOrders = mutableListOf<Order>()
@@ -151,32 +140,23 @@ class BacktestEngine(
         var peak = initialCapital
         var maxDrawdown = BigDecimal.ZERO
 
-        test1m.forEachIndexed { index, candle1m ->
-            val history1m = (prime1m + test1m.take(index + 1)).takeLast(config.lookbackWindow)
-            val index5m = (config.primeSize + (index / 5)).coerceAtMost(processedAll5m.size - 1)
-            val history5m = processedAll5m.take(index5m + 1).takeLast(config.lookbackWindow)
-            val index15m = (config.primeSize + (index / 15)).coerceAtMost(processedAll15m.size - 1)
-            val history15m = processedAll15m.take(index15m + 1).takeLast(config.lookbackWindow)
-            val index30m = (config.primeSize + (index / 30)).coerceAtMost(processedAll30m.size - 1)
-            val history30m = processedAll30m.take(index30m + 1).takeLast(config.lookbackWindow)
-            val index1h = (config.primeSize + (index / 60)).coerceAtMost(processedAll1h.size - 1)
-            val history1h = processedAll1h.take(index1h + 1).takeLast(config.lookbackWindow)
+        val intervalRatio = config.tradingIntervalMinutes / config.executionIntervalMinutes
 
-            if (history1h.size < config.minCandlesRequired ||
-                history30m.size < config.minCandlesRequired ||
-                history15m.size < config.minCandlesRequired ||
-                history5m.size < config.minCandlesRequired ||
-                history1m.size < config.minCandlesRequired) {
+        testCandles.forEachIndexed { index, currentCandle ->
+            // Build history for trading decisions (sample at trading interval)
+            val tradingHistory = (primeCandles + testCandles.take(index + 1))
+                .filterIndexed { i, _ -> i % intervalRatio == 0 }
+                .takeLast(config.lookbackWindow)
+
+            if (tradingHistory.size < config.minCandlesRequired) {
                 return@forEachIndexed
             }
 
-            // Check exits
-            equity = checkExits(openOrders, candle1m, equity, closedOrders)
+            // Check exits on every candle (execution interval)
+            equity = checkExits(openOrders, currentCandle, equity, closedOrders)
 
-            // Execute new signals using 1h timeframe only
-            val decision = makeTradingDecisionUseCase(history1h, candle1m.close)
-
-            when (decision) {
+            // Execute new signals using trading interval timeframe
+            when (val decision = makeTradingDecisionUseCase(tradingHistory, currentCandle.close)) {
                 is Decision.Trend -> {
                     openOrders.add(openTrade(decision))
                     println("  🎯 TREND TRADE OPENED")
@@ -197,7 +177,7 @@ class BacktestEngine(
             } else BigDecimal.ZERO
             if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown
 
-            println("  Progress: ${index + 1}/${test1m.size} candles | " +
+            println("  Progress: ${index + 1}/${testCandles.size} candles | " +
                     "Open: ${openOrders.size} | Closed: ${closedOrders.size} | " +
                     "Equity: \$${equity.toUsd()}")
         }

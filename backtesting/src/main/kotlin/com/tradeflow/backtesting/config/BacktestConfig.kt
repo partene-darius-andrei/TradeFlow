@@ -12,5 +12,7 @@ data class BacktestConfig(
     val primeSize: Int = 300,
     val lookbackWindow: Int = 200,
     val minCandlesRequired: Int = 200,
-    val noiseLevel: NoiseLevel = NoiseLevel.NONE
+    val noiseLevel: NoiseLevel = NoiseLevel.NONE,
+    val tradingIntervalMinutes: Int = 60,
+    val executionIntervalMinutes: Int = 1
 )

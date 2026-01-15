@@ -4,7 +4,7 @@ import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.TradingConfig
 import com.tradeflow.core.domain.model.Decision
 import com.tradeflow.core.domain.model.Indicators
-import com.tradeflow.core.domain.model.OrderSide
+import com.tradeflow.core.domain.model.Order
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -41,15 +41,15 @@ class TradingSignalUseCase(
         return null
     }
 
-    private fun checkRsiRange(indicators: Indicators, direction: OrderSide): Decision.Wait? {
+    private fun checkRsiRange(indicators: Indicators, direction: Order.Side): Decision.Wait? {
         val rsiValid = when (direction) {
-            OrderSide.BUY -> indicators.rsi > config.rangeRsiMidpoint
-            OrderSide.SELL -> indicators.rsi < config.rangeRsiMidpoint
+            Order.Side.BUY -> indicators.rsi > config.rangeRsiMidpoint
+            Order.Side.SELL -> indicators.rsi < config.rangeRsiMidpoint
         }
 
         if (!rsiValid) {
-            val operator = if (direction == OrderSide.BUY) ">" else "<"
-            val directionStr = if (direction == OrderSide.BUY) "LONG" else "SHORT"
+            val operator = if (direction == Order.Side.BUY) ">" else "<"
+            val directionStr = if (direction == Order.Side.BUY) "LONG" else "SHORT"
             val reason = "RSI must be $operator ${config.rangeRsiMidpoint} for $directionStr"
             return Decision.Wait(
                 "RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks $directionStr ($reason)"
@@ -61,7 +61,7 @@ class TradingSignalUseCase(
 
     fun createTrendSignal(currentPrice: BigDecimal, indicators: Indicators): Decision {
         val isLong = currentPrice >= indicators.sma200
-        val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
+        val direction = if (isLong) Order.Side.BUY else Order.Side.SELL
 
         checkRsiTrend(indicators, isLong)?.let { return it }
         checkVolume(indicators)?.let { return it }
@@ -99,8 +99,8 @@ class TradingSignalUseCase(
         }
 
         val direction = when {
-            currentPrice < sma200 -> OrderSide.BUY
-            currentPrice > sma200 -> OrderSide.SELL
+            currentPrice < sma200 -> Order.Side.BUY
+            currentPrice > sma200 -> Order.Side.SELL
             else -> return Decision.Wait("Price at mean")
         }
 
@@ -108,8 +108,8 @@ class TradingSignalUseCase(
         checkVolume(indicators)?.let { return it }
 
         val stopLoss = when (direction) {
-            OrderSide.BUY -> currentPrice - (atr * config.rangeStopMultiplier.toBigDecimal())
-            OrderSide.SELL -> currentPrice + (atr * config.rangeStopMultiplier.toBigDecimal())
+            Order.Side.BUY -> currentPrice - (atr * config.rangeStopMultiplier.toBigDecimal())
+            Order.Side.SELL -> currentPrice + (atr * config.rangeStopMultiplier.toBigDecimal())
         }
 
         return Decision.Range(

@@ -5,13 +5,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.get
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.math.BigDecimal
 import java.time.Instant
@@ -20,76 +17,22 @@ object BinanceDataLoader {
 
     private val client = HttpClient(OkHttp)
 
-    data class MultiTimeframeData(
-        val candles1h: List<Candle>,
-        val candles30m: List<Candle>,
-        val candles15m: List<Candle>,
-        val candles5m: List<Candle>,
-        val candles1m: List<Candle>
-    )
-
-    suspend fun fetchPeriodData(period: Pair<Long, Long>): MultiTimeframeData = coroutineScope {
-
-        val candles1h = async {
-            fetchHistoricalCandles(
-                interval = "1h",
-                startTime = period.first,
-                endTime = period.second,
-            )
-        }
-
-        val candles30m = async {
-            fetchHistoricalCandles(
-                interval = "30m",
-                startTime = period.first,
-                endTime = period.second,
-            )
-        }
-
-        val candles15m = async {
-            fetchHistoricalCandles(
-                interval = "15m",
-                startTime = period.first,
-                endTime = period.second,
-            )
-        }
-
-        val candles5m = async {
-            fetchHistoricalCandles(
-                interval = "5m",
-                startTime = period.first,
-                endTime = period.second,
-            )
-        }
-
-        val candles1m = async {
-            fetchHistoricalCandles(
-                interval = "1m",
-                startTime = period.first,
-                endTime = period.second,
-            )
-        }
-
-        MultiTimeframeData(
-            candles1h = candles1h.await(),
-            candles30m = candles30m.await(),
-            candles15m = candles15m.await(),
-            candles5m = candles5m.await(),
-            candles1m = candles1m.await()
+    fun fetchPeriodData(period: Pair<Long, Long>): List<Candle> {
+        return fetchHistoricalCandles(
+            startTime = period.first,
+            endTime = period.second
         )
     }
 
     fun fetchHistoricalCandles(
-        interval: String,
         startTime: Long,
         endTime: Long,
-        limit: Int = 500
     ): List<Candle> = runBlocking {
         val url = buildString {
             append("https://api.binance.com/api/v3/klines")
             append("?symbol=BTCUSDT")
-            append("&interval=$interval")
-            append("&limit=$limit")
+            append("&interval=1m")
+            append("&limit=1000")
             append("&startTime=$startTime")
             append("&endTime=$endTime")
         }

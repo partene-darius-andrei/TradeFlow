@@ -14,7 +14,7 @@ class ValidationRunner(
     private val strategyConfig: StrategyConfig = StrategyConfig()
 ) {
 
-    suspend fun runBacktests(periods: List<Pair<Long, Long>>): List<Pair<Pair<Long, Long>, BacktestResult>> {
+    fun runBacktests(periods: List<Pair<Long, Long>>): List<Pair<Pair<Long, Long>, BacktestResult>> {
         val results = mutableListOf<Pair<Pair<Long, Long>, BacktestResult>>()
         val engine = BacktestEngine(backtestConfig, strategyConfig)
         val numPeriods = periods.size
@@ -24,8 +24,8 @@ class ValidationRunner(
                 val days = ((period.second - period.first) / (1000 * 60 * 60 * 24)).toInt()
                 print("  [${index + 1}/$numPeriods] ${period.first.toDateString()} to ${period.second.toDateString()} ($days days)... ")
 
-                val data = BinanceDataLoader.fetchPeriodData(period)
-                val result = engine.execute(data.candles1h, data.candles30m, data.candles15m, data.candles5m, data.candles1m)
+                val candles = BinanceDataLoader.fetchPeriodData(period)
+                val result = engine.execute(candles)
 
                 println("✓ (PnL: ${if (result.pnlPercent >= 0) "+" else ""}${"%.2f".format(result.pnlPercent)}%, " +
                     "WR: ${"%.1f".format(result.winRate)}%, Trades: ${result.trades.size})")

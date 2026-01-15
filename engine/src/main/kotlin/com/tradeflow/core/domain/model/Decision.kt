@@ -7,14 +7,14 @@ sealed class Decision {
     data class Wait(val reason: String) : Decision()
 
     data class Trend(
-        val direction: OrderSide,
+        val direction: Order.Side,
         val entryPrice: BigDecimal,
         val stopLoss: BigDecimal,
         val takeProfit: BigDecimal
     ) : Decision()
 
     data class Range(
-        val direction: OrderSide,
+        val direction: Order.Side,
         val entryPrice: BigDecimal,
         val stopLoss: BigDecimal,
         val takeProfit: BigDecimal,

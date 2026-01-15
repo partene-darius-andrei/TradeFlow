@@ -5,16 +5,23 @@ import com.tradeflow.backtesting.config.ValidationConfig
 import com.tradeflow.backtesting.validation.ValidationReporter
 import com.tradeflow.backtesting.validation.ValidationRunner
 import com.tradeflow.core.domain.StrategyConfig
+import kotlinx.coroutines.runBlocking
 
-class ParameterValidator(
-    private val backtestConfig: BacktestConfig = BacktestConfig(),
-    private val validationConfig: ValidationConfig = ValidationConfig(),
+class ParameterValidator {
+
+    companion object {
+        fun run() {
+            ParameterValidator()
+        }
+    }
+
+    private val backtestConfig: BacktestConfig = BacktestConfig()
+    private val validationConfig: ValidationConfig = ValidationConfig()
     private val strategyConfig: StrategyConfig = StrategyConfig()
-) {
     private val runner = ValidationRunner(backtestConfig, strategyConfig)
     private val reporter = ValidationReporter(validationConfig)
 
-    suspend operator fun invoke() {
+    init {
         println("\n🧪 RUN VALIDATION - VALIDATE CURRENT PARAMETERS")
         println("=".repeat(90))
         println("Purpose: Validate current parameters on random historical data (no optimization)")
@@ -34,11 +41,10 @@ class ParameterValidator(
 
         println("📡 FETCHING DATA & RUNNING BACKTESTS")
         println("─".repeat(90))
-        val results = runner.runBacktests(periods)
+        val results = runBlocking { runner.runBacktests(periods) }
 
         if (results.isEmpty()) {
             println("\n❌ No results collected. Aborting.")
-            return
         }
 
         reporter.printAggregatedResults(results)
