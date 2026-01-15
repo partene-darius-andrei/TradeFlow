@@ -9,35 +9,62 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 class TradingSignalUseCase(
-    private val config: StrategyConfig = StrategyConfig.default()
+    private val config: StrategyConfig = StrategyConfig()
 ) {
 
     private fun BigDecimal.toUsd() = this.setScale(2, RoundingMode.HALF_UP)
 
-    fun createTrendSignal(currentPrice: BigDecimal, indicators: Indicators): Decision {
-        // Determine direction: LONG (BUY) if price > SMA200, SHORT (SELL) if price < SMA200
-        val isLong = currentPrice >= indicators.sma200
-        val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
+    private fun checkVolume(indicators: Indicators): Decision.Wait? {
+        if (indicators.volumeRatio < TradingConfig.Technical.MIN_VOLUME_RATIO) {
+            return Decision.Wait(
+                "Volume ${indicators.volumeRatio.toBigDecimal().toUsd()}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold"
+            )
+        }
+        return null
+    }
 
-        // RSI Momentum Filter: Block only extreme opposite momentum
-        // FIX: Relaxed from RSI > 50 to RSI > 30 for LONG (was blocking 90% of trades)
-        // LONG blocked only if RSI < 30 (extreme bearish)
-        // SHORT blocked only if RSI > 70 (extreme bullish)
+    private fun checkRsiTrend(indicators: Indicators, isLong: Boolean): Decision.Wait? {
         val rsiBlocksTrade = if (isLong) {
             indicators.rsi < StrategyConfig.RSI_LONG_BLOCK_THRESHOLD
         } else {
             indicators.rsi > StrategyConfig.RSI_SHORT_BLOCK_THRESHOLD
         }
+
         if (rsiBlocksTrade) {
-            val reason = if (isLong) "RSI < 30 (extreme bearish)" else "RSI > 70 (extreme bullish)"
-            return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks ${if (isLong) "LONG" else "SHORT"} ($reason)")
+            val direction = if (isLong) "LONG" else "SHORT"
+            val condition = if (isLong) "extreme bearish" else "extreme bullish"
+            return Decision.Wait(
+                "RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks $direction ($condition)"
+            )
         }
 
-        // Volume Confirmation Filter: Volume must be significantly above average
-        // Research: Volume > 1.5x improves breakout success from 39% to 65% (+26 percentage points)
-        if (indicators.volumeRatio < TradingConfig.Technical.MIN_VOLUME_RATIO) {
-            return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().toUsd()}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
+        return null
+    }
+
+    private fun checkRsiRange(indicators: Indicators, direction: OrderSide): Decision.Wait? {
+        val rsiValid = when (direction) {
+            OrderSide.BUY -> indicators.rsi > config.rangeRsiMidpoint
+            OrderSide.SELL -> indicators.rsi < config.rangeRsiMidpoint
         }
+
+        if (!rsiValid) {
+            val operator = if (direction == OrderSide.BUY) ">" else "<"
+            val directionStr = if (direction == OrderSide.BUY) "LONG" else "SHORT"
+            val reason = "RSI must be $operator ${config.rangeRsiMidpoint} for $directionStr"
+            return Decision.Wait(
+                "RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks $directionStr ($reason)"
+            )
+        }
+
+        return null
+    }
+
+    fun createTrendSignal(currentPrice: BigDecimal, indicators: Indicators): Decision {
+        val isLong = currentPrice >= indicators.sma200
+        val direction = if (isLong) OrderSide.BUY else OrderSide.SELL
+
+        checkRsiTrend(indicators, isLong)?.let { return it }
+        checkVolume(indicators)?.let { return it }
 
         // Calculate stop loss and take profit based on direction
         val sl = if (isLong) {
@@ -77,19 +104,8 @@ class TradingSignalUseCase(
             else -> return Decision.Wait("Price at mean")
         }
 
-        val rsiValid = when (direction) {
-            OrderSide.BUY -> indicators.rsi > config.rangeRsiMidpoint
-            OrderSide.SELL -> indicators.rsi < config.rangeRsiMidpoint
-        }
-        if (!rsiValid) {
-            val operator = if (direction == OrderSide.BUY) ">" else "<"
-            val reason = "RSI must be $operator ${config.rangeRsiMidpoint} for ${if (direction == OrderSide.BUY) "LONG" else "SHORT"}"
-            return Decision.Wait("RSI ${indicators.rsi.toBigDecimal().setScale(1, RoundingMode.HALF_UP)} blocks ${if (direction == OrderSide.BUY) "LONG" else "SHORT"} ($reason)")
-        }
-
-        if (indicators.volumeRatio < TradingConfig.Technical.MIN_VOLUME_RATIO) {
-            return Decision.Wait("Volume ${indicators.volumeRatio.toBigDecimal().toUsd()}x below required ${TradingConfig.Technical.MIN_VOLUME_RATIO}x threshold")
-        }
+        checkRsiRange(indicators, direction)?.let { return it }
+        checkVolume(indicators)?.let { return it }
 
         val stopLoss = when (direction) {
             OrderSide.BUY -> currentPrice - (atr * config.rangeStopMultiplier.toBigDecimal())

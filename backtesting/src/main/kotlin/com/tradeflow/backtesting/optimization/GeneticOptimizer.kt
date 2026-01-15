@@ -9,7 +9,7 @@ data class Chromosome(
     val config: StrategyConfig
 ) {
     companion object {
-        fun random(random: Random, ranges: OptimizationConfig = OptimizationConfig.default()): Chromosome {
+        fun random(random: Random, ranges: OptimizationConfig = OptimizationConfig()): Chromosome {
             val r = ranges.ranges
             return Chromosome(
                 StrategyConfig(
@@ -47,7 +47,7 @@ data class OptimizationResult(
 )
 
 class GeneticOptimizer(
-    private val config: OptimizationConfig = OptimizationConfig.default()
+    private val config: OptimizationConfig = OptimizationConfig()
 ) {
     private val populationSize: Int = config.ga.populationSize
     private val generations: Int = config.ga.generations

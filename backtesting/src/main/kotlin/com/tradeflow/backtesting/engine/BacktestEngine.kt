@@ -17,9 +17,9 @@ import kotlin.math.abs
 private fun BigDecimal.toUsd() = this.setScale(2, RoundingMode.HALF_UP)
 
 class BacktestEngine(
-    private val config: BacktestConfig = BacktestConfig.default(),
-    private val strategyConfig: StrategyConfig = StrategyConfig.default(),
-    private val noiseConfig: com.tradeflow.backtesting.config.NoiseConfig = com.tradeflow.backtesting.config.NoiseConfig.default()
+    private val config: BacktestConfig = BacktestConfig(),
+    private val strategyConfig: StrategyConfig = StrategyConfig(),
+    private val noiseConfig: com.tradeflow.backtesting.config.NoiseConfig = com.tradeflow.backtesting.config.NoiseConfig()
 ) {
     private val initialCapital: BigDecimal = config.initialCapital
     // ==================================================================================
@@ -53,6 +53,65 @@ class BacktestEngine(
         return entryFee + exitFee + slippage
     }
 
+    private fun applyNoiseIfNeeded(candles: List<Candle>): List<Candle> =
+        if (config.noiseLevel != NoiseLevel.NONE) {
+            CandleNoiseInjector.injectNoise(candles, config.noiseLevel, noiseConfig)
+        } else {
+            candles
+        }
+
+    private fun openTrade(decision: Decision): Order = when (decision) {
+        is Decision.Trend -> Order(
+            direction = decision.direction,
+            entryPrice = decision.entryPrice,
+            stopLoss = decision.stopLoss,
+            takeProfit = decision.takeProfit,
+            leverage = strategyConfig.leverage
+        )
+        is Decision.Range -> Order(
+            direction = decision.direction,
+            entryPrice = decision.entryPrice,
+            stopLoss = decision.stopLoss,
+            takeProfit = decision.takeProfit,
+            leverage = strategyConfig.leverage
+        )
+        is Decision.Wait -> error("Cannot open trade for Wait decision")
+    }
+
+    private fun checkExits(
+        openOrders: MutableList<Order>,
+        candle: Candle,
+        equity: BigDecimal,
+        closedOrders: MutableList<Order>
+    ): BigDecimal {
+        var updatedEquity = equity
+
+        openOrders.filter { it.isOpen }.forEach { trade ->
+            val hitStopLoss = when (trade.direction) {
+                OrderSide.BUY -> candle.low <= trade.stopLoss
+                OrderSide.SELL -> candle.high >= trade.stopLoss
+            }
+
+            val hitTakeProfit = when (trade.direction) {
+                OrderSide.BUY -> candle.high >= trade.takeProfit
+                OrderSide.SELL -> candle.low <= trade.takeProfit
+            }
+
+            if (hitStopLoss) {
+                trade.exitPrice = trade.stopLoss
+                closedOrders.add(trade)
+                updatedEquity += closeTrade(trade, updatedEquity, "Stop Loss")
+            } else if (hitTakeProfit) {
+                trade.exitPrice = trade.takeProfit
+                closedOrders.add(trade)
+                updatedEquity += closeTrade(trade, updatedEquity, "Take Profit")
+            }
+        }
+
+        openOrders.removeAll { !it.isOpen }
+        return updatedEquity
+    }
+
     private fun closeTrade(trade: Order, equity: BigDecimal, reason: String): BigDecimal {
         trade.exitReason = reason
 
@@ -77,36 +136,11 @@ class BacktestEngine(
         all5m: List<Candle>,
         all1m: List<Candle>
     ): BacktestResult {
-        // Apply noise injection if configured (for robustness testing)
-        val processedAll1h = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all1h, config.noiseLevel, noiseConfig)
-        } else {
-            all1h
-        }
-
-        val processedAll30m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all30m, config.noiseLevel, noiseConfig)
-        } else {
-            all30m
-        }
-
-        val processedAll15m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all15m, config.noiseLevel, noiseConfig)
-        } else {
-            all15m
-        }
-
-        val processedAll5m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all5m, config.noiseLevel, noiseConfig)
-        } else {
-            all5m
-        }
-
-        val processedAll1m = if (config.noiseLevel != NoiseLevel.NONE) {
-            CandleNoiseInjector.injectNoise(all1m, config.noiseLevel, noiseConfig)
-        } else {
-            all1m
-        }
+        val processedAll1h = applyNoiseIfNeeded(all1h)
+        val processedAll30m = applyNoiseIfNeeded(all30m)
+        val processedAll15m = applyNoiseIfNeeded(all15m)
+        val processedAll5m = applyNoiseIfNeeded(all5m)
+        val processedAll1m = applyNoiseIfNeeded(all1m)
 
         val prime1m = processedAll1m.take(config.primeSize)
         val test1m = processedAll1m.drop(config.primeSize)
@@ -137,54 +171,18 @@ class BacktestEngine(
             }
 
             // Check exits
-            openOrders.filter { it.isOpen }.forEach { trade ->
-                val hitStopLoss = when (trade.direction) {
-                    OrderSide.BUY -> candle1m.low <= trade.stopLoss
-                    OrderSide.SELL -> candle1m.high >= trade.stopLoss
-                }
-
-                val hitTakeProfit = when (trade.direction) {
-                    OrderSide.BUY -> candle1m.high >= trade.takeProfit
-                    OrderSide.SELL -> candle1m.low <= trade.takeProfit
-                }
-
-                if (hitStopLoss) {
-                    trade.exitPrice = trade.stopLoss
-                    closedOrders.add(trade)
-                    equity += closeTrade(trade, equity, "Stop Loss")
-                } else if (hitTakeProfit) {
-                    trade.exitPrice = trade.takeProfit
-                    closedOrders.add(trade)
-                    equity += closeTrade(trade, equity, "Take Profit")
-                }
-            }
-
-            openOrders.removeAll { !it.isOpen }
+            equity = checkExits(openOrders, candle1m, equity, closedOrders)
 
             // Execute new signals using 1h timeframe only
             val decision = makeTradingDecisionUseCase(history1h, candle1m.close)
 
             when (decision) {
                 is Decision.Trend -> {
-                    val newOrder = Order(
-                        direction = decision.direction,
-                        entryPrice = decision.entryPrice,
-                        stopLoss = decision.stopLoss,
-                        takeProfit = decision.takeProfit,
-                        leverage = strategyConfig.leverage
-                    )
-                    openOrders.add(newOrder)
+                    openOrders.add(openTrade(decision))
                     println("  🎯 TREND TRADE OPENED")
                 }
                 is Decision.Range -> {
-                    val newOrder = Order(
-                        direction = decision.direction,
-                        entryPrice = decision.entryPrice,
-                        stopLoss = decision.stopLoss,
-                        takeProfit = decision.takeProfit,
-                        leverage = strategyConfig.leverage
-                    )
-                    openOrders.add(newOrder)
+                    openOrders.add(openTrade(decision))
                     println("  🎯 RANGE TRADE OPENED (mean-reversion)")
                 }
                 is Decision.Wait -> {

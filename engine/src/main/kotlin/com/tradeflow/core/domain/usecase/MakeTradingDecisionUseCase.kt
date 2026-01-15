@@ -7,7 +7,7 @@ import com.tradeflow.core.domain.model.Decision
 import java.math.BigDecimal
 
 class MakeTradingDecisionUseCase(
-    private val config: StrategyConfig = StrategyConfig.default()
+    private val config: StrategyConfig = StrategyConfig()
 ) {
 
     private val analyzeCandlesUseCase = AnalyzeCandlesUseCase()

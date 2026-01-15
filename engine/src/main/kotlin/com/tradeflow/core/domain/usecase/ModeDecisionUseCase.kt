@@ -4,7 +4,7 @@ import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.model.Indicators
 
 class ModeDecisionUseCase(
-    private val config: StrategyConfig = StrategyConfig.default()
+    private val config: StrategyConfig = StrategyConfig()
 ) {
 
     enum class Mode {

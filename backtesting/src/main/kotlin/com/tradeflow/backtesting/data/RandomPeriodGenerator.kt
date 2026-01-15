@@ -12,10 +12,10 @@ object RandomPeriodGenerator {
     private val TODAY = LocalDate.now()
 
     fun generateRandomPeriods(
-        config: ValidationConfig = ValidationConfig.default(),
-        count: Int = config.defaultNumPeriods,
-        minDurationDays: Int = config.minPeriodDays,
-        maxDurationDays: Int = config.maxPeriodDays,
+        config: ValidationConfig = ValidationConfig(),
+        count: Int = config.period.defaultNumPeriods,
+        minDurationDays: Int = config.period.minPeriodDays,
+        maxDurationDays: Int = config.period.maxPeriodDays,
         seed: Long? = null
     ): List<Pair<Long, Long>> {
         val random = seed?.let { Random(it) } ?: Random.Default
@@ -42,7 +42,7 @@ object RandomPeriodGenerator {
     fun calculateRequiredCandles(
         period: Pair<Long, Long>,
         interval: String,
-        config: ValidationConfig = ValidationConfig.default()
+        config: ValidationConfig = ValidationConfig()
     ): Int {
         val durationMillis = period.second - period.first
         val intervalMillis = when (interval) {
@@ -54,6 +54,6 @@ object RandomPeriodGenerator {
             "1d" -> 86_400_000L
             else -> throw IllegalArgumentException("Unsupported interval: $interval")
         }
-        return ((durationMillis / intervalMillis) + config.lookbackBuffer).toInt()
+        return ((durationMillis / intervalMillis) + config.period.lookbackBuffer).toInt()
     }
 }

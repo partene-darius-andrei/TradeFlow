@@ -14,17 +14,7 @@ enum class NoiseLevel {
     LOW,
     MEDIUM,
     HIGH,
-    EXTREME;
-
-    fun toNoiseProfile(config: NoiseConfig): NoiseProfile {
-        return when (this) {
-            NONE -> NoiseProfile(0.0, 0.0, 0.0, 0.0, 0.0)
-            LOW -> config.noiseLevelLow
-            MEDIUM -> config.noiseLevelMedium
-            HIGH -> config.noiseLevelHigh
-            EXTREME -> config.noiseLevelExtreme
-        }
-    }
+    EXTREME
 }
 
 object CandleNoiseInjector {
@@ -32,12 +22,12 @@ object CandleNoiseInjector {
     fun injectNoise(
         candles: List<Candle>,
         noiseLevel: NoiseLevel = NoiseLevel.MEDIUM,
-        config: NoiseConfig = NoiseConfig.default(),
+        config: NoiseConfig = NoiseConfig(),
         seed: Long? = null
     ): List<Candle> {
         if (noiseLevel == NoiseLevel.NONE) return candles
 
-        val profile = noiseLevel.toNoiseProfile(config)
+        val profile = config.profiles[noiseLevel] ?: error("No profile found for $noiseLevel")
         val random = seed?.let { Random(it) } ?: Random.Default
         val noisyCandles = mutableListOf<Candle>()
 
@@ -49,15 +39,15 @@ object CandleNoiseInjector {
             noisyCandle = applyVolumeNoise(noisyCandle, profile.volumeVariance, random)
 
             if (random.nextDouble() < profile.flashEventProbability) {
-                noisyCandle = applyFlashEvent(noisyCandle, config, random)
+                noisyCandle = applyFlashEvent(noisyCandle, profile, random)
             }
 
             if (index > 0 && random.nextDouble() < profile.gapEventProbability) {
-                noisyCandle = applyGapEvent(noisyCandles.last(), noisyCandle, config, random)
+                noisyCandle = applyGapEvent(noisyCandles.last(), noisyCandle, profile, random)
             }
 
             if (random.nextDouble() < profile.wickExtensionProbability) {
-                noisyCandle = applyWickExtension(noisyCandle, config, random)
+                noisyCandle = applyWickExtension(noisyCandle, profile, random)
             }
 
             noisyCandles.add(noisyCandle)
@@ -99,8 +89,8 @@ object CandleNoiseInjector {
         return candle.copy(volume = newVolume)
     }
 
-    private fun applyFlashEvent(candle: Candle, config: NoiseConfig, random: Random): Candle {
-        val flashMagnitude = random.nextDouble(config.flashEventMagnitudeRange.start, config.flashEventMagnitudeRange.endInclusive)
+    private fun applyFlashEvent(candle: Candle, profile: NoiseProfile, random: Random): Candle {
+        val flashMagnitude = random.nextDouble(profile.flashEventMagnitudeRange.start, profile.flashEventMagnitudeRange.endInclusive)
         val isFlashCrash = random.nextBoolean()
 
         return if (isFlashCrash) {
@@ -116,8 +106,8 @@ object CandleNoiseInjector {
         }
     }
 
-    private fun applyGapEvent(previousCandle: Candle, currentCandle: Candle, config: NoiseConfig, random: Random): Candle {
-        val gapSize = random.nextDouble(config.gapSizeRange.start, config.gapSizeRange.endInclusive)
+    private fun applyGapEvent(previousCandle: Candle, currentCandle: Candle, profile: NoiseProfile, random: Random): Candle {
+        val gapSize = random.nextDouble(profile.gapSizeRange.start, profile.gapSizeRange.endInclusive)
         val isGapUp = random.nextBoolean()
 
         val gapMultiplier = if (isGapUp) 1.0 + gapSize else 1.0 - gapSize
@@ -130,8 +120,8 @@ object CandleNoiseInjector {
         )
     }
 
-    private fun applyWickExtension(candle: Candle, config: NoiseConfig, random: Random): Candle {
-        val wickExtension = random.nextDouble(config.wickExtensionRange.start, config.wickExtensionRange.endInclusive)
+    private fun applyWickExtension(candle: Candle, profile: NoiseProfile, random: Random): Candle {
+        val wickExtension = random.nextDouble(profile.wickExtensionRange.start, profile.wickExtensionRange.endInclusive)
         val extendHigh = random.nextBoolean()
 
         return if (extendHigh) {

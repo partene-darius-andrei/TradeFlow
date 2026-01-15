@@ -13,8 +13,4 @@ data class BacktestConfig(
     val lookbackWindow: Int = 200,
     val minCandlesRequired: Int = 200,
     val noiseLevel: NoiseLevel = NoiseLevel.NONE
-) {
-    companion object {
-        fun default(): BacktestConfig = BacktestConfig()
-    }
-}
+)

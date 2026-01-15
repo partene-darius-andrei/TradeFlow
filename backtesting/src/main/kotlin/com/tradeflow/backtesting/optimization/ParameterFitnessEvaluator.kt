@@ -13,8 +13,8 @@ class ParameterFitnessEvaluator(
     private val candles15m: List<Candle>,
     private val candles5m: List<Candle>,
     private val candles1m: List<Candle>,
-    private val backtestConfig: BacktestConfig = BacktestConfig.default(),
-    private val optimizationConfig: OptimizationConfig = OptimizationConfig.default()
+    private val backtestConfig: BacktestConfig = BacktestConfig(),
+    private val optimizationConfig: OptimizationConfig = OptimizationConfig()
 ) {
     private val fitness = optimizationConfig.fitness
 

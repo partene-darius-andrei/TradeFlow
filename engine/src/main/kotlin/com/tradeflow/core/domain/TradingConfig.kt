@@ -18,8 +18,6 @@ data class StrategyConfig(
     companion object {
         const val RSI_LONG_BLOCK_THRESHOLD: Double = 30.0
         const val RSI_SHORT_BLOCK_THRESHOLD: Double = 70.0
-
-        fun default(): StrategyConfig = StrategyConfig()
     }
 }
 

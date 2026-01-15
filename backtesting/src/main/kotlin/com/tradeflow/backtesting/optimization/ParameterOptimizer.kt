@@ -8,44 +8,91 @@ import com.tradeflow.backtesting.data.RandomPeriodGenerator
 import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.model.Candle
 
-class ParameterOptimizer(
+class ParameterOptimizer {
 
-) {
+    data class OptimizerConfig(
+        val numPeriods: Int,
+        val populationSize: Int,
+        val generations: Int,
+        val seed: Long,
+        val backtestConfig: BacktestConfig,
+        val optimizationConfig: OptimizationConfig,
+        val validationConfig: ValidationConfig
+    )
+
+    data class CombinedDataset(
+        val candles1h: List<Candle>,
+        val candles30m: List<Candle>,
+        val candles15m: List<Candle>,
+        val candles5m: List<Candle>,
+        val candles1m: List<Candle>
+    )
 
     suspend fun run(args: Array<String>) {
+        val config = parseConfiguration(args)
+        printHeader(config)
 
-        val backtestConfig = BacktestConfig.default()
-        val optimizationConfig = OptimizationConfig.default()
-        val validationConfig = ValidationConfig.default()
+        val periods = generatePeriods(config)
+        val datasets = fetchDatasets(periods, config.numPeriods)
 
-        println("\n🧬 RUN OPTIMIZATION - RANDOM PERIODS MODE")
-        println("=".repeat(90))
-        println("Purpose: Find optimal parameters using genetic algorithm on random historical data")
-        println("=".repeat(90))
+        if (datasets.isEmpty()) {
+            println("\n❌ No data fetched. Aborting.")
+            return
+        }
 
+        val combinedData = combineDatasets(datasets)
+        val result = runOptimization(combinedData, config)
+        reportResults(result, combinedData, config)
+        nextSteps()
+    }
+
+    private fun parseConfiguration(args: Array<String>): OptimizerConfig {
         val numPeriods = args.getOrNull(1)?.toIntOrNull() ?: 5
         val populationSize = args.getOrNull(2)?.toIntOrNull() ?: 50
         val generations = args.getOrNull(3)?.toIntOrNull() ?: 100
         val seed = args.getOrNull(4)?.toLongOrNull() ?: System.currentTimeMillis()
 
+        return OptimizerConfig(
+            numPeriods = numPeriods,
+            populationSize = populationSize,
+            generations = generations,
+            seed = seed,
+            backtestConfig = BacktestConfig(),
+            optimizationConfig = OptimizationConfig(),
+            validationConfig = ValidationConfig()
+        )
+    }
+
+    private fun printHeader(config: OptimizerConfig) {
+        println("\n🧬 RUN OPTIMIZATION - RANDOM PERIODS MODE")
+        println("=".repeat(90))
+        println("Purpose: Find optimal parameters using genetic algorithm on random historical data")
+        println("=".repeat(90))
         println("\nConfiguration:")
         println("  Mode:              Random Periods")
-        println("  Random Periods:    $numPeriods")
-        println("  Population Size:   $populationSize")
-        println("  Generations:       $generations")
-        println("  Random Seed:       $seed")
+        println("  Random Periods:    ${config.numPeriods}")
+        println("  Population Size:   ${config.populationSize}")
+        println("  Generations:       ${config.generations}")
+        println("  Random Seed:       ${config.seed}")
         println()
+    }
 
+    private fun generatePeriods(config: OptimizerConfig): List<Pair<Long, Long>> {
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
-            config = validationConfig,
-            count = numPeriods,
-            seed = seed
+            config = config.validationConfig,
+            count = config.numPeriods,
+            seed = config.seed
         )
-
         println()
+        return periods
+    }
 
+    private suspend fun fetchDatasets(
+        periods: List<Pair<Long, Long>>,
+        numPeriods: Int
+    ): List<Pair<Pair<Long, Long>, BinanceDataLoader.MultiTimeframeData>> {
         println("📡 FETCHING DATA FROM BINANCE")
         println("─".repeat(90))
         val datasets = mutableListOf<Pair<Pair<Long, Long>, BinanceDataLoader.MultiTimeframeData>>()
@@ -60,12 +107,10 @@ class ParameterOptimizer(
                 println("✗ Error: ${e.message}")
             }
         }
+        return datasets
+    }
 
-        if (datasets.isEmpty()) {
-            println("\n❌ No data fetched. Aborting.")
-            return
-        }
-
+    private fun combineDatasets(datasets: List<Pair<Pair<Long, Long>, BinanceDataLoader.MultiTimeframeData>>): CombinedDataset {
         val allCandles1h = datasets.flatMap { it.second.candles1h }
         val allCandles30m = datasets.flatMap { it.second.candles30m }
         val allCandles15m = datasets.flatMap { it.second.candles15m }
@@ -82,71 +127,87 @@ class ParameterOptimizer(
         println("  Total days:        ${allCandles1h.size / 24}")
         println()
 
+        return CombinedDataset(allCandles1h, allCandles30m, allCandles15m, allCandles5m, allCandles1m)
+    }
+
+    private fun runOptimization(data: CombinedDataset, config: OptimizerConfig): OptimizationResult {
         println("🧬 RUNNING GENETIC OPTIMIZATION")
         println("─".repeat(90))
         println("This will take several minutes...")
         println()
 
-        val optimizer = GeneticOptimizer(optimizationConfig)
-
-        val evaluator = ParameterFitnessEvaluator(allCandles1h, allCandles30m, allCandles15m, allCandles5m, allCandles1m, backtestConfig, optimizationConfig)
-
-        val result = optimizer.optimize(
-            fitnessFunction = { params -> evaluator.evaluate(params) },
-            seed = seed
+        val optimizer = GeneticOptimizer(config.optimizationConfig)
+        val evaluator = ParameterFitnessEvaluator(
+            data.candles1h,
+            data.candles30m,
+            data.candles15m,
+            data.candles5m,
+            data.candles1m,
+            config.backtestConfig,
+            config.optimizationConfig
         )
 
+        return optimizer.optimize(
+            fitnessFunction = { params -> evaluator.evaluate(params) },
+            seed = config.seed
+        )
+    }
+
+    private fun reportResults(result: OptimizationResult, data: CombinedDataset, config: OptimizerConfig) {
         println("\n✅ OPTIMIZATION COMPLETE")
         println("=".repeat(90))
         println("Champion Fitness: ${"%.4f".format(result.fitness)}")
         println()
+
+        printChampionParameters(result.champion.config)
+        printComparison(result, data, config)
+    }
+
+    private fun printChampionParameters(champion: StrategyConfig) {
         println("📋 OPTIMIZED PARAMETERS")
         println("─".repeat(90))
-        val champion = result.champion.config
         println("  adxTrendThreshold:       ${champion.adxTrendThreshold}")
         println("  adxRangeThreshold:       ${champion.adxRangeThreshold}")
         println("  confirmationCandles:     ${champion.confirmationCandles}")
-        println(
-            "  trendPositionPercent:    ${champion.trendPositionPercent} (${
-                (champion.trendPositionPercent.toDouble() * 100).let {
-                    "%.2f".format(
-                        it
-                    )
-                }
-            }%)"
-        )
+        println("  trendPositionPercent:    ${champion.trendPositionPercent} (${"%.2f".format(champion.trendPositionPercent.toDouble() * 100)}%)")
         println("  stopLossAtrMultiplier:   ${champion.stopLossAtrMultiplier}")
         println("  takeProfitAtrMultiplier: ${champion.takeProfitAtrMultiplier}")
         println("  leverage:                ${champion.leverage}x")
         println()
+    }
 
-        val baselineFitness = evaluator.evaluate(StrategyConfig.default())
-        val improvement =
-            ((result.fitness - baselineFitness) / baselineFitness.coerceAtLeast(0.0001)) * 100
+    private fun printComparison(result: OptimizationResult, data: CombinedDataset, config: OptimizerConfig) {
+        val evaluator = ParameterFitnessEvaluator(
+            data.candles1h,
+            data.candles30m,
+            data.candles15m,
+            data.candles5m,
+            data.candles1m,
+            config.backtestConfig,
+            config.optimizationConfig
+        )
+
+        val baselineFitness = evaluator.evaluate(StrategyConfig())
+        val improvement = ((result.fitness - baselineFitness) / baselineFitness.coerceAtLeast(0.0001)) * 100
 
         println("📈 COMPARISON")
         println("─".repeat(90))
         println("  Baseline Fitness (current):  ${"%.4f".format(baselineFitness)}")
         println("  Champion Fitness (evolved):  ${"%.4f".format(result.fitness)}")
-        println(
-            "  Improvement:                 ${if (improvement >= 0) "+" else ""}${
-                "%.2f".format(
-                    improvement
-                )
-            }%"
-        )
+        println("  Improvement:                 ${if (improvement >= 0) "+" else ""}${"%.2f".format(improvement)}%")
         println()
 
-        if (improvement > validationConfig.significantImprovementThreshold) {
-            println("✅ SIGNIFICANT IMPROVEMENT - Consider updating TradingConfig with these parameters")
-        } else if (improvement > 0.0) {
-            println("⚠️  MARGINAL IMPROVEMENT - Test thoroughly before deploying")
-        } else {
-            println("❌ NO IMPROVEMENT - Current parameters are already optimal for this dataset")
+        when {
+            improvement > config.validationConfig.significance.significantImprovement -> {
+                println("✅ SIGNIFICANT IMPROVEMENT - Consider updating TradingConfig with these parameters")
+            }
+            improvement > 0.0 -> {
+                println("⚠️  MARGINAL IMPROVEMENT - Test thoroughly before deploying")
+            }
+            else -> {
+                println("❌ NO IMPROVEMENT - Current parameters are already optimal for this dataset")
+            }
         }
-
-        nextSteps()
-
     }
 
     private fun nextSteps() {
