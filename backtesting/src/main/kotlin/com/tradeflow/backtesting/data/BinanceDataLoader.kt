@@ -1,5 +1,6 @@
 package com.tradeflow.backtesting.data
 
+import com.tradeflow.backtesting.model.Period
 import com.tradeflow.core.domain.model.Candle
 import com.tradeflow.core.domain.model.Interval
 import io.ktor.client.HttpClient
@@ -19,12 +20,12 @@ object BinanceDataLoader {
     private val client = HttpClient(OkHttp)
 
     fun fetchPeriodData(
-        period: Pair<Long, Long>,
+        period: Period,
         interval: Interval
     ): List<Candle> {
         return fetchHistoricalCandles(
-            startTime = period.first,
-            endTime = period.second,
+            startTime = period.startMs,
+            endTime = period.endMs,
             interval = interval
         )
     }

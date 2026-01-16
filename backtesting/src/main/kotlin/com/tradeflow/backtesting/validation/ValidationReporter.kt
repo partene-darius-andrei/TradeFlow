@@ -2,6 +2,7 @@ package com.tradeflow.backtesting.validation
 
 import com.tradeflow.backtesting.config.ValidationConfig
 import com.tradeflow.backtesting.engine.BacktestResult
+import com.tradeflow.backtesting.model.Period
 import com.tradeflow.core.domain.StrategyConfig
 import kotlin.math.sqrt
 
@@ -21,7 +22,7 @@ class ValidationReporter(
         println()
     }
 
-    fun printAggregatedResults(results: List<Pair<Pair<Long, Long>, BacktestResult>>) {
+    fun printAggregatedResults(results: List<Pair<Period, BacktestResult>>) {
         if (results.isEmpty()) {
             println("⚠️  No results to aggregate")
             return
@@ -131,7 +132,7 @@ class ValidationReporter(
         println()
     }
 
-    fun printNextSteps(results: List<Pair<Pair<Long, Long>, BacktestResult>>) {
+    fun printNextSteps(results: List<Pair<Period, BacktestResult>>) {
         println("💡 NEXT STEPS")
         println("─".repeat(90))
         val avgPnl = results.map { it.second.pnlPercent }.average()

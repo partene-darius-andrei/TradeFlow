@@ -5,6 +5,7 @@ import com.tradeflow.backtesting.config.OptimizationConfig
 import com.tradeflow.backtesting.config.ValidationConfig
 import com.tradeflow.backtesting.data.BinanceDataLoader
 import com.tradeflow.backtesting.data.RandomPeriodGenerator
+import com.tradeflow.backtesting.model.Period
 import com.tradeflow.core.domain.StrategyConfig
 import com.tradeflow.core.domain.model.Candle
 import kotlinx.coroutines.runBlocking
@@ -60,7 +61,7 @@ class ParameterOptimizer {
         println()
     }
 
-    private fun generatePeriods(): List<Pair<Long, Long>> {
+    private fun generatePeriods(): List<Period> {
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
@@ -73,18 +74,18 @@ class ParameterOptimizer {
     }
 
     private fun fetchDatasets(
-        periods: List<Pair<Long, Long>>
-    ): List<Pair<Pair<Long, Long>, List<Candle>>> {
+        periods: List<Period>
+    ): List<Pair<Period, List<Candle>>> {
         println("📡 FETCHING DATA FROM BINANCE")
         println("─".repeat(90))
-        val datasets = mutableListOf<Pair<Pair<Long, Long>, List<Candle>>>()
+        val datasets = mutableListOf<Pair<Period, List<Candle>>>()
 
         periods.forEachIndexed { index, period ->
             try {
                 print("  Fetching period ${index + 1}/${periods.size}... ")
                 val candles = BinanceDataLoader.fetchPeriodData(period, backtestConfig.interval)
                 println("✓ (${candles.size} ${backtestConfig.interval.apiString} candles)")
-                datasets.add(Pair(period, candles))
+                datasets.add(period to candles)
             } catch (e: Exception) {
                 println("✗ Error: ${e.message}")
             }
@@ -92,7 +93,7 @@ class ParameterOptimizer {
         return datasets
     }
 
-    private fun combineDatasets(datasets: List<Pair<Pair<Long, Long>, List<Candle>>>): List<Candle> {
+    private fun combineDatasets(datasets: List<Pair<Period, List<Candle>>>): List<Candle> {
         val candles = datasets.flatMap { it.second }
 
         println("\n📊 COMBINED DATASET")

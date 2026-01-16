@@ -6,7 +6,7 @@ import com.tradeflow.backtesting.data.BinanceDataLoader
 import com.tradeflow.backtesting.data.RandomPeriodGenerator
 import com.tradeflow.backtesting.engine.BacktestEngine
 import com.tradeflow.backtesting.engine.BacktestResult
-import com.tradeflow.backtesting.util.toDateString
+import com.tradeflow.backtesting.model.Period
 import com.tradeflow.core.domain.StrategyConfig
 
 class ValidationRunner(
@@ -14,15 +14,14 @@ class ValidationRunner(
     private val strategyConfig: StrategyConfig = StrategyConfig()
 ) {
 
-    fun runBacktests(periods: List<Pair<Long, Long>>): List<Pair<Pair<Long, Long>, BacktestResult>> {
-        val results = mutableListOf<Pair<Pair<Long, Long>, BacktestResult>>()
+    fun runBacktests(periods: List<Period>): List<Pair<Period, BacktestResult>> {
+        val results = mutableListOf<Pair<Period, BacktestResult>>()
         val engine = BacktestEngine(backtestConfig, strategyConfig)
         val numPeriods = periods.size
 
         periods.forEachIndexed { index, period ->
             try {
-                val days = ((period.second - period.first) / (1000 * 60 * 60 * 24)).toInt()
-                print("  [${index + 1}/$numPeriods] ${period.first.toDateString()} to ${period.second.toDateString()} ($days days)... ")
+                print("  [${index + 1}/$numPeriods] $period... ")
 
                 val candles = BinanceDataLoader.fetchPeriodData(period, backtestConfig.interval)
                 val result = engine.execute(candles)
@@ -40,7 +39,7 @@ class ValidationRunner(
         return results
     }
 
-    fun generatePeriods(validationConfig: ValidationConfig, numPeriods: Int, minDays: Int, maxDays: Int): List<Pair<Long, Long>> {
+    fun generatePeriods(validationConfig: ValidationConfig, numPeriods: Int, minDays: Int, maxDays: Int): List<Period> {
         println("📅 GENERATING RANDOM HISTORICAL PERIODS")
         println("─".repeat(90))
         val periods = RandomPeriodGenerator.generateRandomPeriods(
@@ -50,9 +49,8 @@ class ValidationRunner(
             maxDurationDays = maxDays
         )
 
-        periods.forEachIndexed { index, (start, end) ->
-            val days = ((end - start) / (1000 * 60 * 60 * 24)).toInt()
-            println("  ${index + 1}. ${start.toDateString()} to ${end.toDateString()} ($days days)")
+        periods.forEachIndexed { index, period ->
+            println("  ${index + 1}. $period")
         }
         println()
         return periods

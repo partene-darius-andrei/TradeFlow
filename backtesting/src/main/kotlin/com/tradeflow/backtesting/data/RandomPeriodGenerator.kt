@@ -1,6 +1,7 @@
 package com.tradeflow.backtesting.data
 
 import com.tradeflow.backtesting.config.ValidationConfig
+import com.tradeflow.backtesting.model.Period
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -17,9 +18,9 @@ object RandomPeriodGenerator {
         minDurationDays: Int = config.period.minPeriodDays,
         maxDurationDays: Int = config.period.maxPeriodDays,
         seed: Long? = null
-    ): List<Pair<Long, Long>> {
+    ): List<Period> {
         val random = seed?.let { Random(it) } ?: Random.Default
-        val periods = emptyList<Pair<Long, Long>>().toMutableList()
+        val periods = mutableListOf<Period>()
         val totalDaysAvailable = ChronoUnit.DAYS.between(BITCOIN_BIRTH, TODAY).toInt()
 
         repeat(count) {
@@ -33,18 +34,18 @@ object RandomPeriodGenerator {
             val startTime = startDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
             val endTime = endDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
-            periods.add(startTime to endTime)
+            periods.add(Period(startTime, endTime))
         }
 
-        return periods.sortedBy { it.first }
+        return periods.sortedBy { it.startMs }
     }
 
     fun calculateRequiredCandles(
-        period: Pair<Long, Long>,
+        period: Period,
         interval: String,
         config: ValidationConfig = ValidationConfig()
     ): Int {
-        val durationMillis = period.second - period.first
+        val durationMillis = period.endMs - period.startMs
         val intervalMillis = when (interval) {
             "1m" -> 60_000L
             "5m" -> 300_000L
