@@ -7,13 +7,6 @@ application {
     mainClass.set("com.tradeflow.backtesting.RunValidationKt")
 }
 
-tasks.register<JavaExec>("runMassiveOptimization") {
-    group = "application"
-    description = "Run 50 rounds of optimization with dynamic scaling"
-    mainClass.set("com.tradeflow.backtesting.RunMassiveOptimizationKt")
-    classpath = sourceSets["main"].runtimeClasspath
-}
-
 kotlin {
     jvmToolchain(21)
 }
@@ -33,11 +26,4 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
-
-    // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.18")
-
-    // Testing
-    testImplementation(kotlin("test"))
-    testImplementation("junit:junit:4.13.2")
 }
