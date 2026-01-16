@@ -3,25 +3,25 @@ package com.tradeflow.core.domain
 import kotlin.random.Random
 
 data class StrategyConfig(
-    val confirmationCandles: Param = Param(default = 1.0, min = 1.0, max = 5.0),
-    val adxTrendThreshold: Param = Param(default = 17.0, min = 15.0, max = 30.0),
-    val adxRangeThreshold: Param = Param(default = 1.0, min = 0.5, max = 2.0),
-    val stopLossAtrMultiplier: Param = Param(default = 10.0, min = 3.0, max = 20.0),
-    val takeProfitAtrMultiplier: Param = Param(default = 20.0, min = 5.0, max = 40.0),
-    val trendPositionPercent: Param = Param(default = 0.05, min = 0.01, max = 0.15),
-    val leverage: Param = Param(default = 3.0, min = 1.0, max = 10.0),
-    val rangeEntryMultiplier: Param = Param(default = 0.5, min = 0.3, max = 1.0),
-    val rangeStopMultiplier: Param = Param(default = 2.0, min = 1.5, max = 3.0),
-    val rangeRsiMidpoint: Param = Param(default = 50.0, min = 45.0, max = 55.0),
-    val smaPeriod: Param = Param(default = 200.0, min = 150.0, max = 250.0),
-    val adxPeriod: Param = Param(default = 14.0, min = 10.0, max = 20.0),
+    val confirmationCandles: Param = Param(default = 3.0, min = 1.0, max = 5.0),
+    val adxTrendThreshold: Param = Param(default = 25.782492479530777, min = 15.0, max = 30.0),
+    val adxRangeThreshold: Param = Param(default = 1.9514741656281005, min = 0.5, max = 2.0),
+    val stopLossAtrMultiplier: Param = Param(default = 1.0, min = 3.0, max = 20.0),
+    val takeProfitAtrMultiplier: Param = Param(default = 2.0, min = 5.0, max = 40.0),
+    val trendPositionPercent: Param = Param(default = 0.013717556606683175, min = 0.01, max = 0.15),
+    val leverage: Param = Param(default = 3.863343975917127, min = 1.0, max = 10.0),
+    val rangeEntryMultiplier: Param = Param(default = 0.7689869740896329, min = 0.3, max = 1.0),
+    val rangeStopMultiplier: Param = Param(default = 2.5127263893683947, min = 1.5, max = 3.0),
+    val rangeRsiMidpoint: Param = Param(default = 55.0, min = 45.0, max = 55.0),
+    val smaPeriod: Param = Param(default = 233.0, min = 150.0, max = 250.0),
+    val adxPeriod: Param = Param(default = 18.0, min = 10.0, max = 20.0),
     val atrPeriod: Param = Param(default = 14.0, min = 10.0, max = 20.0),
-    val rsiPeriod: Param = Param(default = 14.0, min = 10.0, max = 20.0),
-    val volumeSmaPeriod: Param = Param(default = 20.0, min = 10.0, max = 30.0),
-    val minVolumeRatio: Param = Param(default = 1.0, min = 0.5, max = 2.0),
-    val rsiLongBlockThreshold: Param = Param(default = 30.0, min = 25.0, max = 35.0),
-    val rsiShortBlockThreshold: Param = Param(default = 70.0, min = 65.0, max = 75.0),
-    val smaPreviousLookback: Param = Param(default = 10.0, min = 5.0, max = 20.0)
+    val rsiPeriod: Param = Param(default = 18.0, min = 10.0, max = 20.0),
+    val volumeSmaPeriod: Param = Param(default = 23.0, min = 10.0, max = 30.0),
+    val minVolumeRatio: Param = Param(default = 2.0, min = 0.5, max = 2.0),
+    val rsiLongBlockThreshold: Param = Param(default = 32.0142270461333, min = 25.0, max = 35.0),
+    val rsiShortBlockThreshold: Param = Param(default = 66.95229008675221, min = 65.0, max = 75.0),
+    val smaPreviousLookback: Param = Param(default = 6.0, min = 5.0, max = 20.0)
 ) {
     data class Param(
         var default: Double,

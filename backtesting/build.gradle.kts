@@ -7,6 +7,13 @@ application {
     mainClass.set("com.tradeflow.backtesting.RunValidationKt")
 }
 
+tasks.register<JavaExec>("runMassiveOptimization") {
+    group = "application"
+    description = "Run 50 rounds of optimization with dynamic scaling"
+    mainClass.set("com.tradeflow.backtesting.RunMassiveOptimizationKt")
+    classpath = sourceSets["main"].runtimeClasspath
+}
+
 kotlin {
     jvmToolchain(21)
 }
